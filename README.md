@@ -59,6 +59,16 @@ On Windows, `Start-Montralog.ps1` also starts the stack after Docker is running.
 
 Use the [evaluation walkthrough](docs/EVALUATION.md) for a complete test session. Stop with `docker compose stop`; named volumes retain data. Do not run `docker compose down -v` against valuable data.
 
+## Helm and Kubernetes
+
+The chart is in [`deploy/helm/montralog`](deploy/helm/montralog). It includes deployments, services, persistent storage, collector/backends, alert evaluation, optional TLS ingress and network policies.
+
+- [Chart README and installation](deploy/helm/montralog/README.md)
+- [Download the tested chart and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.0-rc1)
+- [Deployment values](deploy/helm/montralog/values.yaml) and [PostgreSQL/TLS example](deploy/helm/montralog/values-production.yaml)
+
+The chart version is `0.5.0-rc.1`; its application version is `0.5.0-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
+
 ## Architecture
 
 ```mermaid
