@@ -147,4 +147,4 @@ PostgreSQL tests are opt-in and require a separate disposable database named `mo
 
 ## License and security
 
-First-party code is licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [NOTICE](NOTICE) and [third-party components](THIRD_PARTY.md). Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new), rather than public issues. See [SECURITY.md](SECURITY.md) for scope and limitations.
+First-party code is licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [NOTICE](NOTICE) and [third-party components](docs/THIRD_PARTY.md). Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new), rather than public issues. See [SECURITY.md](SECURITY.md) for scope and limitations.

@@ -27,6 +27,6 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 - [Production-readiness checklist](PRODUCTION.md)
 - [Release status](RELEASE.md)
 - [Security policy](../SECURITY.md)
-- [Changelog](../CHANGELOG.md)
+- [Changelog](CHANGELOG.md)
 
 Historical versioned verification reports describe their stated versions only. They do not certify the current application or a different deployment.
