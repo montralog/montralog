@@ -62,11 +62,12 @@ jobs:
       - run: python -m pip install PyYAML==6.0.3
       - run: python scripts/check_chart.py
       - run: |
-          curl -fsSL https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64 -o /tmp/kind
+          curl -fsSL https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64 -o /tmp/kind-linux-amd64
           curl -fsSL https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64.sha256sum -o /tmp/kind.sha256sum
           cd /tmp
           sha256sum --check kind.sha256sum
-          chmod +x /tmp/kind
+          chmod +x /tmp/kind-linux-amd64
+          mv /tmp/kind-linux-amd64 /tmp/kind
       - run: /tmp/kind create cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig" --wait 120s
       - run: docker buildx build --provenance=false --sbom=false --load -t montralog:0.5.0-rc1 .
       - run: |
@@ -82,4 +83,4 @@ jobs:
           name: montralog-helm-chart
           path: dist/*.tgz
       - if: always()
-        run: /tmp/kind delete cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"
+        run: if [ -x /tmp/kind ]; then /tmp/kind delete cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"; fi
