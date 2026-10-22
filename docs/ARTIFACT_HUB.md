@@ -9,6 +9,10 @@ The manually dispatched `Publish Helm repository` workflow publishes the existin
 publishes only that preview. Extend the repository to retain all released versions
 before publishing a subsequent chart; do not replace an existing version's archive.
 
+The repository is registered under the Montralog account. Its assigned ID is
+`1c2a9013-1178-494e-af42-0291fc28f401`. Ownership metadata lives in
+`deploy/helm/artifacthub-repo.yml` and is copied beside the published index.
+
 ## Register the repository
 
 1. Create an account at https://artifacthub.io and sign in.

@@ -27,6 +27,7 @@ jobs:
           gh release download v0.5.0-rc1 --pattern 'montralog-0.5.0-rc.1.tgz' --dir public
           helm show chart public/montralog-0.5.0-rc.1.tgz
           helm repo index public --url https://montralog.github.io/montralog
+          cp deploy/helm/artifacthub-repo.yml public/artifacthub-repo.yml
           touch public/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
