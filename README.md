@@ -2,11 +2,41 @@
 
 <h1 align="center">Montralog</h1>
 <p align="center"><strong>Monitoring · Tracing · Logging · Tracking</strong><br>Self-hosted observability for understanding your systems.</p>
-<p align="center"><a href="#quickstart">Quickstart</a> · <a href="docs/README.md">Documentation</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a></p>
+<p align="center"><a href="#see-montralog-in-action">Screenshots</a> · <a href="#quickstart">Quickstart</a> · <a href="docs/README.md">Documentation</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a></p>
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Run it with Docker Compose or deploy its Helm chart to Kubernetes. First-party code is Apache-2.0; no hosted Montralog account is required.
 
 **Current release: 0.5.0-rc1 — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
+
+## See Montralog in action
+
+Local evaluation screenshots showing actual Montralog features. Timeline examples include synthetic demo/test events; these images are not production performance claims.
+
+### Build a monitoring dashboard
+
+Combine statistics, graphs and multiple timelines in a saved dashboard. Metric panels query your configured Prometheus source.
+
+![Montralog dashboard showing host CPU, memory and log/deployment timeline panels](docs/assets/screenshots/dashboards.jpg)
+
+<details>
+<summary><strong>Explore log and deployment timelines</strong></summary>
+
+Compare recorded errors and deployment changes side by side, then open a related trace. Correlation provides evidence to investigate; it is not proof of cause.
+
+![Montralog log and deployment timelines showing labelled synthetic demo events and links to related traces](docs/assets/screenshots/timelines.jpg)
+
+</details>
+
+<details>
+<summary><strong>Connect and test your data sources</strong></summary>
+
+Configure a Prometheus server, choose authentication when needed, and test its connection. Built-in log/trace storage and optional host/Docker collection are shown separately.
+
+![Montralog Connect data screen showing a successful Prometheus test and available signal connections](docs/assets/screenshots/connections.jpg)
+
+</details>
+
+Try it yourself with the [quickstart](#quickstart), then follow the [evaluation walkthrough](docs/EVALUATION.md).
 
 ## What works today
 
