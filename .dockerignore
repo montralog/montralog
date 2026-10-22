@@ -1,0 +1,14 @@
+.env
+data
+backups
+.git
+__pycache__
+tests
+*.zip
+work
+dist
+build
+*.egg-info
+*.tgz
+
+.local/

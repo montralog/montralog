@@ -1,0 +1,83 @@
+# image.repository must point to an image you built and published, or loaded locally.
+image:
+  repository: montralog
+  tag: 0.5.0-rc1
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+replicaCount: 1
+auth:
+  # Create this Secret separately; credentials never enter Helm values/release history.
+  existingSecret: montralog-auth
+  readTokenKey: read-token
+  ingestTokenKey: ingest-token
+database:
+  # sqlite: one replica only. postgresql: external operator-managed database.
+  mode: sqlite
+  existingSecret: ""
+  urlKey: database-url
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClassName: ""
+  accessModes: [ReadWriteOnce]
+  size: 10Gi
+retentionDays: 7
+service:
+  port: 8080
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: ""
+  tls: []
+resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits: {cpu: "1", memory: 512Mi}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+networkPolicy:
+  enabled: true
+  extraEgress: []
+  # Additional namespaces permitted to call gateway/OTLP. Same namespace is allowed.
+  clientNamespaceSelector:
+    matchLabels:
+      montralog-client: "true"
+  ingressNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ingress-nginx
+collector:
+  enabled: true
+  image: otel/opentelemetry-collector-contrib:0.161.0@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
+  persistence:
+    size: 5Gi
+    storageClassName: ""
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+prometheus:
+  enabled: true
+  # Required URL when bundled Prometheus is disabled.
+  externalUrl: ""
+  image: prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7
+  persistence: {size: 20Gi, storageClassName: ""}
+  retention: 7d
+  retentionSize: 10GB
+  extraScrapeConfigs: []
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+    limits: {cpu: "2", memory: 1Gi}
+alertmanager:
+  enabled: true
+  image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+  persistence: {size: 1Gi, storageClassName: ""}
+  # Optional Secret with alertmanager.yml. Default receiver sends no notifications.
+  existingConfigSecret: ""
+  resources:
+    requests: {cpu: 25m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}

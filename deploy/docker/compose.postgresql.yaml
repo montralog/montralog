@@ -1,0 +1,13 @@
+# Optional overlay: use an operator-managed PostgreSQL database.
+# docker compose -f compose.yaml -f deploy/docker/compose.postgresql.yaml up -d --build
+# Snapshot/import existing SQLite telemetry before changing storage modes.
+services:
+  gateway:
+    environment:
+      MONTRALOG_DATABASE_URL: ${MONTRALOG_DATABASE_URL:?Set the PostgreSQL URL in your local environment or .env}
+  retention:
+    environment:
+      MONTRALOG_DATABASE_URL: ${MONTRALOG_DATABASE_URL:?Set the PostgreSQL URL in your local environment or .env}
+  notifications:
+    environment:
+      MONTRALOG_DATABASE_URL: ${MONTRALOG_DATABASE_URL:?Set the PostgreSQL URL in your local environment or .env}

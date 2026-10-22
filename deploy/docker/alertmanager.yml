@@ -1,0 +1,12 @@
+global:
+  resolve_timeout: 5m
+route:
+  receiver: unconfigured
+  group_by: [alertname, job]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+# No external messages are sent by default.
+# Replace this receiver with your webhook/email receiver before relying on alerts.
+receivers:
+  - name: unconfigured

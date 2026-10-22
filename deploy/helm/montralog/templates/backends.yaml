@@ -1,0 +1,163 @@
+{{- $root := . -}}
+{{- range $component := list "prometheus" "alertmanager" -}}
+{{- $settings := index $root.Values $component -}}
+{{- if $settings.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "montralog.fullname" $root }}-{{ $component }}
+  labels: {{- include "montralog.labels" $root | nindent 4 }}
+data:
+  {{- if eq $component "prometheus" }}
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    rule_files: [/etc/backend/rules.yml]
+    {{- if $root.Values.alertmanager.enabled }}
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: [{{ include "montralog.fullname" $root }}-alertmanager:9093]
+    {{- end }}
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: [localhost:9090]
+      {{- if $root.Values.collector.enabled }}
+      - job_name: otel-applications
+        static_configs:
+          - targets: [{{ include "montralog.fullname" $root }}-collector:9464]
+      {{- end }}
+      {{- with $settings.extraScrapeConfigs }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  rules.yml: |
+    {{- $root.Files.Get "files/rules.yml" | nindent 4 }}
+  {{- else }}
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: unconfigured
+      group_by: [alertname, job]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: unconfigured
+  {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "montralog.fullname" $root }}-{{ $component }}
+  labels: {{- include "montralog.labels" $root | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "montralog.selector" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: http
+      port: {{ if eq $component "prometheus" }}9090{{ else }}9093{{ end }}
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "montralog.fullname" $root }}-{{ $component }}-headless
+  labels: {{- include "montralog.labels" $root | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "montralog.selector" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: http
+      port: {{ if eq $component "prometheus" }}9090{{ else }}9093{{ end }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "montralog.fullname" $root }}-{{ $component }}
+  labels: {{- include "montralog.labels" $root | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "montralog.fullname" $root }}-{{ $component }}-headless
+  selector:
+    matchLabels:
+      {{- include "montralog.selector" $root | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+  template:
+    metadata:
+      labels:
+        {{- include "montralog.selector" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $component }}
+      annotations:
+        checksum/settings: {{ toYaml $settings | sha256sum | quote }}
+        checksum/rules: {{ $root.Files.Get "files/rules.yml" | sha256sum | quote }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: {{ $component }}
+          image: {{ $settings.image | quote }}
+          args:
+            {{- if eq $component "prometheus" }}
+            - --config.file=/etc/backend/prometheus.yml
+            - --storage.tsdb.path=/var/lib/backend
+            - --storage.tsdb.retention.time={{ $settings.retention }}
+            - --storage.tsdb.retention.size={{ $settings.retentionSize }}
+            {{- else }}
+            - --config.file=/etc/backend/alertmanager.yml
+            - --storage.path=/var/lib/backend
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          ports:
+            - name: http
+              containerPort: {{ if eq $component "prometheus" }}9090{{ else }}9093{{ end }}
+          resources: {{- toYaml $settings.resources | nindent 12 }}
+          readinessProbe:
+            httpGet: {path: /-/ready, port: http}
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: {path: /-/healthy, port: http}
+            initialDelaySeconds: 30
+          volumeMounts:
+            - {name: config, mountPath: /etc/backend, readOnly: true}
+            - {name: data, mountPath: /var/lib/backend}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          {{- if and (eq $component "alertmanager") $settings.existingConfigSecret }}
+          secret:
+            secretName: {{ $settings.existingConfigSecret }}
+          {{- else }}
+          configMap:
+            name: {{ include "montralog.fullname" $root }}-{{ $component }}
+          {{- end }}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if $settings.persistence.storageClassName }}
+        storageClassName: {{ $settings.persistence.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $settings.persistence.size }}
+{{- end -}}
+{{- end -}}

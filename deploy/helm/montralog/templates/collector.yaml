@@ -1,0 +1,170 @@
+{{- if .Values.collector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "montralog.fullname" . }}-collector
+  labels: {{- include "montralog.labels" . | nindent 4 }}
+data:
+  collector.yml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      bearertokenauth:
+        token: ${env:MONTRALOG_INGEST_TOKEN}
+      file_storage:
+        directory: /var/lib/otelcol
+        create_directory: true
+        timeout: 10s
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            auth: {authenticator: bearertokenauth}
+          http:
+            endpoint: 0.0.0.0:4318
+            auth: {authenticator: bearertokenauth}
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 256
+        spike_limit_mib: 64
+      batch:
+        timeout: 5s
+        send_batch_size: 200
+        send_batch_max_size: 500
+    exporters:
+      otlp_http/montralog:
+        endpoint: http://{{ include "montralog.fullname" . }}:{{ .Values.service.port }}
+        encoding: json
+        compression: none
+        headers:
+          Authorization: Bearer ${env:MONTRALOG_INGEST_TOKEN}
+        sending_queue:
+          enabled: true
+          queue_size: 1000
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 30s
+          max_elapsed_time: 0s
+      prometheus:
+        endpoint: 0.0.0.0:9464
+        resource_to_telemetry_conversion: {enabled: true}
+    service:
+      extensions: [health_check, bearertokenauth, file_storage]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp_http/montralog]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp_http/montralog]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "montralog.fullname" . }}-collector
+  labels: {{- include "montralog.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "montralog.selector" . | nindent 4 }}
+    app.kubernetes.io/component: collector
+  ports:
+    - {name: otlp-grpc, port: 4317, targetPort: 4317}
+    - {name: otlp-http, port: 4318, targetPort: 4318}
+    - {name: metrics, port: 9464, targetPort: 9464}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "montralog.fullname" . }}-collector-headless
+  labels: {{- include "montralog.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "montralog.selector" . | nindent 4 }}
+    app.kubernetes.io/component: collector
+  ports: [{name: otlp-http, port: 4318}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "montralog.fullname" . }}-collector
+  labels: {{- include "montralog.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "montralog.fullname" . }}-collector-headless
+  selector:
+    matchLabels:
+      {{- include "montralog.selector" . | nindent 6 }}
+      app.kubernetes.io/component: collector
+  template:
+    metadata:
+      labels:
+        {{- include "montralog.selector" . | nindent 8 }}
+        app.kubernetes.io/component: collector
+      annotations:
+        checksum/config: {{ printf "%s-%s" .Chart.Version (toJson .Values) | sha256sum | quote }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        fsGroup: 10001
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: collector
+          image: {{ .Values.collector.image | quote }}
+          args: [--config=/etc/otelcol/collector.yml]
+          securityContext: {{- include "montralog.containerSecurity" . | nindent 12 }}
+          env:
+            - name: MONTRALOG_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.existingSecret }}
+                  key: {{ .Values.auth.ingestTokenKey }}
+          ports:
+            - {name: otlp-grpc, containerPort: 4317}
+            - {name: otlp-http, containerPort: 4318}
+            - {name: metrics, containerPort: 9464}
+            - {name: health, containerPort: 13133}
+          resources: {{- toYaml .Values.collector.resources | nindent 12 }}
+          readinessProbe:
+            httpGet: {path: /, port: health}
+            initialDelaySeconds: 3
+          livenessProbe:
+            httpGet: {path: /, port: health}
+            initialDelaySeconds: 15
+          volumeMounts:
+            - {name: config, mountPath: /etc/otelcol, readOnly: true}
+            - {name: queue, mountPath: /var/lib/otelcol}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "montralog.fullname" . }}-collector
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+  volumeClaimTemplates:
+    - metadata:
+        name: queue
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.collector.persistence.storageClassName }}
+        storageClassName: {{ .Values.collector.persistence.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.collector.persistence.size }}
+{{- end }}

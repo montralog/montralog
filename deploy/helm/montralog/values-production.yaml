@@ -1,0 +1,29 @@
+# Example production topology, NOT credentials or a capacity guarantee.
+# Replace registry/repository, external database Secret and ingress host/TLS.
+replicaCount: 2
+image:
+  repository: your-registry.example/your-team/montralog
+  tag: 0.5.0-rc1
+auth:
+  existingSecret: montralog-auth
+database:
+  mode: postgresql
+  existingSecret: montralog-database
+persistence:
+  enabled: false
+ingress:
+  enabled: true
+  className: nginx
+  host: montralog.example.com
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 2m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+  tls:
+    - hosts: [montralog.example.com]
+      secretName: montralog-tls
+resources:
+  requests: {cpu: 250m, memory: 256Mi}
+  limits: {cpu: "2", memory: 1Gi}
+# Set affinity/topology spreading appropriate to actual cluster nodes/failure domains.

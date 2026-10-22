@@ -1,0 +1,39 @@
+{{- if eq .Values.database.mode "postgresql" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "montralog.fullname" . }}-retention
+  labels: {{- include "montralog.labels" . | nindent 4 }}
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            {{- include "montralog.selector" . | nindent 12 }}
+            app.kubernetes.io/component: retention
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile: {type: RuntimeDefault}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: retention
+              image: {{ include "montralog.image" . | quote }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: [python, -m, montralog, prune]
+              env: {{- include "montralog.environment" . | nindent 16 }}
+              securityContext: {{- include "montralog.containerSecurity" . | nindent 16 }}
+              resources:
+                requests: {cpu: 25m, memory: 32Mi}
+                limits: {cpu: 250m, memory: 128Mi}
+{{- end }}

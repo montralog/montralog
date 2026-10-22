@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS data_sources (id TEXT PRIMARY KEY,name TEXT NOT NULL,url TEXT NOT NULL,auth_type TEXT NOT NULL,username TEXT NOT NULL,secret TEXT NOT NULL,is_default INTEGER NOT NULL,last_checked DOUBLE PRECISION NOT NULL,last_status TEXT NOT NULL,last_detail TEXT NOT NULL,created_at DOUBLE PRECISION NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS data_source_default ON data_sources(is_default) WHERE is_default=1;

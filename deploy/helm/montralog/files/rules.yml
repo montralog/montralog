@@ -1,0 +1,28 @@
+groups:
+  - name: montralog.infrastructure
+    rules:
+      - alert: ExporterUnavailable
+        expr: up == 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: 'Exporter {{ $labels.instance }} is unreachable'
+          description: Check networking and exporter health. This is not proof the application is down.
+      - alert: HostMemoryPressure
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: 'Host {{ $labels.instance }} memory usage exceeds 90%'
+      - alert: HostDiskSpaceLow
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes < 0.10
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: 'Filesystem on {{ $labels.instance }} has less than 10% available'
+      - alert: KubernetesContainerRestarting
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: 'Repeated container restarts in {{ $labels.namespace }}/{{ $labels.pod }}'

@@ -1,0 +1,18 @@
+{{- if and (eq .Values.database.mode "sqlite") (ne (int .Values.replicaCount) 1) -}}
+{{- fail "SQLite requires replicaCount=1. Configure external PostgreSQL before scaling." -}}
+{{- end -}}
+{{- if and (eq .Values.database.mode "sqlite") (not .Values.persistence.enabled) -}}
+{{- fail "SQLite requires persistence.enabled=true to avoid losing telemetry." -}}
+{{- end -}}
+{{- if and (eq .Values.database.mode "postgresql") (empty .Values.database.existingSecret) -}}
+{{- fail "PostgreSQL requires database.existingSecret containing a database URL." -}}
+{{- end -}}
+{{- if and (not .Values.prometheus.enabled) (empty .Values.prometheus.externalUrl) -}}
+{{- fail "Set prometheus.externalUrl when disabling bundled Prometheus." -}}
+{{- end -}}
+{{- if empty .Values.auth.existingSecret -}}
+{{- fail "Set auth.existingSecret; plaintext credentials in chart values are unsupported." -}}
+{{- end -}}
+{{- if and .Values.ingress.enabled (or (empty .Values.ingress.host) (empty .Values.ingress.tls)) -}}
+{{- fail "Ingress requires a host and TLS configuration." -}}
+{{- end -}}

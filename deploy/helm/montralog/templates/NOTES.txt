@@ -1,0 +1,17 @@
+Montralog {{ .Chart.AppVersion }} is deployed in namespace {{ .Release.Namespace }}.
+
+Access privately:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "montralog.fullname" . }} 8080:{{ .Values.service.port }}
+
+Create a local browser account in a gateway pod:
+  kubectl -n {{ .Release.Namespace }} exec -it deployment/{{ include "montralog.fullname" . }} -- python -m montralog create-user --username admin --name Administrator
+Open http://localhost:8080 and sign in with that account.
+Never put plaintext credentials in Helm values.
+
+Storage: {{ .Values.database.mode }}.
+{{ if eq .Values.database.mode "sqlite" }}SQLite is intentionally restricted to one replica.{{ end }}
+{{ if .Values.collector.enabled }}Internal OTLP endpoint: {{ include "montralog.fullname" . }}-collector:4317 / :4318.{{ end }}
+
+TLS, source instrumentation, exporter targets, database backups, network-policy
+support in the cluster CNI and external alert delivery must be verified by operators.
+This release candidate does not establish production availability or capacity guarantees.

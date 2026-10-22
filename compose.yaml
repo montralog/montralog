@@ -1,0 +1,130 @@
+name: montralog
+services:
+  gateway:
+    build: .
+    image: montralog:0.5.0-rc1
+    environment:
+      MONTRALOG_READ_TOKEN: ${MONTRALOG_READ_TOKEN:?Run python scripts/setup.py}
+      MONTRALOG_INGEST_TOKEN: ${MONTRALOG_INGEST_TOKEN:?Run python scripts/setup.py}
+      MONTRALOG_COOKIE_SECURE: ${MONTRALOG_COOKIE_SECURE:-false}
+      MONTRALOG_DB: /data/montralog.db
+      MONTRALOG_COLLECTOR_URL: http://collector:4318
+      PROMETHEUS_URL: http://prometheus:9090
+    ports: ["127.0.0.1:8080:8080"]
+    volumes: [montralog-data:/data]
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:8080/health/ready',timeout=6)"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 15s
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+  retention:
+    image: montralog:0.5.0-rc1
+    environment:
+      MONTRALOG_DB: /data/montralog.db
+      RETENTION_DAYS: ${RETENTION_DAYS:-7}
+    command: ["python","scripts/retention.py"]
+    volumes: [montralog-data:/data]
+    depends_on:
+      gateway: {condition: service_healthy}
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    pids_limit: 32
+    restart: unless-stopped
+    logging: *logging
+  notifications:
+    image: montralog:0.5.0-rc1
+    environment:
+      MONTRALOG_DB: /data/montralog.db
+      PROMETHEUS_URL: http://prometheus:9090
+    command: ["python","-m","montralog.notifications"]
+    volumes: [montralog-data:/data]
+    depends_on:
+      gateway: {condition: service_healthy}
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    pids_limit: 32
+    restart: unless-stopped
+    logging: *logging
+  prometheus:
+    image: prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7
+    command: ["--config.file=/etc/prometheus/prometheus.yml","--storage.tsdb.path=/prometheus","--storage.tsdb.retention.time=7d","--storage.tsdb.retention.size=5GB"]
+    volumes:
+      - ./deploy/docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/docker/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus-data:/prometheus
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    pids_limit: 128
+    restart: unless-stopped
+    logging: *logging
+  alertmanager:
+    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml","--storage.path=/alertmanager"]
+    volumes:
+      - ./deploy/docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    pids_limit: 64
+    restart: unless-stopped
+    logging: *logging
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
+    command: ["--config=/etc/otelcol/config.yml"]
+    environment:
+      MONTRALOG_INGEST_TOKEN: ${MONTRALOG_INGEST_TOKEN:?Run python scripts/setup.py}
+    volumes:
+      - ./deploy/docker/collector.yml:/etc/otelcol/config.yml:ro
+      - collector-data:/var/lib/otelcol
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    depends_on:
+      gateway: {condition: service_healthy}
+      collector-storage-init: {condition: service_completed_successfully}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    pids_limit: 128
+    restart: unless-stopped
+    logging: *logging
+  collector-storage-init:
+    image: montralog:0.5.0-rc1
+    user: "0:0"
+    command: ["python","-c","import os; os.chown('/queue',10001,10001)"]
+    volumes: [collector-data:/queue]
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 64m
+    pids_limit: 16
+    restart: "no"
+    logging: *logging
+volumes:
+  montralog-data:
+  prometheus-data:
+  alertmanager-data:
+  collector-data:

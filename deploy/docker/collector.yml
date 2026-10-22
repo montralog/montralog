@@ -1,0 +1,61 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  file_storage:
+    directory: /var/lib/otelcol
+    create_directory: true
+  bearertokenauth:
+    token: ${env:MONTRALOG_INGEST_TOKEN}
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        auth: {authenticator: bearertokenauth}
+      http:
+        endpoint: 0.0.0.0:4318
+        auth: {authenticator: bearertokenauth}
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    timeout: 5s
+    send_batch_size: 200
+    send_batch_max_size: 500
+exporters:
+  otlp_http/montralog:
+    endpoint: http://gateway:8080
+    encoding: json
+    compression: none
+    headers:
+      Authorization: Bearer ${env:MONTRALOG_INGEST_TOKEN}
+    sending_queue:
+      enabled: true
+      queue_size: 1000
+      storage: file_storage
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 15s
+      max_elapsed_time: 0s
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    resource_to_telemetry_conversion:
+      enabled: true
+service:
+  extensions: [bearertokenauth, file_storage, health_check]
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/montralog]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/montralog]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
