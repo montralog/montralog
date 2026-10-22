@@ -1,5 +1,6 @@
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-$pidFile = Join-Path $PSScriptRoot '.local\metrics-agent.pid'
+$pidFile = Join-Path $projectRoot '.local\metrics-agent.pid'
 if (-not (Test-Path -LiteralPath $pidFile)) { Write-Host 'No local agent is registered.'; exit 0 }
 $agentPid = [int](Get-Content -LiteralPath $pidFile)
 $existing = Get-CimInstance Win32_Process -Filter "ProcessId=$agentPid" -ErrorAction SilentlyContinue

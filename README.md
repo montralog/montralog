@@ -18,23 +18,19 @@ Combine statistics, graphs and multiple timelines in a saved dashboard. Metric p
 
 ![Montralog dashboard showing host CPU, memory and log/deployment timeline panels](docs/assets/screenshots/dashboards.jpg)
 
-<details>
-<summary><strong>Explore log and deployment timelines</strong></summary>
+### Explore log and deployment timelines
 
 Compare recorded errors and deployment changes side by side, then open a related trace. Correlation provides evidence to investigate; it is not proof of cause.
 
 ![Montralog log and deployment timelines showing labelled synthetic demo events and links to related traces](docs/assets/screenshots/timelines.jpg)
 
-</details>
 
-<details>
-<summary><strong>Connect and test your data sources</strong></summary>
+### Connect and test your data sources
 
 Configure a Prometheus server, choose authentication when needed, and test its connection. Built-in log/trace storage and optional host/Docker collection are shown separately.
 
 ![Montralog Connect data screen showing a successful Prometheus test and available signal connections](docs/assets/screenshots/connections.jpg)
 
-</details>
 
 Try it yourself with the [quickstart](#quickstart), then follow the [evaluation walkthrough](docs/EVALUATION.md).
 
@@ -77,7 +73,7 @@ python scripts/check_install.py
 python scripts/check_install.py --demo
 ```
 
-On Windows, `Start-Montralog.ps1` also starts the stack after Docker is running. Create the first account with the command above. The optional local metrics agent has separate [setup instructions](agents/README.md).
+On Windows, `scripts/windows/Start-Montralog.ps1` also starts the stack after Docker is running. Create the first account with the command above. The optional local metrics agent has separate [setup instructions](agents/README.md).
 
 ## Start exploring
 

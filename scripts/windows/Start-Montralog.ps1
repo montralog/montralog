@@ -1,5 +1,6 @@
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+Set-Location -LiteralPath $projectRoot
 if (-not (Test-Path -LiteralPath '.env')) {
     python scripts/setup.py
     if ($LASTEXITCODE -ne 0) { throw 'Credential setup failed.' }

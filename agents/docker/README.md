@@ -12,8 +12,8 @@ It does not collect container logs, environments, process command lines or files
 From the project directory after starting Docker and Montralog:
 
 ```powershell
-.\Start-Local-Metrics.ps1
-.\Stop-Local-Metrics.ps1
+.\scripts\windows\Start-Local-Metrics.ps1
+.\scripts\windows\Stop-Local-Metrics.ps1
 ```
 
 Start is idempotent. It runs a hidden Python process, records its PID in `.local`,

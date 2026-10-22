@@ -21,6 +21,7 @@
     │   ├── docker/            Local backend configuration and alert rules
     │   └── helm/montralog/    Chart, values schema, templates, production example
     ├── scripts/               Setup, smoke checks, chart validation and migration
+    │   └── windows/           Windows startup, shutdown, demo and metrics helpers
     ├── tests/                 Gateway, storage and optional PostgreSQL tests
     ├── docs/                  Architecture, operations, release gates and guides
     ├── .github/workflows/     Application, image and chart verification

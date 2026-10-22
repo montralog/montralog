@@ -1,5 +1,6 @@
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+Set-Location -LiteralPath $projectRoot
 if (-not (Test-Path -LiteralPath '.env')) { throw 'Run setup/start first.' }
 foreach ($line in Get-Content -LiteralPath '.env') {
     if ($line -match '^MONTRALOG_INGEST_TOKEN=(.+)$') {
