@@ -20,6 +20,8 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 
 ## Develop and assess
 
+- [Executed functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
+
 - [Project structure](PROJECT_STRUCTURE.md)
 - [Architecture](ARCHITECTURE.md)
 - [Contributing](../CONTRIBUTING.md)
