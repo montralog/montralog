@@ -2,6 +2,7 @@
 import base64
 import ipaddress
 import json
+import math
 import os
 import secrets
 import socket
@@ -34,6 +35,13 @@ def validate_url(raw):
             raise AccountError('Link-local, metadata, multicast and unspecified addresses are not supported.')
     return raw.rstrip('/')
 
+def finite_json_number(value):
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError('Non-finite JSON number')
+    return number
+
+
 def query(source,path,params=None):
     if path not in ('query','query_range','targets','alerts'):raise ValueError('Unsupported Prometheus API')
     try:
@@ -49,7 +57,7 @@ def query(source,path,params=None):
         with urllib.request.build_opener(NoRedirect()).open(request,timeout=8) as response:
             raw=response.read(MAX_BODY+1)
             if len(raw)>MAX_BODY:raise ValueError('Response too large')
-            result=json.loads(raw)
+            result=json.loads(raw,parse_float=finite_json_number,parse_constant=finite_json_number)
             if not isinstance(result,dict) or result.get('status')!='success' or not isinstance(result.get('data'),dict):
                 return {'available':False,'error':'The server did not return a successful Prometheus API response.'}
             return {'available':True,**result,'source':{'id':source.get('id','builtin'),'name':source.get('name','Bundled Prometheus')}}

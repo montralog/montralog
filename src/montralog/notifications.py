@@ -10,6 +10,7 @@ from .accounts import AccountError, require_csrf
 from .studio import admin
 from .storage import database
 from .metrics import PANELS, prometheus
+from .validation import number
 
 def valid_webhook(url):
     return isinstance(url,str) and bool(re.fullmatch(r'https://hooks\.slack\.com/services/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+',url)) and len(url)<=512
@@ -78,7 +79,11 @@ def route(path,method,data,user,environ):
             return {'ok':True}
         name=data.get('name','');d=data.get('definition',{})
         if not isinstance(name,str) or not 1<=len(name.strip())<=100 or not isinstance(d,dict):raise AccountError('Provide a rule name.')
-        source=d.get('source','metric');metric=d.get('metric','cpu');op=d.get('op','gt');threshold=float(d.get('threshold',0));duration=int(d.get('for_seconds',60))
+        source=d.get('source','metric');metric=d.get('metric','cpu');op=d.get('op','gt')
+        threshold=number(d.get('threshold',0))
+        duration_value=number(d.get('for_seconds',60))
+        if not duration_value.is_integer():raise AccountError('Alert waiting period must be a whole number of seconds.')
+        duration=int(duration_value)
         if source not in ('metric','logs') or (source=='metric' and metric not in PANELS) or op not in ('gt','lt') or not math.isfinite(threshold) or not 0<=duration<=3600:
             raise AccountError('Invalid alert condition.')
         clean={'source':source,'metric':metric,'op':op,'threshold':threshold,'for_seconds':duration}

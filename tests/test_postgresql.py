@@ -91,3 +91,10 @@ class PostgresIdentityTests(test_identity.IdentityTests):
         with patch.object(test_gateway.GatewayTests, 'setUp', PostgresGatewayTests.setUp):
             super().setUp()
     tearDown=PostgresGatewayTests.tearDown
+
+import test_functional_review
+
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'), 'No isolated PostgreSQL test database supplied')
+class PostgresFunctionalReviewTests(test_functional_review.FunctionalReviewTests):
+    setUp = PostgresGatewayTests.setUp
+    tearDown = PostgresGatewayTests.tearDown
