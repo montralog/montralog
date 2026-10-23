@@ -1,6 +1,6 @@
-"""Import a platform-specific local gateway image into the disposable kind node.
+"""Import a platform-specific local image into the disposable kind node.
 
-Works around Docker Desktop OCI indexes containing unavailable other-platform
+Works around Docker OCI indexes containing unavailable other-platform
 or attestation content. Requires Docker with image save --platform support.
 """
 import argparse
@@ -19,4 +19,4 @@ with tempfile.TemporaryDirectory(dir=root) as tmp:
     subprocess.run(['docker','image','save','--platform=linux/amd64','-o',str(archive),args.image],check=True)
     with archive.open('rb') as data:
         subprocess.run(['docker','exec','-i',node,'ctr','--namespace=k8s.io','images','import','--platform','linux/amd64','-'],stdin=data,check=True)
-print('Gateway image imported into disposable verification node')
+print(f'{args.image} imported into disposable verification node')

@@ -31,6 +31,7 @@ jobs:
           MONTRALOG_TEST_DATABASE_URL: postgresql://postgres:ci-ephemeral-only@localhost:5432/montralog_test
       - run: for file in src/montralog/static/*.js; do node --check "$file"; done
       - run: node --test tests/test_studio_rendering.cjs
+      - run: python scripts/functional_review_smoke.py
       - run: python -m build
   containers:
     runs-on: ubuntu-latest
@@ -76,7 +77,9 @@ jobs:
           docker pull prom/alertmanager:v0.28.1
           docker pull otel/opentelemetry-collector-contrib:0.161.0
           docker pull postgres:17.6-alpine
-          /tmp/kind load docker-image montralog:0.5.0-rc1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine --name montralog-verify
+          for image in montralog:0.5.0-rc1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
+            python scripts/load_kind_gateway.py --image "$image"
+          done
       - run: python scripts/cluster_smoke.py --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"
       - run: helm package deploy/helm/montralog --destination dist
       - uses: actions/upload-artifact@v4
