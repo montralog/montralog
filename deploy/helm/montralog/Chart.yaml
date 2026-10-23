@@ -2,7 +2,25 @@ apiVersion: v2
 name: montralog
 description: Montralog gateway, durable OpenTelemetry collector, and optional metrics backends
 type: application
-version: 0.5.0-rc.1
+version: 0.5.0-rc.2
 appVersion: 0.5.0-rc1
 kubeVersion: ">=1.27.0-0"
 keywords: [observability, monitoring, logs, tracing, opentelemetry]
+home: https://github.com/montralog/montralog
+icon: https://raw.githubusercontent.com/montralog/montralog/main/docs/assets/montralog-avatar.png
+sources:
+  - https://github.com/montralog/montralog
+maintainers:
+  - name: Montralog
+    url: https://github.com/montralog
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/prerelease: "true"
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://github.com/montralog/montralog/blob/main/docs/README.md
+  artifacthub.io/changes: |
+    - kind: fixed
+      description: Include the installation README and license in the chart archive.
+    - kind: added
+      description: Add project logo and documentation links.

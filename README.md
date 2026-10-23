@@ -93,7 +93,7 @@ The chart is in [`deploy/helm/montralog`](deploy/helm/montralog). It includes de
 - [Download the tested chart and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.0-rc1)
 - [Deployment values](deploy/helm/montralog/values.yaml) and [PostgreSQL/TLS example](deploy/helm/montralog/values-production.yaml)
 
-The chart version is `0.5.0-rc.1`; its application version is `0.5.0-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
+The chart version is `0.5.0-rc.2`; its application version is `0.5.0-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
 
 ## Architecture
 
