@@ -24,6 +24,10 @@ for profile in ('sqlite','postgresql'):
     assert deployment['spec']['replicas']==(1 if profile=='sqlite' else 2)
     assert deployment['spec']['strategy']['type']==('Recreate' if profile=='sqlite' else 'RollingUpdate')
     assert not any(x['kind']=='Secret' for x in manifests),'Credentials must be operator-managed Secrets'
+    if profile=='postgresql':
+        encryption=next(e for e in deployment['spec']['template']['spec']['containers'][0]['env'] if e['name']=='MONTRALOG_ENCRYPTION_KEY')
+        assert encryption['valueFrom']['secretKeyRef']['name']=='montralog-encryption'
+
     for resource in manifests:
         if resource['kind'] in ('Deployment','StatefulSet'):
             pod=resource['spec']['template']['spec']

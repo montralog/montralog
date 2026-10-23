@@ -19,6 +19,6 @@ Before relying on a deployment, record evidence for each item:
 
 SQLite deployment uses one gateway. PostgreSQL can share application storage across gateways, but does not make Prometheus, the collector or the entire system highly available. Notification evaluation remains a singleton worker.
 
-Connection passwords and Slack webhooks are stored in the protected application database, not separately encrypted at rest. Local accounts share telemetry within one organization. Company sign-in needs registration and live validation. There is no tenant isolation, independent security audit or published capacity guarantee.
+Integration credentials support authenticated encryption with an operator-held key. Existing plaintext records require the [explicit migration](SECURITY-0.5.1.md); telemetry and whole databases are not encrypted by this feature. Local accounts share telemetry within one organization. Company sign-in needs registration and live validation. There is no tenant isolation, independent security audit or published capacity guarantee.
 
 Use the operations, security and Kubernetes guides for deployment details. Treat each unchecked item above as outstanding work for your environment.

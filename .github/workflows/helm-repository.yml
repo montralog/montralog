@@ -1,6 +1,11 @@
 name: Publish Helm repository
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub release whose chart should be indexed
+        required: true
+        default: v0.5.1-rc1
 permissions:
   contents: read
   pages: write
@@ -16,37 +21,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4.3.0
-        with:
-          version: v3.19.4
+      - uses: azure/setup-helm@v4
+        with: {version: v3.19.4}
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Validate chart
-        run: |
-          python -m pip install PyYAML==6.0.3
-          python scripts/check_chart.py
-      - name: Package documented chart and retain previous release
+        with: {python-version: "3.13"}
+      - run: python -m pip install PyYAML==6.0.3
+      - name: Retain prior versions and add released chart
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p public
-          gh release download v0.5.0-rc1 --pattern 'montralog-0.5.0-rc.1.tgz' --dir public
-          status=$(curl -sS -o public/montralog-0.5.0-rc.2.tgz -w '%{http_code}' https://montralog.github.io/montralog/montralog-0.5.0-rc.2.tgz)
-          case "$status" in
-            200) echo 'Retaining the existing immutable rc.2 archive' ;;
-            404) rm public/montralog-0.5.0-rc.2.tgz; helm package deploy/helm/montralog --destination public ;;
-            *) echo "Cannot verify existing archive: HTTP $status"; exit 1 ;;
-          esac
-          tar -tzf public/montralog-0.5.0-rc.2.tgz | grep -x 'montralog/README.md'
-          tar -tzf public/montralog-0.5.0-rc.2.tgz | grep -x 'montralog/LICENSE'
-          helm show readme public/montralog-0.5.0-rc.2.tgz
-          helm repo index public --url https://montralog.github.io/montralog
-          cp deploy/helm/artifacthub-repo.yml public/artifacthub-repo.yml
-          touch public/.nojekyll
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python scripts/build_chart_repository.py --release "$RELEASE_TAG"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+        with: {path: public}
       - uses: actions/deploy-pages@v4
         id: deployment

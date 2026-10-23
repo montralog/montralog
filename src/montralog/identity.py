@@ -14,6 +14,7 @@ from . import accounts
 from .accounts import AccountError
 from .storage import database, postgres_enabled
 from .studio import admin
+from .secret_store import seal, reveal
 
 PROVIDERS = {'microsoft': 'Microsoft Entra ID', 'google': 'Google Workspace', 'okta': 'Okta'}
 
@@ -89,7 +90,7 @@ def settings(method, data, user, environ):
             db.execute('DELETE FROM identity_states WHERE provider=?', (provider,))
         return {'ok': True}
     config = {k: str(data.get(k, '')).strip() for k in ('issuer', 'client_id', 'redirect_uri', 'domain')}
-    config.update(provider=provider, client_secret=str(data.get('client_secret') or old.get('client_secret', '')))
+    config.update(provider=provider, client_secret=str(data.get('client_secret') or reveal(old.get('client_secret', ''))))
     if provider == 'google':
         config['issuer'] = 'https://accounts.google.com'
         if not re.fullmatch(r'[a-z0-9][a-z0-9.-]{0,251}\.[a-z]{2,63}', config['domain']):
@@ -109,6 +110,7 @@ def settings(method, data, user, environ):
     metadata(config)
     if data.get('action') == 'test':
         return {'ok': True, 'message': 'Discovery reachable. A real sign-in is still required to verify the registration.'}
+    config['client_secret'] = seal(config['client_secret'])
     with database() as db:
         db.execute('INSERT INTO identity_providers(provider,config) VALUES (?,?) ON CONFLICT(provider) DO UPDATE SET config=excluded.config', (provider, json.dumps(config)))
         db.execute('DELETE FROM identity_states WHERE provider=?', (provider,))
@@ -164,7 +166,7 @@ def flow(path, params, environ):
     if params.get('error') or not params.get('code'):
         raise AccountError('Provider sign-in was not completed.', 401)
     meta = metadata(config)
-    tokens = request_json(meta['token_endpoint'], provider, dict(grant_type='authorization_code', code=params['code'], redirect_uri=config['redirect_uri'], client_id=config['client_id'], client_secret=config['client_secret'], code_verifier=state['verifier']))
+    tokens = request_json(meta['token_endpoint'], provider, dict(grant_type='authorization_code', code=params['code'], redirect_uri=config['redirect_uri'], client_id=config['client_id'], client_secret=reveal(config['client_secret']), code_verifier=state['verifier']))
     claims = verify(tokens.get('id_token', ''), request_json(meta['jwks_uri'], provider), config, state['nonce'])
     with database() as db:
         if not postgres_enabled(): db.execute('BEGIN IMMEDIATE')

@@ -12,3 +12,32 @@ build
 *.tgz
 
 .local/
+
+# Local credentials and runtime state must never enter published images.
+.env*
+!.env.example
+.venv/
+.aws/
+.ssh/
+*.key
+*.pem
+*.p12
+*.pfx
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+**/.env*
+!**/.env.example
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+**/.aws/
+**/.ssh/

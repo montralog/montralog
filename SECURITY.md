@@ -1,5 +1,7 @@
 # Security policy
 
+Supported preview: **0.5.1-rc1**. See [security changes and encrypted-credential upgrade instructions](docs/SECURITY-0.5.1.md). Earlier previews should upgrade; no stable-version SLA is provided.
+
 This release candidate has no independent security audit. Intended for one trusted
 organization in a protected network. Read-token holders access all telemetry.
 Ingest-token holders can submit spoofed service names/events. This is role

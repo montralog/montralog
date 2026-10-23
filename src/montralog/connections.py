@@ -12,6 +12,7 @@ import urllib.request
 from .accounts import AccountError, require_csrf
 from .storage import database
 from .config import MAX_BODY
+from .secret_store import seal, reveal
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
@@ -48,9 +49,9 @@ def query(source,path,params=None):
         base=validate_url(source['url'])
         headers={'Accept':'application/json'}
         if source.get('auth_type')=='basic':
-            credentials=(source.get('username','')+':'+source.get('secret','')).encode()
+            credentials=(source.get('username','')+':'+reveal(source.get('secret',''))).encode()
             headers['Authorization']='Basic '+base64.b64encode(credentials).decode()
-        elif source.get('auth_type')=='bearer':headers['Authorization']='Bearer '+source.get('secret','')
+        elif source.get('auth_type')=='bearer':headers['Authorization']='Bearer '+reveal(source.get('secret',''))
         url=base+'/api/v1/'+path
         if params:url+='?'+urllib.parse.urlencode(params)
         request=urllib.request.Request(url,headers=headers)
@@ -98,7 +99,7 @@ def route(method,data,user,environ):
         url=validate_url(url)
         with database() as db:old=db.execute('SELECT * FROM data_sources WHERE id=?',(ident,)).fetchone() if ident else None
         if ident and not old:raise AccountError('Connection not found.',404)
-        if old and old['auth_type']==auth and not secret:secret=old['secret']
+        if old and old['auth_type']==auth and not secret:secret=reveal(old['secret'])
         if auth=='none':secret='';username=''
         if auth=='basic' and (not username or not secret):raise AccountError('Enter the server username and password.')
         if auth=='bearer' and not secret:raise AccountError('Enter the server bearer credential.')
@@ -114,6 +115,7 @@ def route(method,data,user,environ):
     if action=='test':return {'ok':bool(result.get('available')),'message':detail,'series':count}
     if action!='save':raise AccountError('Unknown connection action.')
     if not result.get('available'):raise AccountError(detail)
+    source['secret']=seal(source['secret'])
     default=int(data.get('is_default',False) is True)
     with database() as db:
         if default:db.execute('UPDATE data_sources SET is_default=0 WHERE is_default=1')

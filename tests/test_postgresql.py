@@ -98,3 +98,9 @@ import test_functional_review
 class PostgresFunctionalReviewTests(test_functional_review.FunctionalReviewTests):
     setUp = PostgresGatewayTests.setUp
     tearDown = PostgresGatewayTests.tearDown
+
+import test_secret_store
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'), 'No isolated PostgreSQL test database supplied')
+class PostgresSecretStoreTests(test_secret_store.SecretStoreTests):
+    setUp = PostgresGatewayTests.setUp
+    tearDown = PostgresGatewayTests.tearDown

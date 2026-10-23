@@ -1,9 +1,12 @@
 # Release status
 
-**0.5.0-rc1 is a public preview for evaluation and controlled pilots.** It is not stable 1.0 or an independent production certification.
+Current version: **0.5.1-rc1**, a security-focused public preview for controlled pilots.
 
-The repository includes source, Docker configuration, Helm chart, automated tests and setup documentation. Build your own container image; no public image is promised by this release. Use the changelog and versioned verification reports to understand what was tested.
+- [Versioned release notes](RELEASE-0.5.1.md)
+- [Security changes and upgrade](SECURITY-0.5.1.md)
+- [Executed functional review](FUNCTIONAL_REVIEW-2026-10-23.md)
+- [Production validation still required](PRODUCTION.md)
 
-Before production adoption, complete [PRODUCTION.md](PRODUCTION.md), including exact-image dependency/security review, backup restoration, representative load, alert delivery, target-cluster behavior and operator ownership. Before a stable release, establish a support policy, maintenance/review ownership and a security-response process. Private vulnerability reports are available in the repository Security tab.
+Application, Python and Helm versions are aligned by release checks. Source, Python packages and the Helm chart are published as release assets only after functional and security gates pass. Build your own application container from the release tag.
 
-Before upgrading, take and verify a backup. Schema migrations are forward-only. Restore a pre-upgrade backup for rollback; do not run older application code against a newer schema.
+Before upgrading, back up the database and preserve any encryption key separately. Encrypted integration fields are not readable by older application versions. Restore a pre-upgrade backup for rollback; schema migrations remain forward-only. No independent security audit, stable support SLA or production certification is implied.

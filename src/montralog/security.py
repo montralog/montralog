@@ -11,6 +11,8 @@ def token_matches(env, candidate):
     return False
 
 def validate_config():
+    from .secret_store import cipher
+    cipher()
     for name in ('MONTRALOG_READ_TOKEN','MONTRALOG_INGEST_TOKEN'):
         if len(os.getenv(name,'')) < 32:
             raise SystemExit(f'{name} must contain at least 32 characters')

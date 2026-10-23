@@ -11,6 +11,7 @@ from .studio import admin
 from .storage import database
 from .metrics import PANELS, prometheus
 from .validation import number
+from .secret_store import seal, reveal
 
 def valid_webhook(url):
     return isinstance(url,str) and bool(re.fullmatch(r'https://hooks\.slack\.com/services/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+',url)) and len(url)<=512
@@ -56,8 +57,9 @@ def route(path,method,data,user,environ):
         if not isinstance(name,str) or not 1<=len(name.strip())<=80:raise AccountError('Provide a channel name.')
         with database() as db:
             old=db.execute('SELECT * FROM notification_channels WHERE id=?',(ident,)).fetchone() if ident else None
-            if old and not url:url=old['secret']
+            if old and not url:url=reveal(old['secret'])
             if not valid_webhook(url):raise AccountError('Enter a valid Slack incoming webhook URL from hooks.slack.com.')
+            url=seal(url)
             if old:db.execute('UPDATE notification_channels SET name=?,secret=?,enabled=? WHERE id=?',(name.strip(),url,enabled,ident))
             else:
                 if db.execute('SELECT COUNT(*) FROM notification_channels').fetchone()[0]>=20:raise AccountError('Maximum of 20 channels.')
@@ -159,11 +161,13 @@ def deliver():
     with database() as db:items=[dict(r) for r in db.execute("SELECT o.*,c.secret,c.enabled FROM notification_outbox o JOIN notification_channels c ON c.id=o.channel_id WHERE o.status='pending' AND o.next_attempt<=? ORDER BY o.created_at LIMIT 20",(now,))]
     for item in items:
         if not item['enabled']:continue
-        try:send_slack(item['secret'],item['message']);status,error='sent',''
+        try:send_slack(reveal(item['secret']),item['message']);status,error='sent',''
         except Exception:status,error=('failed' if item['attempts']>=4 else 'pending'),'Slack delivery failed; check the webhook, channel and network'
         with database() as db:db.execute('UPDATE notification_outbox SET status=?,attempts=?,next_attempt=?,last_error=? WHERE id=?',(status,item['attempts']+1,now+min(900,30*2**item['attempts']),error,item['id']))
 
 def main():
+    from .secret_store import cipher
+    cipher()
     from .storage import initialize
     initialize()
     while True:

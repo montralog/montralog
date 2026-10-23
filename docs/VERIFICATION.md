@@ -1,6 +1,9 @@
 # Verification evidence
 
-Current public preview: **0.5.0-rc1**.
+Current public preview: **0.5.1-rc1**.
+
+- [Security changes and upgrade](SECURITY-0.5.1.md)
+- [Versioned release notes](RELEASE-0.5.1.md)
 
 - [Executed functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
 

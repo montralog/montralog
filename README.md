@@ -6,7 +6,7 @@
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Run it with Docker Compose or deploy its Helm chart to Kubernetes. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current release: 0.5.0-rc1 — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
+**Current release: 0.5.1-rc1 — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
 
 ## See Montralog in action
 
@@ -91,10 +91,10 @@ The chart is in [`deploy/helm/montralog`](deploy/helm/montralog). It includes de
 
 - [Chart README and installation](deploy/helm/montralog/README.md)
 - [Artifact Hub listing](https://artifacthub.io/packages/helm/montralog/montralog) and [Helm repository index](https://montralog.github.io/montralog/index.yaml)
-- [Original preview archive and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.0-rc1)
+- [Release downloads and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.1-rc1)
 - [Deployment values](deploy/helm/montralog/values.yaml) and [PostgreSQL/TLS example](deploy/helm/montralog/values-production.yaml)
 
-The chart version is `0.5.0-rc.2`; its application version is `0.5.0-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
+The chart version is `0.5.1-rc.1`; its application version is `0.5.1-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
 
 ## Architecture
 
@@ -133,7 +133,7 @@ Teams/groups organize membership; they do not isolate telemetry or grant inherit
 
 Microsoft 365, Google Workspace and Okta audit-event polling are not implemented. Company login does not collect audit logs. Other security tools can send supported log/OpenTelemetry data through your own collector or adapter.
 
-Log grouping is heuristic, not proven root-cause analysis. Contact-point and connection secrets are stored in the protected application database without separate application-level encryption. Slack delivery, backup restoration, load limits and Kubernetes behavior must be validated in your environment. No public container image is published yet: build your own image for Docker/Helm.
+Log grouping is heuristic, not proven root-cause analysis. Integration credentials support authenticated encryption with an operator-held key; existing plaintext records require the [explicit migration](docs/SECURITY-0.5.1.md). Slack delivery, backup restoration, load limits and Kubernetes behavior must be validated in your environment. No public container image is published yet: build your own image for Docker/Helm.
 
 ## Contribute
 

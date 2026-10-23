@@ -1,7 +1,7 @@
 # image.repository must point to an image you built and published, or loaded locally.
 image:
   repository: montralog
-  tag: 0.5.0-rc1
+  tag: 0.5.1-rc1
   digest: ""
   pullPolicy: IfNotPresent
 imagePullSecrets: []
@@ -11,6 +11,11 @@ auth:
   existingSecret: montralog-auth
   readTokenKey: read-token
   ingestTokenKey: ingest-token
+encryption:
+  # Existing operator-managed Secret; never put the key in Helm values.
+  existingSecret: ""
+  key: encryption-key
+
 database:
   # sqlite: one replica only. postgresql: external operator-managed database.
   mode: sqlite

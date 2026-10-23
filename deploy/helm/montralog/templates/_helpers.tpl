@@ -35,6 +35,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
     secretKeyRef:
       name: {{ .Values.auth.existingSecret }}
       key: {{ .Values.auth.ingestTokenKey }}
+{{- if .Values.encryption.existingSecret }}
+- name: MONTRALOG_ENCRYPTION_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.encryption.existingSecret }}
+      key: {{ .Values.encryption.key }}
+- name: MONTRALOG_ENCRYPTION_REQUIRED
+  value: "true"
+{{- end }}
 - name: MONTRALOG_COOKIE_SECURE
   value: {{ ternary "true" "false" .Values.ingress.enabled | quote }}
 - name: MONTRALOG_DB

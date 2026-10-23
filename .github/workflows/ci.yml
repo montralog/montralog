@@ -1,5 +1,8 @@
 name: Verify
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -26,6 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: "22"}
       - run: python -m pip install -e ".[server]" -r requirements-dev.txt
+      - run: python scripts/check_release.py
       - run: python -m unittest discover -s tests -v
         env:
           MONTRALOG_TEST_DATABASE_URL: postgresql://postgres:ci-ephemeral-only@localhost:5432/montralog_test
@@ -45,7 +49,7 @@ jobs:
       - run: docker run --rm -v "$PWD/deploy/docker:/rules:ro" --workdir /rules --entrypoint promtool prom/prometheus:v3.13.3 test rules rule-tests.yml
       - run: docker compose run --rm --no-deps collector validate --config=/etc/otelcol/config.yml
       - run: docker compose run --rm --no-deps --entrypoint amtool alertmanager check-config /etc/alertmanager/alertmanager.yml
-      - run: docker compose build gateway
+      - run: python scripts/check_image_secrets.py
       - run: docker compose up -d --no-build --wait --wait-timeout 180
       - run: python scripts/check_install.py
       - run: python scripts/smoke.py
@@ -71,13 +75,13 @@ jobs:
           chmod +x /tmp/kind-linux-amd64
           mv /tmp/kind-linux-amd64 /tmp/kind
       - run: /tmp/kind create cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig" --wait 120s
-      - run: docker buildx build --provenance=false --sbom=false --load -t montralog:0.5.0-rc1 .
+      - run: docker buildx build --provenance=false --sbom=false --load -t montralog:0.5.1-rc1 .
       - run: |
           docker pull prom/prometheus:v3.13.3
           docker pull prom/alertmanager:v0.28.1
           docker pull otel/opentelemetry-collector-contrib:0.161.0
           docker pull postgres:17.6-alpine
-          for image in montralog:0.5.0-rc1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
+          for image in montralog:0.5.1-rc1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
             python scripts/load_kind_gateway.py --image "$image"
           done
       - run: python scripts/cluster_smoke.py --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"
@@ -88,3 +92,34 @@ jobs:
           path: dist/*.tgz
       - if: always()
         run: if [ -x /tmp/kind ]; then /tmp/kind delete cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"; fi
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: python -m pip install pip-audit==2.10.1 bandit==1.9.4
+      - run: mkdir -p security-reports
+      - name: Known runtime dependency vulnerabilities
+        run: pip-audit -r requirements.txt --format json --output security-reports/dependencies.json
+      - name: High severity static findings
+        run: bandit -r src/montralog -lll -f json -o security-reports/bandit-high.json
+      - name: Build exact container for security inspection
+        run: docker build -t montralog:security .
+      - name: Install verified official Trivy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.76.1 --repo aquasecurity/trivy --pattern trivy_0.76.1_Linux-64bit.tar.gz --pattern trivy_0.76.1_checksums.txt
+          sha256sum --ignore-missing --check trivy_0.76.1_checksums.txt
+          tar -xzf trivy_0.76.1_Linux-64bit.tar.gz trivy
+      - name: Image vulnerability report and fixable high-critical gate
+        run: |
+          ./trivy image --scanners vuln --severity HIGH,CRITICAL --format json --output security-reports/image.json montralog:security
+          ./trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 montralog:security
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: security-reports/

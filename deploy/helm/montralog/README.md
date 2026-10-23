@@ -1,6 +1,6 @@
 # Montralog Helm chart
 
-Chart **0.5.0-rc.2** deploys application **0.5.0-rc1**. This public preview has hosted kind-cluster checks for SQLite and the PostgreSQL topology; validate your own cluster before production use.
+Chart **0.5.1-rc.1** deploys application **0.5.1-rc1**. This public preview has hosted kind-cluster checks for SQLite and the PostgreSQL topology; validate your own cluster before production use.
 
 ## Included resources
 
@@ -24,7 +24,7 @@ Add the repository, then replace the registry placeholder with your application 
 ```sh
 helm repo add montralog https://montralog.github.io/montralog
 helm repo update
-helm upgrade --install montralog montralog/montralog --version 0.5.0-rc.2 --namespace observability --create-namespace --set auth.existingSecret=montralog-auth --set image.repository=YOUR_REGISTRY/montralog --set image.tag=0.5.0-rc1 --wait --timeout 5m
+helm upgrade --install montralog montralog/montralog --version 0.5.1-rc.1 --namespace observability --create-namespace --set auth.existingSecret=montralog-auth --set image.repository=YOUR_REGISTRY/montralog --set image.tag=0.5.1-rc1 --wait --timeout 5m
 ```
 
 From a source checkout, replace `montralog/montralog` with `./deploy/helm/montralog`.
@@ -60,3 +60,7 @@ Copy `values-production.yaml` into operator-controlled configuration, replace it
 Back up data before every upgrade. `helm rollback` does not reverse database migrations. SQLite remains single-replica; changing database mode does not migrate data. Existing PVCs may remain on uninstall. Review storage and restore procedures before removing a release.
 
 See [Kubernetes operations](https://github.com/montralog/montralog/blob/main/docs/KUBERNETES.md), [storage](https://github.com/montralog/montralog/blob/main/docs/STORAGE.md) and [production readiness](https://github.com/montralog/montralog/blob/main/docs/PRODUCTION.md) for the complete requirements.
+
+## Integration credential encryption
+
+Configure an operator-managed Secret with `encryption.existingSecret` and `encryption.key`. The production example expects `montralog-encryption` / `encryption-key`. Existing plaintext records require an explicit migration after backup. See [security upgrade instructions](https://github.com/montralog/montralog/blob/main/docs/SECURITY-0.5.1.md).

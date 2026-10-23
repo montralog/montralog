@@ -3,9 +3,12 @@
 replicaCount: 2
 image:
   repository: your-registry.example/your-team/montralog
-  tag: 0.5.0-rc1
+  tag: 0.5.1-rc1
 auth:
   existingSecret: montralog-auth
+encryption:
+  existingSecret: montralog-encryption
+  key: encryption-key
 database:
   mode: postgresql
   existingSecret: montralog-database

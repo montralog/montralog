@@ -1,3 +1,14 @@
+# 0.5.1-rc1 — security-focused preview
+
+- Authenticated encryption for saved integration credentials, with operator-held keys and explicit transactional migration for existing records.
+- Safe private-key generation for upgrades and generated keys for new setups.
+- Hardened Docker build-context exclusions and built-image sentinel checks.
+- Refreshed pinned Python base; dependency, static-code and image security gates.
+- Version alignment and gated release assets: source, wheel, source distribution, Helm package, dependency inventory and checksums.
+- Includes the executed functional-review corrections documented below.
+
+See [release notes](RELEASE-0.5.1.md) and [security upgrade instructions](SECURITY-0.5.1.md).
+
 # Unreleased functional review fixes — 23 October 2026
 
 - Reject malformed nonfinite Prometheus JSON without crashing HTTP response serialization.
