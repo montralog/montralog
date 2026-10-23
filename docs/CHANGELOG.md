@@ -103,4 +103,3 @@ JSON/OTLP JSON adapters, Docker files, retention/backup tools, tests and CI.
 
 
 Not a stable production release. See docs/VERIFICATION.md and docs/RELEASE.md.
-
