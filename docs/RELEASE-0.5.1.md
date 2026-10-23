@@ -6,6 +6,8 @@ This version releases the executed functional-review fixes and additional securi
 
 ## Changes
 
+- Reject collector redirects so ingest credentials cannot follow a redirect to another server; validate collector URLs and response JSON.
+
 - Encrypt saved Prometheus credentials, Slack webhooks and OIDC client secrets when an operator-held key is configured; generate a key for new Docker setups.
 - Add an explicit, transactional and idempotent migration for existing plaintext integration credentials.
 - Exclude private env files, key files, databases and local credentials from Docker builds; verify exclusions against the actual built image.

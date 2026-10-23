@@ -103,8 +103,10 @@ jobs:
       - run: mkdir -p security-reports
       - name: Known runtime dependency vulnerabilities
         run: pip-audit -r requirements.txt --format json --output security-reports/dependencies.json
-      - name: High severity static findings
-        run: bandit -r src/montralog -lll -f json -o security-reports/bandit-high.json
+      - name: Static report and high severity gate
+        run: |
+          bandit -r src/montralog -f json -o security-reports/bandit-all.json --exit-zero
+          bandit -r src/montralog -lll -f json -o security-reports/bandit-high.json
       - name: Build exact container for security inspection
         run: docker build -t montralog:security .
       - name: Install verified official Trivy
