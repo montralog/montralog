@@ -43,6 +43,10 @@ jobs:
           test "$(docker image inspect montralog:security --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$GITHUB_SHA"
           docker run --rm --network none --read-only --cap-drop ALL --tmpfs /tmp:rw,nosuid,noexec,size=64m,mode=1777 --entrypoint python montralog:security scripts/functional_review_smoke.py
           docker run --rm --network none --read-only --cap-drop ALL --tmpfs /tmp:rw,nosuid,noexec,size=64m,mode=1777 --entrypoint python montralog:security scripts/check_runtime.py
+      - name: Measure the exact scanned and published image
+        run: |
+          python scripts/check_bootstrap.py --image montralog:security --output dist/acceptance-reports/bootstrap.json
+          python scripts/acceptance_load.py --image montralog:security --output dist/acceptance-reports/load.json
       - name: Publish versioned image and latest alias
         id: image
         env:
@@ -80,10 +84,6 @@ jobs:
         with:
           name: browser-test-report
           path: ${{ runner.temp }}/browser-report
-      - name: Measure the exact scanned and published image
-        run: |
-          python scripts/check_bootstrap.py --image montralog:security --output dist/acceptance-reports/bootstrap.json
-          python scripts/acceptance_load.py --image montralog:security --output dist/acceptance-reports/load.json
       - name: Package security evidence and checksums
         run: |
           tar -czf dist/montralog-0.6.0-security-reports.tar.gz -C dist security-reports
