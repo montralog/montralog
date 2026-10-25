@@ -1,6 +1,6 @@
 # Production readiness
 
-0.5.0-rc1 is a tested evaluation candidate. A clean local installation and automated tests do not establish production capacity or availability. Keep your existing monitoring during a controlled pilot.
+0.5.1-rc1 is a tested evaluation candidate. A clean local installation and automated tests do not establish production capacity or availability. Keep your existing monitoring during a controlled pilot.
 
 Before relying on a deployment, record evidence for each item:
 

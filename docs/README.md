@@ -20,6 +20,7 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 
 ## Develop and assess
 
+- [0.5.1 release and security verification](SECURITY_VERIFICATION-0.5.1.md)
 - [0.5.1 security changes and upgrade](SECURITY-0.5.1.md)
 - [0.5.1 release notes](RELEASE-0.5.1.md)
 

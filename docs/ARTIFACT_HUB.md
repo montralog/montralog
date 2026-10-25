@@ -4,10 +4,13 @@ Artifact Hub indexes the Helm repository hosted at:
 
 https://montralog.github.io/montralog
 
-The manually dispatched `Publish Helm repository` workflow validates and packages
-chart `0.5.0-rc.2` with its README and license. It retains the unchanged `0.5.0-rc.1`
-archive from the original release. The application version remains `0.5.0-rc1`.
-Keep older chart archives when adding future versions; never replace their contents.
+The manually dispatched `Publish Helm repository` workflow downloads a chart from
+an existing GitHub release selected through `release_tag`. It retains every prior
+chart archive from the live index and verifies each previous digest before adding
+the new version. It refuses to overwrite a chart version with different bytes.
+
+Current release: `v0.5.1-rc1`, chart `0.5.1-rc.1`, application `0.5.1-rc1`.
+The original `0.5.0-rc.1` and `0.5.0-rc.2` charts remain available.
 
 The repository is registered under the Montralog account. Its assigned ID is
 `1c2a9013-1178-494e-af42-0291fc28f401`. Ownership metadata lives in
@@ -31,7 +34,7 @@ Do not claim a verified publisher badge until Artifact Hub grants it.
 ```sh
 helm repo add montralog https://montralog.github.io/montralog
 helm repo update
-helm show chart montralog/montralog --version 0.5.0-rc.2
+helm show chart montralog/montralog --version 0.5.1-rc.1
 ```
 
 This is a public preview requiring your own application image and protected Secrets.

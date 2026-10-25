@@ -2,6 +2,8 @@
 
 Current public preview: **0.5.1-rc1**.
 
+- [Executed release and security verification](SECURITY_VERIFICATION-0.5.1.md)
+
 - [Security changes and upgrade](SECURITY-0.5.1.md)
 - [Versioned release notes](RELEASE-0.5.1.md)
 
