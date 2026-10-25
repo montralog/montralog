@@ -13,7 +13,7 @@ class PostgresGatewayTests(test_gateway.GatewayTests):
         self.env=patch.dict(os.environ,{
             'MONTRALOG_DATABASE_URL':os.environ['MONTRALOG_TEST_DATABASE_URL'],
             'MONTRALOG_READ_TOKEN':'r'*40,'MONTRALOG_INGEST_TOKEN':'w'*40,
-            'RETENTION_DAYS':'7','PROMETHEUS_URL':''})
+            'RETENTION_DAYS':'7','PROMETHEUS_URL':'','MONTRALOG_ALLOWED_DESTINATIONS':'127.0.0.1:9090,localhost:4318'})
         self.env.start()
         # Require an explicit test URL and database name before clearing test records.
         from urllib.parse import urlparse

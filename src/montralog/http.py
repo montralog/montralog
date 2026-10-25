@@ -10,6 +10,7 @@ from .queries import query_view
 from .metrics import PANELS, prometheus
 from .security import token_matches
 from . import accounts
+from .tenancy import tenant_id
 
 
 def application(environ, start_response):
@@ -18,6 +19,10 @@ def application(environ, start_response):
                ('Referrer-Policy','no-referrer'),('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")]
     try:
         path, method = environ.get('PATH_INFO','/'), environ['REQUEST_METHOD']
+        tenant = tenant_id()
+        headers.append(('X-Montralog-Tenant', tenant))
+        if environ.get('HTTP_X_MONTRALOG_TENANT', tenant) != tenant:
+            raise accounts.AccountError('Tenant does not match this deployment.', 403)
         if path in ('/','/app.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
             filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
             body = (ROOT/'static'/filename).read_bytes()

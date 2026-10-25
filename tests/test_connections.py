@@ -18,7 +18,7 @@ class ConnectionTests(test_accounts.AccountTests):
         self.assertEqual(self.request('/api/control/data-sources')['status'],200)
         self.assertEqual(self.request('/api/control/data-sources','POST',{'name':'bad'})['status'],403)
         self.admin_login()
-        source={'name':'Metrics','url':'http://127.0.0.1:9090','auth_type':'basic','username':'reader','secret':'private-password','is_default':True}
+        source={'name':'Metrics','url':'https://127.0.0.1:9090','auth_type':'basic','username':'reader','secret':'private-password','is_default':True}
         with patch.object(connections,'query',return_value={'available':True,'data':{'result':[{}]}}):
             created=self.request('/api/control/data-sources','POST',source)
             self.assertEqual(created['status'],200)
@@ -45,13 +45,13 @@ class ConnectionTests(test_accounts.AccountTests):
 
     def test_server_auth_headers_and_safe_errors(self):
         response=io.BytesIO(json.dumps({'status':'success','data':{'result':[]}}).encode())
-        source={'url':'http://127.0.0.1:9090','auth_type':'bearer','secret':'do-not-expose','name':'Metrics'}
-        with patch('urllib.request.OpenerDirector.open',return_value=response) as opened:
+        source={'url':'https://127.0.0.1:9090','auth_type':'bearer','secret':'do-not-expose','name':'Metrics'}
+        with patch.object(connections,'open_request',return_value=response) as opened:
             self.assertTrue(connections.query(source,'query',{'query':'up'})['available'])
             request=opened.call_args.args[0]
             self.assertEqual(request.get_header('Authorization'),'Bearer do-not-expose')
             self.assertNotIn('do-not-expose',request.full_url)
-        with patch('urllib.request.OpenerDirector.open',side_effect=OSError('secret do-not-expose')):
+        with patch.object(connections,'open_request',side_effect=OSError('secret do-not-expose')):
             self.assertNotIn('do-not-expose',json.dumps(connections.query(source,'query')))
         self.assertIsNone(connections.NoRedirect().redirect_request(None,None,302,'','', 'http://elsewhere/'))
 
@@ -63,3 +63,13 @@ class ConnectionTests(test_accounts.AccountTests):
         self.assertEqual(self.request('/api/saved-dashboards','POST',{'name':'Pinned source','definition':definition})['status'],200)
         self.request('/api/control/data-sources','POST',{'action':'delete','id':ident})
         with self.assertRaises(AccountError):connections.resolve(ident)
+
+    def test_http_credentials_are_rejected_before_connection_test_or_storage(self):
+        self.admin_login()
+        for auth in ('basic', 'bearer'):
+            with self.subTest(auth=auth), patch.object(connections, 'query') as query:
+                result = self.request('/api/control/data-sources', 'POST', {'name':'Unsafe','url':'http://127.0.0.1:9090','auth_type':auth,'username':'reader','secret':'fixture-secret'})
+                self.assertEqual(result['status'],400)
+                query.assert_not_called()
+        with storage.database() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM data_sources').fetchone()[0],0)

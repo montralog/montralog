@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS deployment_identity (id INTEGER PRIMARY KEY CHECK (id=1), tenant_id TEXT NOT NULL);

@@ -11,7 +11,7 @@ from pathlib import Path
 from .config import database_url, ROOT
 
 DB = Path(os.getenv('MONTRALOG_DB',str(Path.cwd()/'data'/'montralog.db')))
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 class StorageError(Exception):
     """A storage failure safe to expose as a generic HTTP 503."""
@@ -47,7 +47,7 @@ class PostgresConnection:
             self.total_changes+=max(0,cursor.rowcount)
 
 @contextmanager
-def database():
+def database(check_tenant=True):
     if postgres_enabled():
         try:
             import psycopg
@@ -58,7 +58,11 @@ def database():
             # No credentials or raw connection strings are logged.
             with psycopg.connect(database_url(),connect_timeout=5,row_factory=dict_row,
                                  options='-c statement_timeout=10000 -c lock_timeout=5000') as connection:
-                yield PostgresConnection(connection)
+                db = PostgresConnection(connection)
+                if check_tenant:
+                    from .tenancy import check_binding
+                    check_binding(db)
+                yield db
         except psycopg.Error as error:
             raise StorageError('PostgreSQL operation failed') from error
     else:
@@ -82,6 +86,9 @@ def database():
                 deadline=time.monotonic()+10
                 connection.set_progress_handler(lambda: int(time.monotonic()>deadline),10000)
                 with connection:
+                    if check_tenant:
+                        from .tenancy import check_binding
+                        check_binding(connection)
                     yield connection
             finally:
                 connection.close()
@@ -90,7 +97,7 @@ def database():
 
 def initialize():
     dialect='postgresql' if postgres_enabled() else 'sqlite'
-    with database() as db:
+    with database(check_tenant=False) as db:
         if postgres_enabled():
             db.execute('SELECT pg_advisory_xact_lock(76674701)')
         else:
@@ -101,12 +108,14 @@ def initialize():
         if version>SCHEMA_VERSION:
             raise StorageError('Database schema is newer than this application')
         for migration in range(version+1, SCHEMA_VERSION+1):
-            filename = {1:'001_initial.sql',2:'002_accounts.sql',3:'003_studio.sql',4:'004_connections.sql',5:'005_access.sql'}[migration]
+            filename = {1:'001_initial.sql',2:'002_accounts.sql',3:'003_studio.sql',4:'004_connections.sql',5:'005_access.sql',6:'006_tenancy.sql'}[migration]
             sql=(ROOT/'migrations'/dialect/filename).read_text(encoding='utf-8')
             for statement in sql.split(';'):
                 if statement.strip():
                     db.execute(statement)
             db.execute('INSERT INTO schema_migrations(version,applied_at) VALUES (?,?)',(migration,time.time()))
+        from .tenancy import bind
+        bind(db)
 
 def prune():
     days=int(os.getenv('RETENTION_DAYS','7'))

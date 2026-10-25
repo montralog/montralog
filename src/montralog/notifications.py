@@ -12,6 +12,7 @@ from .storage import database
 from .metrics import PANELS, prometheus
 from .validation import number
 from .secret_store import seal, reveal
+from .outbound import open_request
 
 def valid_webhook(url):
     return isinstance(url,str) and bool(re.fullmatch(r'https://hooks\.slack\.com/services/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+',url)) and len(url)<=512
@@ -22,7 +23,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def send_slack(url,text):
     if not valid_webhook(url):raise ValueError('Invalid Slack endpoint')
     req=urllib.request.Request(url,data=json.dumps({'text':text,'mrkdwn':False,'unfurl_links':False,'unfurl_media':False}).encode(),headers={'Content-Type':'application/json'})
-    with urllib.request.build_opener(NoRedirect()).open(req,timeout=8) as response:
+    with open_request(req, timeout=8) as response:
         if response.read(128).strip()!=b'ok':raise ValueError('Slack did not acknowledge delivery')
 
 def route(path,method,data,user,environ):

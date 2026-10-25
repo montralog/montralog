@@ -16,6 +16,8 @@ from .accounts import AccountError
 from .storage import database, postgres_enabled
 from .studio import admin
 from .secret_store import seal, reveal
+from .outbound import open_request
+from .tenancy import cookie_name
 
 PROVIDERS = {'microsoft': 'Microsoft Entra ID', 'google': 'Google Workspace', 'okta': 'Okta'}
 
@@ -45,7 +47,7 @@ def request_json(url, provider, form=None):
     req = urllib.request.Request(url, data=urllib.parse.urlencode(form).encode() if form else None,
                                  headers={'Accept': 'application/json'})
     try:
-        with urllib.request.build_opener(NoRedirect()).open(req, timeout=8) as response:
+        with open_request(req, timeout=8) as response:
             raw = response.read(2*1024*1024+1)
         if len(raw) > 2*1024*1024:
             raise ValueError()
@@ -126,7 +128,7 @@ def public_providers():
 
 
 def binding_cookie(value, secure, expired=False):
-    return ('Set-Cookie', 'montralog_oidc='+value+'; Path=/auth/oidc/; HttpOnly; SameSite=Lax; Max-Age='+('0' if expired else '600')+('; Secure' if secure else ''))
+    return ('Set-Cookie', cookie_name('montralog_oidc')+'='+value+'; Path=/auth/oidc/; HttpOnly; SameSite=Lax; Max-Age='+('0' if expired else '600')+('; Secure' if secure else ''))
 
 
 def flow(path, params, environ):
@@ -155,7 +157,7 @@ def flow(path, params, environ):
     cookies = SimpleCookie()
     try:
         cookies.load(environ.get('HTTP_COOKIE', ''))
-        binding = cookies['montralog_oidc'].value
+        binding = cookies[cookie_name('montralog_oidc')].value
     except Exception:
         raise AccountError('Sign-in browser verification failed. Start again.', 401) from None
     with database() as db:

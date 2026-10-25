@@ -1,6 +1,9 @@
 import json
 import os
 import unittest
+import sqlite3
+from contextlib import closing
+from pathlib import Path
 from unittest.mock import patch
 from cryptography.fernet import Fernet
 import test_gateway
@@ -33,7 +36,7 @@ class SecretStoreTests(unittest.TestCase):
         webhook = 'https://hooks.slack.com/services/TEST/CHANNEL/test-secret'
         with patch.dict(os.environ, {'MONTRALOG_ENCRYPTION_KEY': key}):
             with patch.object(connections, 'query', return_value={'available': True, 'data': {'result': []}}):
-                created = self.request('/api/control/data-sources', 'POST', {'name': 'Metrics', 'url': 'http://127.0.0.1:9090', 'auth_type': 'bearer', 'secret': 'metrics-secret'})
+                created = self.request('/api/control/data-sources', 'POST', {'name': 'Metrics', 'url': 'https://127.0.0.1:9090', 'auth_type': 'bearer', 'secret': 'metrics-secret'})
             self.assertEqual(created['status'], 200)
             created = self.request('/api/control/channels', 'POST', {'name': 'Slack', 'webhook': webhook})
             self.assertEqual(created['status'], 200)
@@ -66,6 +69,33 @@ class SecretStoreTests(unittest.TestCase):
             with self.assertRaises(storage.StorageError): secret_store.encrypt_existing()
         with storage.database() as db:
             self.assertEqual(db.execute("SELECT secret FROM data_sources WHERE id='legacy'").fetchone()[0], 'plaintext-before-rollback')
+
+    def test_encrypted_backup_restore_wrong_key_and_lost_key_fail_closed(self):
+        if storage.postgres_enabled():
+            self.skipTest('SQLite backup API only; PostgreSQL native restore needs deployment acceptance')
+        key = Fernet.generate_key().decode()
+        with patch.dict(os.environ, {'MONTRALOG_ENCRYPTION_KEY': key, 'MONTRALOG_ENCRYPTION_REQUIRED': 'true'}):
+            # A fresh install has nothing to migrate; the same migration also
+            # handles pre-existing plaintext records without changing telemetry.
+            self.assertEqual(secret_store.encrypt_existing(), 0)
+            with storage.database() as db:
+                db.execute('INSERT INTO notification_channels VALUES (?,?,?,?,?,?)', ('restore-channel', 'Restore fixture', 'slack', 'legacy-webhook-fixture', 1, 0))
+            self.assertEqual(secret_store.encrypt_existing(), 1)
+            backup = Path(self.tmp.name) / 'encrypted-backup.db'
+            with storage.database() as source, closing(sqlite3.connect(backup)) as target:
+                source.backup(target)
+            with patch.object(storage, 'DB', backup):
+                storage.initialize()
+                for candidate in ('', Fernet.generate_key().decode()):
+                    with patch.dict(os.environ, {'MONTRALOG_ENCRYPTION_KEY': candidate}):
+                        with self.assertRaises(storage.StorageError): secret_store.encrypt_existing()
+                with storage.database() as db:
+                    stored = db.execute("SELECT secret FROM notification_channels WHERE id='restore-channel'").fetchone()[0]
+                self.assertTrue(stored.startswith(secret_store.PREFIX))
+                # Recovery uses the separately preserved original key. There is
+                # intentionally no bypass capable of recovering a lost key.
+                self.assertEqual(secret_store.reveal(stored), 'legacy-webhook-fixture')
+                self.assertEqual(secret_store.encrypt_existing(), 0)
 
 
 import test_identity

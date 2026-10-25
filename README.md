@@ -4,9 +4,9 @@
 <p align="center"><strong>Monitoring · Tracing · Logging · Tracking</strong><br>Self-hosted observability for understanding your systems.</p>
 <p align="center"><a href="#see-montralog-in-action">Screenshots</a> · <a href="#quickstart">Quickstart</a> · <a href="docs/README.md">Documentation</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="SECURITY.md">Security</a></p>
 
-Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Run it with Docker Compose or deploy its Helm chart to Kubernetes. First-party code is Apache-2.0; no hosted Montralog account is required.
+Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Install and operate it with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current release: [0.5.1](https://github.com/montralog/montralog/releases/tag/v0.5.1).** Public Linux/amd64 image: `ghcr.io/montralog/montralog:0.5.1`. Release gates cover functional, browser, Docker, Kubernetes and image-security checks. Follow the [organization rollout guide](docs/ORGANIZATION_ROLLOUT.md) before production adoption; capacity, availability and live integrations depend on your deployment.
+**Release line: 0.6.0 � Docker installation and isolated customer deployments.** See [published releases](https://github.com/montralog/montralog/releases), [security and test reports](docs/reports/README.md), and the [production acceptance matrix](docs/PRODUCTION.md). Use only a published version and its image digest for deployment.
 
 ## See Montralog in action
 
@@ -44,17 +44,17 @@ Try it yourself with the [quickstart](#quickstart), then follow the [organizatio
 | Alerting | Metric/log rules, pending/firing state, in-app notifications and optional Slack webhooks with persisted retries |
 | Access | Local accounts, revocable browser sessions, administrator/viewer roles, organizational teams and groups, expiring read/ingest tokens |
 | Company login | Microsoft Entra ID, Google Workspace and Okta OIDC setup; requires your registration and live verification |
-| Infrastructure | Optional host/Docker metrics agent; Kubernetes deployment chart; external exporters are needed for their respective metrics |
+| Infrastructure | Optional host/Docker metrics agent; external exporters supply their respective metrics |
 | Storage | SQLite application data by default, optional PostgreSQL; Prometheus stores metrics; persisted collector queues |
 
 ## Quickstart
 
-Prerequisites: Docker Engine/Desktop using Linux containers, Docker Compose v2 and Python 3.11+. Start from the repository folder:
+Prerequisites: Docker Engine/Desktop using Linux containers and Docker Compose v2. Host Python, Helm and Kubernetes are not required. Download the release source ZIP or clone the repository:
 
 ```sh
 git clone https://github.com/montralog/montralog.git
 cd montralog
-python scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.6.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -64,15 +64,7 @@ Choose a unique password at the prompt. Fresh installations have no shared defau
 
 `setup.py` creates private machine credentials in `.env` and preserves an existing file. Never commit this file or share your database. Docker services bind to loopback by default. Use HTTPS and secure cookies before exposing the application remotely.
 
-Validate the installation:
-
-```sh
-python scripts/check_install.py
-# Optional: explicitly insert labelled synthetic example telemetry.
-python scripts/check_install.py --demo
-```
-
-On Windows, `scripts/windows/Start-Montralog.ps1` also starts the stack after Docker is running. Create the first account with the command above. The optional local metrics agent has separate [setup instructions](agents/README.md).
+Check startup with `docker compose ps` and open the workspace. Follow the [Docker guide](docs/CONTAINERS.md) for upgrades, backup and recovery. For multiple customers, use [separate customer stacks](docs/TENANCY.md); do not reuse credentials or volumes.
 
 ## Start exploring
 
@@ -83,17 +75,6 @@ On Windows, `scripts/windows/Start-Montralog.ps1` also starts the stack after Do
 5. Open **People & access** for roles, teams, groups and company-login settings.
 
 Use the [evaluation walkthrough](docs/EVALUATION.md) for a complete test session. Stop with `docker compose stop`; named volumes retain data. Do not run `docker compose down -v` against valuable data.
-
-## Helm and Kubernetes
-
-The chart is in [`deploy/helm/montralog`](deploy/helm/montralog). It includes deployments, services, persistent storage, collector/backends, alert evaluation, optional TLS ingress and network policies.
-
-- [Chart README and installation](deploy/helm/montralog/README.md)
-- [Artifact Hub listing](https://artifacthub.io/packages/helm/montralog/montralog) and [Helm repository index](https://montralog.github.io/montralog/index.yaml)
-- [Release downloads and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.1)
-- [Deployment values](deploy/helm/montralog/values.yaml) and [PostgreSQL/TLS example](deploy/helm/montralog/values-production.yaml)
-
-The chart version is `0.5.1`; its application version is `0.5.1`. The chart defaults to the public release image. Provision authentication and encryption Secrets before installation, and pin the image digest for production.
 
 ## Architecture
 
@@ -121,7 +102,8 @@ The gateway serves the browser UI and authenticated APIs. Application records an
 | Build dashboards, tokens and alerts | [Studio](docs/STUDIO.md) |
 | Manage people and company login | [Identity](docs/IDENTITY.md), [accounts](docs/ACCOUNTS.md) |
 | Send application data | [API](docs/API.md), [agents](agents/README.md) |
-| Deploy to Kubernetes | [Helm guide](docs/KUBERNETES.md) |
+| Isolate customers | [Docker tenant isolation](docs/TENANCY.md) |
+| Inspect published scans and load results | [Evidence index](docs/reports/README.md) |
 | Back up, restore and operate | [Operations](docs/OPERATIONS.md), [storage](docs/STORAGE.md) |
 | Evaluate readiness and test evidence | [Production checklist](docs/PRODUCTION.md), [verification](docs/VERIFICATION.md) |
 | Understand source folders | [Project structure](docs/PROJECT_STRUCTURE.md), [architecture](docs/ARCHITECTURE.md) |

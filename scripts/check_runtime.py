@@ -8,7 +8,7 @@ from cryptography.fernet import Fernet
 import psycopg
 from montralog.config import VERSION
 
-assert VERSION == '0.5.1'
+assert VERSION == '0.6.0'
 assert os.geteuid() == 10001
 assert platform.machine() == 'x86_64'
 assert not Path('/app/.env').exists()

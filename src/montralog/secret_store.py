@@ -58,3 +58,20 @@ def encrypt_existing():
                 db.execute('UPDATE identity_providers SET config=? WHERE provider=?', (json.dumps(config), row['provider']))
                 changed += 1
     return changed
+
+
+def verify_existing():
+    """Read-only verification for restoration and upgrade acceptance."""
+    cipher(required=True)
+    encrypted = plaintext = 0
+    with database() as db:
+        values = [row[0] for table in ('data_sources', 'notification_channels')
+                  for row in db.execute('SELECT secret FROM ' + table)]
+        values += [json.loads(row[0]).get('client_secret', '') for row in db.execute('SELECT config FROM identity_providers')]
+        for value in values:
+            if value.startswith(PREFIX):
+                reveal(value)
+                encrypted += 1
+            elif value:
+                plaintext += 1
+    return {'encrypted': encrypted, 'plaintext': plaintext}

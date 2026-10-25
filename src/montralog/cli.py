@@ -9,7 +9,7 @@ from .security import validate_config
 
 def main():
     parser=argparse.ArgumentParser(prog='montralog')
-    parser.add_argument('command',choices=['serve','prune','backup','migrate','create-user','reset-password','encrypt-secrets'],default='serve',nargs='?')
+    parser.add_argument('command',choices=['serve','prune','backup','migrate','create-user','reset-password','encrypt-secrets','verify-secrets'],default='serve',nargs='?')
     parser.add_argument('--destination')
     parser.add_argument('--username')
     parser.add_argument('--name')
@@ -36,6 +36,13 @@ def main():
                 db.execute('UPDATE users SET password_hash=? WHERE id=?',(encoded,user['id']))
                 db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
             print('Password reset. All sessions revoked.')
+    elif args.command=='verify-secrets':
+        import json
+        from .secret_store import verify_existing
+        result=verify_existing()
+        print(json.dumps(result))
+        if result['plaintext']:
+            raise SystemExit('Plaintext integration credentials remain; run encrypt-secrets after backup.')
     elif args.command=='encrypt-secrets':
         from .secret_store import encrypt_existing
         print(f'Encrypted {encrypt_existing()} integration credentials. Preserve the key separately from backups.')
