@@ -3,6 +3,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
+    python -m pip uninstall --yes pip setuptools wheel && \
+    python -c "import shutil,sysconfig; from pathlib import Path; shutil.rmtree(Path(sysconfig.get_path('stdlib'))/'ensurepip')" && \
     groupadd --gid 10001 montralog && \
     useradd --uid 10001 --gid 10001 --no-create-home montralog && \
     mkdir /data && chown 10001:10001 /data

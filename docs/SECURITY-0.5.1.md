@@ -37,7 +37,7 @@ In that case set `encryption.key=MONTRALOG_ENCRYPTION_KEY`. Set the existing Sec
 
 ## Image and dependency checks
 
-The Docker context excludes private env variants, keys, certificates, local cloud/SSH credentials, databases and logs. CI builds with disposable private-file sentinels and checks that the resulting image does not contain them. The official Python 3.13 slim base is pinned by digest.
+The Docker context excludes private env variants, keys, certificates, local cloud/SSH credentials, databases and logs. CI builds with disposable private-file sentinels and checks that the resulting image does not contain them. The official Python 3.13 slim base is pinned by digest. The runtime image removes pip, setuptools, wheel and ensurepip after installing application dependencies; build tools and their vendored copies are unnecessary in the immutable application runtime. Do not install packages inside running containers; rebuild the image instead.
 
 CI runs pip-audit against resolved runtime requirements, Bandit with a high-severity gate, and Trivy against the built image. The full high/critical image report is retained; the release gate rejects high/critical findings with available fixes. Unfixed findings remain visible for operator review, and passing these checks is not an independent audit or proof of absence of vulnerabilities. Static medium findings from parameterized SQL construction and URL forwarding are retained as review considerations; the SQL parameters and forwarding destination restrictions require continued review.
 
