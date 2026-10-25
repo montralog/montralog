@@ -1,6 +1,6 @@
 # Verification evidence
 
-Current public preview: **0.5.1-rc1**.
+Current release: **0.5.1**.
 
 - [Executed release and security verification](SECURITY_VERIFICATION-0.5.1.md)
 

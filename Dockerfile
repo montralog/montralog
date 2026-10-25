@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.source="https://github.com/montralog/montralog" \
       org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="Montralog monitoring, tracing, logging and tracking"
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db MONTRALOG_ENCRYPTION_REQUIRED=true
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \

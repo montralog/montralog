@@ -1,8 +1,8 @@
 # Security policy
 
-Supported preview: **0.5.1-rc1**. See [security changes and encrypted-credential upgrade instructions](docs/SECURITY-0.5.1.md). Earlier previews should upgrade; no stable-version SLA is provided.
+Supported release: **0.5.1**. See [security changes and encrypted-credential upgrade instructions](docs/SECURITY-0.5.1.md). Earlier previews should upgrade. See docs/SUPPORT.md for the maintained release line and support scope.
 
-This release candidate has no independent security audit. Intended for one trusted
+This release has no independent security audit. Intended for one trusted
 organization in a protected network. Read-token holders access all telemetry.
 Ingest-token holders can submit spoofed service names/events. This is role
 separation, not granular RBAC, tenant isolation or source attestation.
@@ -22,6 +22,8 @@ Docker uses a one-shot root initializer limited to CHOWN on its dedicated collec
 volume. It mounts no host paths or Docker socket. Gateway/collector run as uid 10001;
 Helm uses fsGroup for volume access.
 
-Report vulnerabilities privately using the repository Security tab / Report a vulnerability. Do not include credentials or sensitive telemetry in public issues. This early public preview has no guaranteed response-time SLA or stable-version support window.
+Report vulnerabilities privately using the repository Security tab / Report a vulnerability. Do not include credentials or sensitive telemetry in public issues. Community vulnerability response has no guaranteed SLA; the latest 0.5.x release is maintained.
 
 Browser account security and limitations are documented in docs/ACCOUNTS.md. Local accounts share telemetry read access; there is no tenant isolation. Identity-provider setup and boundaries are documented in docs/IDENTITY.md. Access changes have a limited audit history; it is not a tamper-proof compliance log.
+
+Release images use a pinned Alpine runtime. Publication rejects every reported HIGH/CRITICAL image vulnerability, including unfixed findings, and requires nonempty OS/Python scan inventories. Reports are a point-in-time scan, not a universal security guarantee. Docker and Helm require an operator-held encryption key by default; migrate existing plaintext integration records explicitly after backup.

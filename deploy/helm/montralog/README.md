@@ -1,6 +1,6 @@
 # Montralog Helm chart
 
-Chart **0.5.1-rc.1** deploys application **0.5.1-rc1**. This public preview has hosted kind-cluster checks for SQLite and the PostgreSQL topology; validate your own cluster before production use.
+Chart **0.5.1** deploys application **0.5.1**. This release has hosted kind-cluster checks for SQLite and the PostgreSQL topology; validate your own cluster before production use.
 
 ## Included resources
 
@@ -13,18 +13,18 @@ Templates are under [templates/](https://github.com/montralog/montralog/tree/mai
 
 ## Prerequisites
 
-Kubernetes 1.27+, Helm 3, a working persistent-volume storage class and a Montralog image built and pushed to your own registry. The public Helm repository is https://montralog.github.io/montralog. No public application image is published yet; build and push your own image before installation.
+Kubernetes 1.27+, Helm 3, a working persistent-volume storage class and access to the public Linux/amd64 Montralog image. The public Helm repository is https://montralog.github.io/montralog. The chart uses `ghcr.io/montralog/montralog:0.5.1` by default. Pin `image.digest` for production.
 
 Create namespace `observability`. Create a Secret named `montralog-auth` in that namespace containing distinct random `read-token` and `ingest-token` values of at least 32 characters each. Use protected files or a secret manager. Keep secret values out of Git, Helm values and command history. See the full [credentials guide](https://github.com/montralog/montralog/blob/main/docs/KUBERNETES.md#credentials).
 
 ## Install the released chart
 
-Add the repository, then replace the registry placeholder with your application image:
+Provision both the `montralog-auth` and `montralog-encryption` Secrets first. Then add the public chart repository:
 
 ```sh
 helm repo add montralog https://montralog.github.io/montralog
 helm repo update
-helm upgrade --install montralog montralog/montralog --version 0.5.1-rc.1 --namespace observability --create-namespace --set auth.existingSecret=montralog-auth --set image.repository=YOUR_REGISTRY/montralog --set image.tag=0.5.1-rc1 --wait --timeout 5m
+helm upgrade --install montralog montralog/montralog --version 0.5.1 --namespace observability --create-namespace --set auth.existingSecret=montralog-auth --wait --timeout 5m
 ```
 
 From a source checkout, replace `montralog/montralog` with `./deploy/helm/montralog`.
@@ -63,4 +63,4 @@ See [Kubernetes operations](https://github.com/montralog/montralog/blob/main/doc
 
 ## Integration credential encryption
 
-Configure an operator-managed Secret with `encryption.existingSecret` and `encryption.key`. The production example expects `montralog-encryption` / `encryption-key`. Existing plaintext records require an explicit migration after backup. See [security upgrade instructions](https://github.com/montralog/montralog/blob/main/docs/SECURITY-0.5.1.md).
+An operator-managed encryption Secret is required. Configure it with `encryption.existingSecret` and `encryption.key`. The production example expects `montralog-encryption` / `encryption-key`. Existing plaintext records require an explicit migration after backup. See [security upgrade instructions](https://github.com/montralog/montralog/blob/main/docs/SECURITY-0.5.1.md).

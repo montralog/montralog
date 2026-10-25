@@ -14,6 +14,7 @@ with os.fdopen(fd, 'w') as out:
     out.write('MONTRALOG_READ_TOKEN=' + secrets.token_urlsafe(36) + '\n')
     out.write('MONTRALOG_INGEST_TOKEN=' + secrets.token_urlsafe(36) + '\n')
     out.write('MONTRALOG_ENCRYPTION_KEY=' + base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('ascii') + '\n')
+    out.write('MONTRALOG_ENCRYPTION_REQUIRED=true\n')
     out.write('RETENTION_DAYS=7\n')
 print('Created .env. Keep it private and restrict Windows file permissions.')
 print('Run: docker compose build gateway, then docker compose up -d --no-build --wait')

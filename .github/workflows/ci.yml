@@ -128,3 +128,24 @@ jobs:
           path: image-scan/
           compression-level: 1
           retention-days: 7
+
+  browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: python -m pip install -e ".[server]" -r requirements-dev.txt
+      - run: npm ci
+        working-directory: tests/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/browser
+      - run: npm test
+        working-directory: tests/browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-report
+          path: tests/browser/playwright-report/

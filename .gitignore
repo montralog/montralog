@@ -22,3 +22,7 @@ build/
 *.log
 *.pem
 *.key
+
+node_modules/
+playwright-report/
+test-results/

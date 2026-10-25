@@ -16,3 +16,6 @@
 {{- if and .Values.ingress.enabled (or (empty .Values.ingress.host) (empty .Values.ingress.tls)) -}}
 {{- fail "Ingress requires a host and TLS configuration." -}}
 {{- end -}}
+{{- if empty .Values.encryption.existingSecret -}}
+{{- fail "Set encryption.existingSecret; integration credential encryption is required." -}}
+{{- end -}}

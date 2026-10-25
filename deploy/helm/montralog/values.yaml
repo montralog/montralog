@@ -1,4 +1,4 @@
-# image.repository must point to an image you built and published, or loaded locally.
+# Public release image; pin image.digest for production rollouts.
 image:
   repository: ghcr.io/montralog/montralog
   tag: 0.5.1
@@ -13,7 +13,7 @@ auth:
   ingestTokenKey: ingest-token
 encryption:
   # Existing operator-managed Secret; never put the key in Helm values.
-  existingSecret: ""
+  existingSecret: montralog-encryption
   key: encryption-key
 
 database:

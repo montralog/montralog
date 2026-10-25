@@ -55,6 +55,7 @@ for settings in (
     ['--set','prometheus.enabled=false'],
     ['--set','retentionDays=0'],
     ['--set','database.mode=invalid'],
+    ['--set','encryption.existingSecret='],
 ):
     command('template','invalid',chart,*settings,success=False)
-print('PASS: seven unsafe/invalid chart configurations were rejected')
+print('PASS: eight unsafe/invalid chart configurations were rejected')

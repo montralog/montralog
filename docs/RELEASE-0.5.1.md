@@ -1,28 +1,31 @@
-# Montralog 0.5.1-rc1 — security-focused public preview
+# Montralog 0.5.1
 
-Application: **0.5.1-rc1**. Python package: **0.5.1rc1**. Helm chart: **0.5.1-rc.1**. Database schema remains **5**.
+Application, Python package and Helm chart: **0.5.1**. Database schema: **5**.
 
-This version releases the executed functional-review fixes and additional security work together as one tagged source snapshot. It remains a preview for controlled pilots, with no independent security audit or production capacity guarantee.
+This non-RC release provides a public Linux/amd64 container at `ghcr.io/montralog/montralog:0.5.1`, linked to this repository under Packages. The `latest` tag is a convenience alias; pin the digest from `IMAGE_DIGESTS.txt` for production.
 
-## Changes
+## What changed
 
-- Reject collector redirects so ingest credentials cannot follow a redirect to another server; validate collector URLs and response JSON.
-
-- Encrypt saved Prometheus credentials, Slack webhooks and OIDC client secrets when an operator-held key is configured; generate a key for new Docker setups.
-- Add an explicit, transactional and idempotent migration for existing plaintext integration credentials.
-- Exclude private env files, key files, databases and local credentials from Docker builds; verify exclusions against the actual built image.
-- Refresh the pinned official Python base and introduce dependency, static-code and image security gates.
-- Include the reviewed fixes for malformed Prometheus responses, invalid alert numbers and missing chart samples.
-- Include SQLite/PostgreSQL regression, HTTP ingestion/restore, Docker and Kubernetes tests, plus a documented Helm chart and Artifact Hub integration.
+- Replace the previous Debian runtime with a pinned Alpine 3.24 runtime. The release gate rejects every reported HIGH/CRITICAL finding, including unfixed findings, and rejects incomplete/unsupported scan reports.
+- Require encryption keys by default in Docker and Helm. Preserve existing keys and explicitly migrate legacy plaintext integration credentials after backup.
+- Publish the exact scanned image archive, verify its image ID/source revision, exercise its hardened startup, and require anonymous pull access with a matching registry digest before publishing the release.
+- Publish GitHub build provenance for the container and attach its digest, source, Python distributions, Helm chart, dependency inventory, checksums and security reports to this release.
+- Add browser acceptance tests for login/profile/logout, dashboard persistence, escaped log rendering/search and viewer authorization, plus regression cases for security gates.
+- Include the previously reviewed ingestion, alert, dashboard, credential storage and collector redirect fixes.
 
 ## Install and upgrade
 
-Start with the repository quickstart or chart README. Read [the security upgrade guide](SECURITY-0.5.1.md) before enabling encryption on an existing deployment. Back up the database and preserve the key separately. Old application versions cannot read the new encrypted integration fields; rollback requires a pre-upgrade database backup and its matching configuration. Avoid changing database mode during this upgrade.
+- [Docker installation](https://github.com/montralog/montralog/blob/v0.5.1/docs/CONTAINERS.md)
+- [Organization rollout checklist](https://github.com/montralog/montralog/blob/v0.5.1/docs/ORGANIZATION_ROLLOUT.md)
+- [Helm chart](https://github.com/montralog/montralog/tree/v0.5.1/deploy/helm/montralog)
+- [Encryption and upgrade procedure](https://github.com/montralog/montralog/blob/v0.5.1/docs/SECURITY-0.5.1.md)
 
-Build your own application image from this tag and push it to your registry for Kubernetes. This release does not claim a published public application container. Verify downloaded assets with `SHA256SUMS.txt`. Checksums provide integrity checks, not an independent publisher signature.
+Back up the database and preserve the encryption key before upgrading. Existing `.env` files are never overwritten by setup. If no encryption key exists, create the private upgrade env file and supply it to all application processes, then run `python -m montralog encrypt-secrets`. Older application versions cannot read the encrypted integration fields; rollback requires the matching pre-upgrade database and configuration backup.
 
-Release assets include the tagged source archive, Python wheel/source distribution, Helm package, checksums and dependency inventory. The release workflow executes functional and security gates before publishing these assets. Exact scan evidence is linked from the workflow; known unfixed OS findings, if present, remain in the full image report.
+## Validation and operating scope
 
-## Scope
+The release workflow requires Python 3.11/3.13 with SQLite/PostgreSQL tests, frontend component tests, real-browser acceptance, Docker/collector checks, Kubernetes SQLite/PostgreSQL installation and restart checks, dependency auditing, static analysis and strict container scanning. Image startup also checks the native PostgreSQL driver, non-root execution, encryption and architecture. The resulting reports are public release assets or workflow artifacts.
 
-Live tenant SSO, Slack destination receipt, full browser end-to-end tests, sustained load and production incident recovery remain deployment-specific. Credentials without a configured key remain in legacy compatibility mode until migrated. See the security policy and production checklist.
+Supported deployment profiles are a single SQLite gateway or PostgreSQL-backed gateways for one trusted organization. Published container support is Linux/amd64. Validate your storage, TLS, NetworkPolicy, backups, load and alert destinations before organization rollout. The PostgreSQL profile does not establish HA for Prometheus or Collector. Live company SSO requires your provider registration and verification. There is no tenant isolation or independent security-audit certification. See the feature boundaries and support policy.
+
+Security scan results are a snapshot for the release image. New advisories may appear later; use dependency alerts and review updates. An empty scan report is rejected rather than treated as a passing scan.

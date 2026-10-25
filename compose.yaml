@@ -8,7 +8,7 @@ services:
       MONTRALOG_INGEST_TOKEN: ${MONTRALOG_INGEST_TOKEN:?Run python scripts/setup.py}
       MONTRALOG_COOKIE_SECURE: ${MONTRALOG_COOKIE_SECURE:-false}
       MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:-}
-      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-false}
+      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-true}
       MONTRALOG_DB: /data/montralog.db
       MONTRALOG_COLLECTOR_URL: http://collector:4318
       PROMETHEUS_URL: http://prometheus:9090
@@ -35,7 +35,7 @@ services:
     image: ghcr.io/montralog/montralog:0.5.1
     environment:
       MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:-}
-      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-false}
+      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-true}
       MONTRALOG_DB: /data/montralog.db
       RETENTION_DAYS: ${RETENTION_DAYS:-7}
     command: ["python","scripts/retention.py"]
@@ -54,7 +54,7 @@ services:
     image: ghcr.io/montralog/montralog:0.5.1
     environment:
       MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:-}
-      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-false}
+      MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-true}
       MONTRALOG_DB: /data/montralog.db
       PROMETHEUS_URL: http://prometheus:9090
     command: ["python","-m","montralog.notifications"]

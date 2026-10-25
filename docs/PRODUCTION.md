@@ -1,6 +1,6 @@
 # Production readiness
 
-0.5.1-rc1 is a tested evaluation candidate. A clean local installation and automated tests do not establish production capacity or availability. Keep your existing monitoring during a controlled pilot.
+0.5.1 is the maintained non-RC release. A clean local installation and automated tests do not establish production capacity or availability. Validate your organization rollout before replacing existing monitoring.
 
 Before relying on a deployment, record evidence for each item:
 

@@ -1,3 +1,11 @@
+# 0.5.1
+
+- Non-RC application, Python and Helm versions, with a public GHCR Linux/amd64 image.
+- Pinned Alpine runtime with strict zero HIGH/CRITICAL publication gate and scan-completeness tests.
+- Publish the exact tested image with digest verification, anonymous pull checks and GitHub provenance.
+- Encryption required by Docker/Helm defaults, with preserved-key upgrade procedures.
+- Real Chromium acceptance tests and organization deployment/support documentation.
+
 # 0.5.1-rc1 — security-focused preview
 
 - Authenticated encryption for saved integration credentials, with operator-held keys and explicit transactional migration for existing records.

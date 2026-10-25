@@ -9,7 +9,7 @@ an existing GitHub release selected through `release_tag`. It retains every prio
 chart archive from the live index and verifies each previous digest before adding
 the new version. It refuses to overwrite a chart version with different bytes.
 
-Current release: `v0.5.1-rc1`, chart `0.5.1-rc.1`, application `0.5.1-rc1`.
+Current release: `v0.5.1`, chart `0.5.1`, application `0.5.1`.
 The original `0.5.0-rc.1` and `0.5.0-rc.2` charts remain available.
 
 The repository is registered under the Montralog account. Its assigned ID is
@@ -34,7 +34,7 @@ Do not claim a verified publisher badge until Artifact Hub grants it.
 ```sh
 helm repo add montralog https://montralog.github.io/montralog
 helm repo update
-helm show chart montralog/montralog --version 0.5.1-rc.1
+helm show chart montralog/montralog --version 0.5.1
 ```
 
 This is a public preview requiring your own application image and protected Secrets.

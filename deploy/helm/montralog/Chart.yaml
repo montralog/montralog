@@ -15,12 +15,14 @@ maintainers:
     url: https://github.com/montralog
 annotations:
   artifacthub.io/license: Apache-2.0
-  artifacthub.io/prerelease: "true"
+  artifacthub.io/prerelease: "false"
   artifacthub.io/links: |
     - name: Documentation
       url: https://github.com/montralog/montralog/blob/main/docs/README.md
   artifacthub.io/changes: |
     - kind: security
-      description: Add integration credential encryption using an operator-managed Secret.
-    - kind: fixed
-      description: Include tested alert, metric backend and dashboard fixes in application 0.5.1.
+      description: Use a pinned Alpine runtime with a zero HIGH/CRITICAL image scan gate.
+    - kind: added
+      description: Publish the tested container on GHCR with source provenance and a stable version.
+    - kind: added
+      description: Add browser acceptance tests and organization deployment documentation.

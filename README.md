@@ -6,7 +6,7 @@
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Run it with Docker Compose or deploy its Helm chart to Kubernetes. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current release: [0.5.1-rc1](https://github.com/montralog/montralog/releases/tag/v0.5.1-rc1) — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
+**Current release: [0.5.1](https://github.com/montralog/montralog/releases/tag/v0.5.1).** Public Linux/amd64 image: `ghcr.io/montralog/montralog:0.5.1`. Release gates cover functional, browser, Docker, Kubernetes and image-security checks. Follow the [organization rollout guide](docs/ORGANIZATION_ROLLOUT.md) before production adoption; capacity, availability and live integrations depend on your deployment.
 
 ## See Montralog in action
 
@@ -32,7 +32,7 @@ Configure a Prometheus server, choose authentication when needed, and test its c
 ![Montralog Connect data screen showing a successful Prometheus test and available signal connections](docs/assets/screenshots/connections.jpg)
 
 
-Try it yourself with the [quickstart](#quickstart), then follow the [evaluation walkthrough](docs/EVALUATION.md).
+Try it yourself with the [quickstart](#quickstart), then follow the [organization rollout guide](docs/ORGANIZATION_ROLLOUT.md).
 
 ## What works today
 
@@ -55,9 +55,8 @@ Prerequisites: Docker Engine/Desktop using Linux containers, Docker Compose v2 a
 git clone https://github.com/montralog/montralog.git
 cd montralog
 python scripts/setup.py
-docker compose pull prometheus alertmanager collector
-docker compose build gateway
-docker compose up -d --no-build --pull never --wait --wait-timeout 180
+docker compose pull
+docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
 ```
 
@@ -91,10 +90,10 @@ The chart is in [`deploy/helm/montralog`](deploy/helm/montralog). It includes de
 
 - [Chart README and installation](deploy/helm/montralog/README.md)
 - [Artifact Hub listing](https://artifacthub.io/packages/helm/montralog/montralog) and [Helm repository index](https://montralog.github.io/montralog/index.yaml)
-- [Release downloads and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.1-rc1)
+- [Release downloads and checksums](https://github.com/montralog/montralog/releases/tag/v0.5.1)
 - [Deployment values](deploy/helm/montralog/values.yaml) and [PostgreSQL/TLS example](deploy/helm/montralog/values-production.yaml)
 
-The chart version is `0.5.1-rc.1`; its application version is `0.5.1-rc1`. Build your own image and provision protected Secrets before installation. A release title alone does not change the versions inside the source or chart.
+The chart version is `0.5.1`; its application version is `0.5.1`. The chart defaults to the public release image. Provision authentication and encryption Secrets before installation, and pin the image digest for production.
 
 ## Architecture
 
@@ -133,11 +132,11 @@ Teams/groups organize membership; they do not isolate telemetry or grant inherit
 
 Microsoft 365, Google Workspace and Okta audit-event polling are not implemented. Company login does not collect audit logs. Other security tools can send supported log/OpenTelemetry data through your own collector or adapter.
 
-Log grouping is heuristic, not proven root-cause analysis. Integration credentials support authenticated encryption with an operator-held key; existing plaintext records require the [explicit migration](docs/SECURITY-0.5.1.md). Slack delivery, backup restoration, load limits and Kubernetes behavior must be validated in your environment. No public container image is published yet: build your own image for Docker/Helm.
+Log grouping is heuristic, not proven root-cause analysis. Integration credentials support authenticated encryption with an operator-held key; existing plaintext records require the [explicit migration](docs/SECURITY-0.5.1.md). Slack delivery, backup restoration, load limits and Kubernetes behavior must be validated in your environment. The published Linux/amd64 container and versioned Helm chart use the same release. See [container installation](docs/CONTAINERS.md) and [support scope](docs/SUPPORT.md).
 
 ## Contribute
 
-Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), include reproducible steps, and sanitize telemetry and credentials. The project is at an early public-preview stage; interfaces and schema may change between candidates.
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), include reproducible steps, and sanitize telemetry and credentials. See the maintained release line and compatibility scope in [the support policy](docs/SUPPORT.md).
 
 ```sh
 python -m pip install -e ".[server]" -r requirements-dev.txt
