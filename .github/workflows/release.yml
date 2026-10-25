@@ -43,4 +43,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v0.5.1-rc1 dist/* --target "$GITHUB_SHA" --title 'Montralog 0.5.1-rc1 — security-focused preview' --notes-file docs/RELEASE-0.5.1.md --prerelease --latest
+          gh release create v0.5.1-rc1 dist/* --target "$GITHUB_SHA" --title 'Montralog 0.5.1-rc1 — security-focused preview' --notes-file docs/RELEASE-0.5.1.md --prerelease

@@ -6,7 +6,7 @@
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Run it with Docker Compose or deploy its Helm chart to Kubernetes. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current release: 0.5.1-rc1 — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
+**Current release: [0.5.1-rc1](https://github.com/montralog/montralog/releases/tag/v0.5.1-rc1) — public preview.** This is an evaluation candidate for controlled pilots. It has automated and local integration checks, but no independent security audit or published production capacity guarantee. Keep existing monitoring while evaluating it.
 
 ## See Montralog in action
 
