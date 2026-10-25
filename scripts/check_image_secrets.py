@@ -15,7 +15,7 @@ try:
     subprocess.run(['docker', 'compose', 'build', 'gateway'], cwd=root, check=True)
     check = 'from pathlib import Path; names=' + repr(files) + '; assert all(not (Path("/app")/name).exists() for name in names); assert Path("/app/.env.example").exists(); print("PASS: private files excluded from built image")'
     subprocess.run(['docker', 'run', '--rm', '--network', 'none', '--read-only', '--cap-drop', 'ALL',
-                    '--entrypoint', 'python', 'montralog:0.5.1-rc1', '-c', check], check=True)
+                    '--entrypoint', 'python', 'ghcr.io/montralog/montralog:0.5.1', '-c', check], check=True)
 finally:
     for path in created:
         path.unlink()

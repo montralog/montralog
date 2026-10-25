@@ -2,7 +2,7 @@ name: montralog
 services:
   gateway:
     build: .
-    image: montralog:0.5.1-rc1
+    image: ghcr.io/montralog/montralog:0.5.1
     environment:
       MONTRALOG_READ_TOKEN: ${MONTRALOG_READ_TOKEN:?Run python scripts/setup.py}
       MONTRALOG_INGEST_TOKEN: ${MONTRALOG_INGEST_TOKEN:?Run python scripts/setup.py}
@@ -32,7 +32,7 @@ services:
       driver: json-file
       options: {max-size: 10m, max-file: "3"}
   retention:
-    image: montralog:0.5.1-rc1
+    image: ghcr.io/montralog/montralog:0.5.1
     environment:
       MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:-}
       MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-false}
@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
     logging: *logging
   notifications:
-    image: montralog:0.5.1-rc1
+    image: ghcr.io/montralog/montralog:0.5.1
     environment:
       MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:-}
       MONTRALOG_ENCRYPTION_REQUIRED: ${MONTRALOG_ENCRYPTION_REQUIRED:-false}
@@ -117,7 +117,7 @@ services:
     restart: unless-stopped
     logging: *logging
   collector-storage-init:
-    image: montralog:0.5.1-rc1
+    image: ghcr.io/montralog/montralog:0.5.1
     user: "0:0"
     command: ["python","-c","import os; os.chown('/queue',10001,10001)"]
     volumes: [collector-data:/queue]

@@ -2,8 +2,8 @@
 # Replace registry/repository, external database Secret and ingress host/TLS.
 replicaCount: 2
 image:
-  repository: your-registry.example/your-team/montralog
-  tag: 0.5.1-rc1
+  repository: ghcr.io/montralog/montralog
+  tag: 0.5.1
 auth:
   existingSecret: montralog-auth
 encryption:

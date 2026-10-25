@@ -1,7 +1,7 @@
 # image.repository must point to an image you built and published, or loaded locally.
 image:
-  repository: montralog
-  tag: 0.5.1-rc1
+  repository: ghcr.io/montralog/montralog
+  tag: 0.5.1
   digest: ""
   pullPolicy: IfNotPresent
 imagePullSecrets: []
