@@ -157,6 +157,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.13"}
       - run: docker build --build-arg VCS_REF="$GITHUB_SHA" -t montralog:acceptance .
+      - run: python scripts/check_bootstrap.py --image montralog:acceptance --output acceptance-reports/bootstrap.json
       - run: python scripts/acceptance_load.py --image montralog:acceptance --output acceptance-reports/load.json
       - uses: actions/upload-artifact@v4
         if: always()

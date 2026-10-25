@@ -10,6 +10,11 @@ try:
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
 except FileExistsError:
     raise SystemExit('.env already exists; preserving your credentials.')
+if hasattr(os, 'geteuid') and os.geteuid() == 0:
+    # A root helper container must not leave a mode-600 file owned by root
+    # when the bind-mounted checkout belongs to a non-root host operator.
+    owner = root.stat()
+    os.fchown(fd, owner.st_uid, owner.st_gid)
 with os.fdopen(fd, 'w') as out:
     out.write('MONTRALOG_TENANT_ID=tenant-' + secrets.token_hex(8) + '\n')
     out.write('MONTRALOG_READ_TOKEN=' + secrets.token_urlsafe(36) + '\n')
