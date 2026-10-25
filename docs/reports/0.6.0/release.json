@@ -1,0 +1,15 @@
+{
+  "release": "https://github.com/montralog/montralog/releases/tag/v0.6.0",
+  "source_commit": "ae38edd9dcdd415e53fbe61edfad62749ccfda02",
+  "image": "ghcr.io/montralog/montralog@sha256:a71321fd52d4af2aea430a183dd349512c4906db43370334f2184c28ab03d1c6",
+  "release_run": "https://github.com/montralog/montralog/actions/runs/40203198912",
+  "unit_tests": {
+    "verify / application (3.13)": 167,
+    "verify / application (3.11)": 167
+  },
+  "static_counts": {
+    "MEDIUM": 18,
+    "LOW": 2
+  },
+  "scope": "Isolated Docker customer stacks; environment acceptance remains required."
+}

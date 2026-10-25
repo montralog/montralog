@@ -1,0 +1,65 @@
+{
+  "result": "PASS",
+  "image": "montralog:security",
+  "platform": "Docker Linux containers",
+  "started_at_utc": "2026-10-25T14:42:57.547081+00:00",
+  "container_limits": {
+    "cpus": 1,
+    "memory_mib": 512,
+    "pids": 128
+  },
+  "workload": {
+    "batches": 100,
+    "batch_size": 100,
+    "clients": 8
+  },
+  "limits": [
+    "Synthetic local workload, not an organization capacity guarantee.",
+    "Gateway restart and SQLite write-lock injection; not PostgreSQL failover.",
+    "Slack delivery is stubbed; retry deadlines are advanced, no external messages sent."
+  ],
+  "image_id": "sha256:a71321fd52d4af2aea430a183dd349512c4906db43370334f2184c28ab03d1c6",
+  "source_revision": "ae38edd9dcdd415e53fbe61edfad62749ccfda02",
+  "ingestion": {
+    "acknowledged": 10000,
+    "stored": 10000,
+    "missing": 0,
+    "elapsed_seconds": 1.089,
+    "events_per_second": 9184.86,
+    "batch_latency_ms": {
+      "p50": 21.307,
+      "p95": 171.815,
+      "max": 1054.226
+    },
+    "concurrent_query_latency_ms": {
+      "count": 20,
+      "p50": 88.043,
+      "p95": 112.347
+    },
+    "request_errors": 0
+  },
+  "write_failure": {
+    "explicit_503_retries": 1,
+    "recovered": true
+  },
+  "restart": {
+    "recovery_seconds": 1.344,
+    "stored_before": 10001,
+    "stored_after": 10001,
+    "missing": 0
+  },
+  "alerting": {
+    "initial_failure": {
+      "state": "pending",
+      "attempts": 1,
+      "initial_backoff_seconds": 30
+    },
+    "recovery": {
+      "state": "sent",
+      "attempts": 3,
+      "second_backoff_seconds": 60,
+      "worker_process_recovery": true
+    },
+    "external_delivery": "stubbed"
+  }
+}

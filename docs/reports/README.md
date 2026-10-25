@@ -2,6 +2,27 @@
 
 Reports apply to their exact version/image, not every deployment. They are scan snapshots and tested scenarios, not an independent audit.
 
+## Published 0.6.0 evidence
+
+Source: `ae38edd9dcdd415e53fbe61edfad62749ccfda02`. [Successful release verification](https://github.com/montralog/montralog/actions/runs/40203198912) and [immutable downloads](https://github.com/montralog/montralog/releases/tag/v0.6.0).
+
+| Check | Result |
+|---|---|
+| Image scan | HIGH 0, CRITICAL 0; all severity counts and inventories retained |
+| Static analysis | 0 HIGH, 18 MEDIUM, 2 LOW warnings retained |
+| Python | 167 tests discovered per Python 3.11/3.13; one intentional SQLite-only backup skip in the PostgreSQL subclass |
+| Browser / frontend | Four Chromium acceptance cases and three renderer tests passed |
+| Bootstrap | Docker-only setup, private operator-owned files, unique customer credentials, no overwrite and invalid/overlapping configuration rejection passed |
+| Ingestion | 10000 acknowledged / 10000 stored; 0 missing, 9184.86 events/s in this short synthetic run |
+| Concurrent log queries | p95 112.347 ms; 20 query measurements |
+| Storage failure | Explicit 503 retry and recovery passed |
+| Gateway restart | 10001 before / 10001 after; recovery 1.344 seconds |
+| Alert worker | Persisted queue recovered after two stubbed failures in separate worker processes |
+
+[Release/source/image identity](0.6.0/release.json), [all-severity image scan](0.6.0/image.json), [summary](0.6.0/summary.json), [dependency audit](0.6.0/dependencies.json), [all static warnings](0.6.0/bandit-all.json), [high-severity static gate](0.6.0/bandit-high.json), [exact-image load/recovery](0.6.0/load.json), [Docker bootstrap](0.6.0/bootstrap.json).
+
+The exact scanned release image was exercised before publication, with one CPU and 512 MiB limits. These short measurements establish correctness/recovery for this workload, not sustained sizing or a latency SLA. Slack is stubbed and retry deadlines are advanced. Static SQL warnings involve parameterized values and fixed query fragments/table names; they remain visible for review. See [security review and limits](../SECURITY-0.6.0.md) and [production acceptance](../PRODUCTION.md).
+
 ## Published 0.5.1 baseline
 
 - [Image scan and OS/Python inventories](0.5.1/image.json)
