@@ -105,7 +105,10 @@ def route(method,data,user,environ):
         url=validate_url(url)
         with database() as db:old=db.execute('SELECT * FROM data_sources WHERE id=?',(ident,)).fetchone() if ident else None
         if ident and not old:raise AccountError('Connection not found.',404)
-        if old and old['auth_type']==auth and not secret:secret=reveal(old['secret'])
+        if old and old['auth_type']==auth and not secret:
+            if auth!='none' and old['url'].rstrip('/')!=url:
+                raise AccountError('Re-enter the credential when changing its server endpoint.')
+            secret=reveal(old['secret'])
         if auth=='none':secret='';username=''
         if auth!='none' and urllib.parse.urlsplit(url).scheme!='https':
             raise AccountError('Saved credentials require an HTTPS data source.')

@@ -73,3 +73,14 @@ class ConnectionTests(test_accounts.AccountTests):
                 query.assert_not_called()
         with storage.database() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM data_sources').fetchone()[0],0)
+
+    def test_endpoint_edit_cannot_reuse_a_hidden_credential(self):
+        self.admin_login()
+        original={'name':'Secure','url':'https://127.0.0.1:9090','auth_type':'bearer','secret':'fixture-secret'}
+        with patch.object(connections,'query',return_value={'available':True,'data':{'result':[]}}):
+            ident=self.request('/api/control/data-sources','POST',original)['body']['id']
+        with patch.object(connections,'query') as query:
+            result=self.request('/api/control/data-sources','POST',{'id':ident,'name':'Changed','url':'https://127.0.0.1:9090/other','auth_type':'bearer','secret':''})
+            self.assertEqual(result['status'],400)
+            query.assert_not_called()
+        self.assertEqual(connections.resolve(ident)['url'],original['url'])
