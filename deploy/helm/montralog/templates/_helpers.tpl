@@ -51,6 +51,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 - name: RETENTION_DAYS
   value: {{ .Values.retentionDays | quote }}
 {{- if .Values.collector.enabled }}
+- name: MONTRALOG_ALLOW_INSECURE_COLLECTOR
+  value: "true"
 - name: MONTRALOG_COLLECTOR_URL
   value: {{ printf "http://%s-collector:4318" (include "montralog.fullname" .) | quote }}
 {{- end }}
