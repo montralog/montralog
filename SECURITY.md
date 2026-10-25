@@ -1,6 +1,6 @@
 # Security policy
 
-Supported release: **0.6.0**. See [security changes and encrypted-credential upgrade instructions](docs/SECURITY-0.5.1.md). Earlier previews should upgrade. See docs/SUPPORT.md for the maintained release line and support scope.
+Supported release: **0.6.0**. See [security changes and encrypted-credential upgrade instructions](docs/SECURITY-0.6.0.md). Earlier previews should upgrade. See docs/SUPPORT.md for the maintained release line and support scope.
 
 This release has no independent security audit. Each Docker stack is scoped to one trusted customer in a protected network. Read-token holders access all telemetry.
 Ingest-token holders can submit spoofed service names/events. Within a customer, this is role separation rather than granular RBAC or source attestation. [Silo tenant boundaries](docs/TENANCY.md) isolate separate Docker stacks; shared-database hosting is disabled.

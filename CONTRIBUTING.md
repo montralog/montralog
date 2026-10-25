@@ -13,7 +13,7 @@ support window before a stable release.
 
 ## Protected main branch
 
-Work on a feature branch and open a pull request. Main requires an up-to-date branch, one approving review, resolved review conversations, and all six GitHub Actions checks: application (3.11), application (3.13), containers, helm, security and browser. Stale approvals are dismissed and the latest push needs approval by someone other than its pusher. Repository administrators retain the owner-authorized bypass exception; non-admin contributors must satisfy these requirements. Force pushes and branch deletion are disabled; history must stay linear.
+Work on a feature branch and open a pull request. Main requires an up-to-date branch, one approving review, resolved review conversations, and all seven GitHub Actions checks: application (3.11), application (3.13), containers, helm, security, browser and resilience. Stale approvals are dismissed and the latest push needs approval by someone other than its pusher. Repository administrators retain the owner-authorized bypass exception; non-admin contributors must satisfy these requirements. Force pushes and branch deletion are disabled; history must stay linear.
 
 An author cannot approve their own pull request. A sole maintainer needs another trusted reviewer for their own changes. Repository owners can administer protection settings; those settings are an administrative trust boundary, not an immutable guarantee.
 
