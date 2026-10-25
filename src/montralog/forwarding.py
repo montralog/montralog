@@ -24,5 +24,6 @@ def metrics(raw):
             if not isinstance(result,dict):raise ValueError('Expected collector object')
             return result
     except urllib.error.HTTPError as error:
+        error.close()
         raise AccountError('Collector rejected the metric payload.' if error.code<500 else 'Collector unavailable.',400 if error.code<500 else 503) from None
     except (OSError,ValueError):raise AccountError('Collector unavailable; retry with backoff.',503) from None

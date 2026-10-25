@@ -12,7 +12,7 @@ Existing installations without a key retain compatibility with plaintext integra
 
 1. Back up the database and keep the existing credentials secure. Review [release notes](RELEASE.md).
 2. Build the new image from the `v0.5.1-rc1` tag.
-3. Generate a separate private key file without overwriting `.env`:
+3. If an encryption key is already configured, reuse it. Generate the separate private key file below only when enabling encryption for the first time; do not replace a key that already protects stored credentials:
 
 ```sh
 python scripts/create_encryption_key.py --destination .local/encryption.env

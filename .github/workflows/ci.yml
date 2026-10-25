@@ -109,17 +109,13 @@ jobs:
           bandit -r src/montralog -lll -f json -o security-reports/bandit-high.json
       - name: Build exact container for security inspection
         run: docker build -t montralog:security .
-      - name: Install verified official Trivy
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Scan saved image with the pinned official Trivy container
         run: |
-          gh release download v0.76.1 --repo aquasecurity/trivy --pattern trivy_0.76.1_Linux-64bit.tar.gz --pattern trivy_0.76.1_checksums.txt
-          sha256sum --ignore-missing --check trivy_0.76.1_checksums.txt
-          tar -xzf trivy_0.76.1_Linux-64bit.tar.gz trivy
-      - name: Image vulnerability report and fixable high-critical gate
-        run: |
-          ./trivy image --scanners vuln --severity HIGH,CRITICAL --format json --output security-reports/image.json montralog:security
-          ./trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 montralog:security
+          mkdir -p image-scan
+          docker image save -o image-scan/image.tar montralog:security
+          TRIVY_IMAGE=aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+          docker run --rm -v "$PWD/image-scan:/scan:ro" -v "$PWD/security-reports:/reports" "$TRIVY_IMAGE" image --input /scan/image.tar --scanners vuln --severity HIGH,CRITICAL --format json --output /reports/image.json
+          docker run --rm -v "$PWD/image-scan:/scan:ro" "$TRIVY_IMAGE" image --input /scan/image.tar --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

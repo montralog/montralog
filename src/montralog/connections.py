@@ -8,6 +8,7 @@ import secrets
 import socket
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 from .accounts import AccountError, require_csrf
 from .storage import database
@@ -63,6 +64,9 @@ def query(source,path,params=None):
                 return {'available':False,'error':'The server did not return a successful Prometheus API response.'}
             return {'available':True,**result,'source':{'id':source.get('id','builtin'),'name':source.get('name','Bundled Prometheus')}}
     except AccountError as error:return {'available':False,'error':error.message}
+    except urllib.error.HTTPError as error:
+        error.close()
+        return {'available':False,'error':'Connection failed. Check the server address, credentials, TLS certificate and network access.'}
     except (OSError,ValueError):return {'available':False,'error':'Connection failed. Check the server address, credentials, TLS certificate and network access.'}
 
 def resolve(ident=''):

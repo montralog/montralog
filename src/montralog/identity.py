@@ -8,6 +8,7 @@ import re
 import secrets
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 from http.cookies import SimpleCookie
 from . import accounts
@@ -52,7 +53,8 @@ def request_json(url, provider, form=None):
         if not isinstance(result, dict):
             raise ValueError()
         return result
-    except Exception:
+    except Exception as error:
+        if isinstance(error, urllib.error.HTTPError): error.close()
         raise AccountError('Provider request failed. Check registration and network access.', 400) from None
 
 
