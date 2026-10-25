@@ -10,7 +10,7 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 
 - [Evaluation walkthrough](EVALUATION.md)
 - [Docker / operations / recovery](OPERATIONS.md)
-- [Kubernetes and Helm](KUBERNETES.md)
+- [Customer isolation with Docker](TENANCY.md)
 - [SQLite, PostgreSQL and migration](STORAGE.md)
 
 ## Use the workspace
@@ -24,11 +24,12 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 
 ## Develop and assess
 
+- [Published scan and acceptance reports](reports/README.md)
 - [Test cases and execution](TESTING.md)
 
-- [0.5.1 release and security verification](SECURITY_VERIFICATION-0.5.1.md)
-- [0.5.1 security changes and upgrade](SECURITY-0.5.1.md)
-- [0.5.1 release notes](RELEASE-0.5.1.md)
+- [Current security changes and upgrade](SECURITY-0.6.0.md)
+- [Current release notes](RELEASE-0.6.0.md)
+- [Historical 0.5.1 verification](SECURITY_VERIFICATION-0.5.1.md)
 
 - [Executed functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
 
@@ -42,3 +43,5 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 - [Changelog](CHANGELOG.md)
 
 Historical versioned verification reports describe their stated versions only. They do not certify the current application or a different deployment.
+
+Historical Helm/Kubernetes guides remain for existing installations; use the Docker guide for new installations.

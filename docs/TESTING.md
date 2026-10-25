@@ -31,3 +31,14 @@ CI verifies Docker context exclusions against the built image, collector/backend
 Security checks include pip-audit, Bandit and the pinned Trivy scanner. `scripts/check_security_report.py` rejects incomplete inventories, unsupported/end-of-life OS scans and every HIGH/CRITICAL finding, including unfixed findings. Unit tests verify that these cases fail closed. The release publishes the exact image archive from the passing scan job, checks its ID/source revision, verifies the native driver/non-root/required-key startup and tests anonymous pull access against the exact manifest digest.
 
 Release assets include the full scan reports, dependency inventory, image digest and checksums. GitHub provenance links the container to its source workflow. Scan success is not a capacity guarantee or independent security certification. Record organization-specific acceptance with the rollout checklist.
+
+## Security and isolated Docker resilience
+
+Run `python -m unittest discover -s tests -v` against temporary data; PostgreSQL cases require an explicitly isolated `montralog_test` database. `test_outbound.py` covers HTTP credential rejection, private/mixed/changed DNS answers, invalid endpoints, exact origin approval, numeric connection pinning, TLS SNI and all redirect statuses. `test_tenancy.py` covers database rebinding, cross-customer credentials/sessions and request identity mismatches. Secret tests include encrypted SQLite restoration; native PostgreSQL recovery remains environment acceptance.
+
+```sh
+docker build -t montralog:acceptance .
+python scripts/acceptance_load.py --image montralog:acceptance --output work/acceptance/load.json
+```
+
+These are contributor test commands; installation itself needs only Docker. The probe creates labelled disposable containers/volumes and cleans up only those it created. It inserts 10,000 synthetic logs with eight clients, measures overlapping query latency, forces a write timeout/retry, restarts the gateway and verifies persisted counts. Separate worker processes verify alert retries after two stubbed delivery failures. Retry deadlines are advanced deliberately; no Slack message is sent. Workload size/concurrency are command-line options. CI runs this as a required release job and publishes JSON. Passing does not establish sustained capacity or customer destination receipt.

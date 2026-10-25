@@ -30,7 +30,7 @@ class FunctionalReviewTests(unittest.TestCase):
         for value in ('NaN', 'Infinity', '-Infinity', '1e400'):
             raw = ('{"status":"success","data":{"result":[],"bad":' + value + '}}').encode()
             with self.subTest(value=value), patch('montralog.connections.resolve', return_value=source), patch(
-                    'urllib.request.OpenerDirector.open', return_value=io.BytesIO(raw)):
+                    'montralog.connections.open_request', return_value=io.BytesIO(raw)):
                 status, body = self.call('/api/metrics', query='panel=cpu')
                 self.assertEqual(status['status'], 200)
                 self.assertFalse(body['available'])
@@ -39,7 +39,7 @@ class FunctionalReviewTests(unittest.TestCase):
     def test_prometheus_string_nan_is_preserved_as_a_valid_sample(self):
         source = {'url': 'http://127.0.0.1:9090', 'auth_type': 'none'}
         payload = {'status': 'success', 'data': {'result': [{'metric': {}, 'value': [123, 'NaN']}]}}
-        with patch('urllib.request.OpenerDirector.open', return_value=io.BytesIO(json.dumps(payload).encode())):
+        with patch('montralog.connections.open_request', return_value=io.BytesIO(json.dumps(payload).encode())):
             result = connections.query(source, 'query')
         self.assertTrue(result['available'])
         self.assertEqual(result['data']['result'][0]['value'][1], 'NaN')

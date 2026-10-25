@@ -18,6 +18,7 @@ def validate_report(report):
         raise ValueError(f'Security gate rejected {len(findings)} HIGH/CRITICAL findings, including unfixed findings')
     return {'result': 'PASS', 'os': os.get('Name'), 'os_packages': len(os_packages),
             'python_packages': len(python_packages), 'high': 0, 'critical': 0,
+            'severity_counts': {level: sum(v.get('Severity') == level for r in results for v in (r.get('Vulnerabilities') or [])) for level in ('UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL')},
             'scope': 'Scanner snapshot for this image; not an independent security audit'}
 
 

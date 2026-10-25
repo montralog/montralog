@@ -1,6 +1,6 @@
 # Organization rollout and acceptance
 
-Use this checklist to record the evidence for your own deployment of 0.5.1. Release CI covers reproducible fixtures; your service mix and operational objectives determine acceptance in your organization.
+Use this checklist to record the evidence for your own deployment of 0.6.0. Release CI covers reproducible fixtures; your service mix and operational objectives determine acceptance in your organization.
 
 | Area | Required organization evidence |
 |---|---|
@@ -12,11 +12,11 @@ Use this checklist to record the evidence for your own deployment of 0.5.1. Rele
 | Alerts | Real firing, pending period, resolution and destination receipt; Slack needs the operator's own webhook |
 | Company login | Tenant registration, exact allowed domains, actual sign-in and provider outage behavior |
 | Recovery | Separate restore rehearsal verifying telemetry, accounts, dashboards and encrypted credentials with the preserved key |
-| Kubernetes | Storage class, TLS, CNI NetworkPolicy, resources, image pull and rolling restart checked in your cluster |
+| Customer boundary | Separate Docker projects, keys, tokens, volumes and networks; reject wrong-customer sessions/tokens and verify tenant bindings |
 | Capacity | Representative sustained ingestion and queries, retention/disk pressure, target latency/error budgets and overload behavior |
 | Operations | Named operators, independent pipeline monitoring, private vulnerability reporting and upgrade/rollback ownership |
 
-Deploy for one trusted organization. Teams/groups organize membership; they do not isolate telemetry or grant inherited custom roles. There is no SCIM or automatic directory deprovisioning. Microsoft 365/Google/Okta audit-event polling is not included in company sign-in. Exporter coverage depends on the sources you configure.
+Deploy each customer in its own Docker stack using [tenant isolation](TENANCY.md). Teams/groups organize membership; they do not isolate telemetry or grant inherited custom roles. There is no SCIM or automatic directory deprovisioning. Microsoft 365/Google/Okta audit-event polling is not included in company sign-in. Exporter coverage depends on the sources you configure.
 
 SQLite supports one gateway. PostgreSQL supports shared application storage across gateways; Prometheus, Collector and the singleton notification evaluator need their own availability planning. No production load guarantee is inferred from short smoke tests.
 

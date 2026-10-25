@@ -9,6 +9,7 @@ import time
 from http.cookies import SimpleCookie
 from .storage import database, postgres_enabled
 from .metrics import PANELS
+from .tenancy import cookie_name
 
 SESSION_SECONDS = 12 * 3600
 ITERATIONS = 600_000
@@ -59,7 +60,8 @@ def session(environ):
     cookie = SimpleCookie()
     try:
         cookie.load(environ.get('HTTP_COOKIE', ''))
-        raw = cookie['montralog_session'].value if 'montralog_session' in cookie else ''
+        name = cookie_name('montralog_session')
+        raw = cookie[name].value if name in cookie else ''
     except Exception:
         return None
     if not re.fullmatch('[A-Za-z0-9_-]{43}', raw):
@@ -80,7 +82,7 @@ def require_csrf(environ, user):
 
 def cookie(value, expired=False):
     secure = '; Secure' if os.getenv('MONTRALOG_COOKIE_SECURE', '').lower() == 'true' else ''
-    return ('Set-Cookie', f'montralog_session={value}; Path=/; HttpOnly; SameSite=Strict; Max-Age={0 if expired else SESSION_SECONDS}{secure}')
+    return ('Set-Cookie', f'{cookie_name("montralog_session")}={value}; Path=/; HttpOnly; SameSite=Strict; Max-Age={0 if expired else SESSION_SECONDS}{secure}')
 
 def login(data, environ):
     username = str(data.get('username', '')).strip().lower()[:64]

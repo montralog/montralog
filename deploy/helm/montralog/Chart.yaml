@@ -2,8 +2,8 @@ apiVersion: v2
 name: montralog
 description: Montralog gateway, durable OpenTelemetry collector, and optional metrics backends
 type: application
-version: 0.5.1
-appVersion: 0.5.1
+version: 0.6.0
+appVersion: 0.6.0
 kubeVersion: ">=1.27.0-0"
 keywords: [observability, monitoring, logs, tracing, opentelemetry]
 home: https://github.com/montralog/montralog

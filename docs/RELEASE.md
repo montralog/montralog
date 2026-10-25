@@ -1,13 +1,7 @@
 # Release status
 
-Current non-RC release: **0.5.1**. Application, Python package and Helm chart all use `0.5.1`, with schema `5`.
+The Docker isolation and security release line is **0.6.0**, schema **6**. Use [the published release](https://github.com/montralog/montralog/releases/tag/v0.6.0) and its checksums/image digest, [Docker installation](CONTAINERS.md), [security upgrade](SECURITY-0.6.0.md) and [public reports](reports/README.md).
 
-- [Release downloads](https://github.com/montralog/montralog/releases/tag/v0.5.1)
-- [Public GitHub container package](https://github.com/orgs/montralog/packages/container/package/montralog)
-- [Release notes](RELEASE-0.5.1.md)
-- [Container installation](CONTAINERS.md)
-- [Organization rollout](ORGANIZATION_ROLLOUT.md)
-- [Security upgrade](SECURITY-0.5.1.md)
-- [Support policy](SUPPORT.md)
+Customer hosting uses separate Docker stacks; shared-gateway/database SaaS is disabled. Production acceptance remains environment-specific: [readiness matrix](PRODUCTION.md).
 
-Publication requires all functional, browser, deployment and security gates, and anonymous access to the exact tested container digest. The image is signed through GitHub source provenance and linked under repository Packages. Older RC records remain historical evidence. The current version makes no independent security-audit certification or universal capacity claim.
+Earlier releases and their immutable reports remain available as historical evidence. Changed source requires a new version; published image tags/releases are not silently replaced with new application code.

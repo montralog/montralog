@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "os": "3.24.3",
+  "os_packages": 29,
+  "python_packages": 7,
+  "high": 0,
+  "critical": 0,
+  "scope": "Scanner snapshot for this image; not an independent security audit"
+}

@@ -1,40 +1,62 @@
-# Public container installation
+# Docker installation and operation
 
-Package: **ghcr.io/montralog/montralog**. Supported release image platform: **Linux/amd64**.
+Requirements: Docker Engine/Desktop with Linux containers and Compose v2. Published images support Linux/amd64. Host Python, Helm and Kubernetes are not required.
 
-```sh
-docker pull ghcr.io/montralog/montralog:0.5.1
-```
+## Install
 
-Anonymous public pulls require no GitHub token. The package is linked to the repository's Packages section. Version `0.5.1` identifies the release; `latest` is a moving convenience alias. Use the digest published in `IMAGE_DIGESTS.txt` for repeatable deployments. The image includes OCI source/version/revision labels and GitHub build provenance.
-
-## Docker Compose
-
-Check out tag `v0.5.1`. Prerequisites: Docker Engine/Desktop with Linux containers, Compose v2 and host Python 3.11+ for the private bootstrap helper.
+Download the release source ZIP or check out its Git tag. From that folder in PowerShell or a POSIX shell:
 
 ```sh
-python scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.6.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
-python scripts/check_install.py
+docker compose ps
 ```
 
-Setup creates distinct machine credentials and an encryption key in a private `.env`; it never overwrites an existing file. Choose an individual administrator password at the prompt. No shared default browser account is installed. Open http://localhost:8080. Ports bind to loopback by default. Put HTTPS, secure cookies and access controls in place before remote access. Production roles, storage and notification destinations require operator configuration.
+Choose a unique password, then open **http://localhost:8080**. Browser access uses your login session. Setup creates `.env` once with distinct machine tokens, a customer identity and encryption key; an existing file is preserved. Protect that file with OS permissions, including an operator-only ACL on Windows. Never share or commit it. Root is used only for the short bootstrap container writing configuration; applications run as UID 10001.
 
-For an existing deployment, follow [the security upgrade procedure](SECURITY-0.5.1.md). Stable images require an encryption key. Preserve an existing key, and explicitly migrate any legacy plaintext integration credentials after backup. Do not substitute a new key for one that already protects credentials.
+The stack includes Prometheus, Collector, Alertmanager and background workers. Ports bind to loopback. Before remote access configure HTTPS, secure cookies and restricted ingress. Connect exporters or instrument applications to collect their data. For multiple customers, follow [customer isolation](TENANCY.md).
 
-## Kubernetes
+## Operate
 
 ```sh
-helm repo add montralog https://montralog.github.io/montralog
-helm repo update
+docker compose ps
+docker compose logs --tail 100 gateway notifications collector
+docker compose stop
+docker compose up -d --wait
 ```
 
-Follow the chart README to create the authentication and encryption Secrets first. The chart defaults to the public versioned image. For production, copy the production values example, configure external PostgreSQL and TLS, and set `image.digest` to the release digest. The image repository remains `ghcr.io/montralog/montralog`.
+Named volumes retain data. `docker compose down -v` destroys volumes. Always use the correct customer environment file on every command.
 
-## Verify and operate
+## Back up and upgrade
 
-Release assets include checksums, image digest and scan reports. The workflow publishes source provenance for the image. Keep your deployment inventory pinned to the exact tested version/digest; record OS/architecture, storage and configuration. Validate backup restoration in staging before upgrades. Named volumes retain data when stopping Compose; `docker compose down -v` removes it.
+Preserve the original `.env`, customer identity and encryption key separately from database backups. Back up before starting a new image:
 
-The image runs as UID/GID 10001 with no installed runtime package managers. Rebuild from source to customize dependencies. Runtime storage belongs under `/data`; `/tmp` needs writable temporary space for readonly-container operation. The Compose and Helm profiles configure non-root execution, dropped capabilities and writable temporary storage. See the organization rollout and operations guides.
+```sh
+docker compose exec gateway python -m montralog backup --destination /data/pre-upgrade.db
+docker compose cp gateway:/data/pre-upgrade.db ./pre-upgrade.db
+```
+
+Use a new backup filename each time. Protect the downloaded database. This backs up application SQLite data, not Prometheus or Collector volumes. PostgreSQL needs native backups/PITR. Obtain the new release source/Compose files without overwriting private configuration, then:
+
+```sh
+docker compose pull
+docker compose up -d --wait --wait-timeout 180
+docker compose exec gateway python -m montralog encrypt-secrets
+docker compose exec gateway python -m montralog verify-secrets
+```
+
+Migration is transactional/idempotent; wrong keys abort it. Verification reads without modifying records and fails if plaintext credentials remain. Reuse the original key. For a pre-encryption installation, generate the private key file with `scripts/create_encryption_key.py` inside the helper Docker container; see [the historical key procedure](SECURITY-0.5.1.md). Supply that file to all subsequent Compose commands.
+
+Schema 6 binds a database to `MONTRALOG_TENANT_ID` on first upgrade. Existing configurations without that variable retain identity `default`. Do not change it or mount another customer's volume. Older images reject newer schemas; rollback requires the matching old database, image and configuration.
+
+## Restore and key loss
+
+Restore into a separate, stopped Docker project using the original tenant ID and encryption key. Copy the database into its own application volume, assign UID/GID 10001, start it and run `verify-secrets`. Verify login, telemetry counts, dashboards and a controlled notification before switching traffic. Wrong tenant bindings are rejected.
+
+Recover a lost active key from its separate protected backup. Without any original key copy, encrypted credentials cannot be decrypted. Preserve telemetry/accounts and have an operator re-provision integrations through a planned recovery procedure; there is no decryption bypass. Test this procedure in staging before adoption.
+
+## Release verification
+
+[Public reports](reports/README.md) include scan JSON, inventories, static findings, checksums, image digest, provenance and failure/recovery results. Pin the released image digest. See [production acceptance](PRODUCTION.md). Older Helm artifacts remain available for compatibility; Docker is the documented installation path for this release line.

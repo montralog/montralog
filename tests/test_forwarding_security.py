@@ -28,7 +28,7 @@ class ForwardingSecurityTests(unittest.TestCase):
                 threads = [threading.Thread(target=server.serve_forever, daemon=True) for server in (source, destination)]
                 for thread in threads: thread.start()
                 try:
-                    with patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': f'http://127.0.0.1:{source.server_port}', 'MONTRALOG_INGEST_TOKEN': 'private-test-token'}):
+                    with patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': f'http://127.0.0.1:{source.server_port}', 'MONTRALOG_INGEST_TOKEN': 'private-test-token', 'MONTRALOG_ALLOW_INSECURE_COLLECTOR': 'true'}):
                         with self.assertRaises(AccountError): forwarding.metrics(b'{}')
                     self.assertEqual(received, [])
                 finally:
@@ -37,12 +37,12 @@ class ForwardingSecurityTests(unittest.TestCase):
 
     def test_nonfinite_collector_responses_fail_safely(self):
         for body in (b'{"invalid":NaN}', b'{"invalid":1e400}', b'[]'):
-            with self.subTest(body=body), patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': 'http://localhost:4318', 'MONTRALOG_INGEST_TOKEN': 'test'}), patch('urllib.request.OpenerDirector.open', return_value=io.BytesIO(body)):
+            with self.subTest(body=body), patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': 'http://localhost:4318', 'MONTRALOG_INGEST_TOKEN': 'test'}), patch.object(forwarding,'open_request', return_value=io.BytesIO(body)):
                 with self.assertRaises(AccountError) as error: forwarding.metrics(b'{}')
                 self.assertEqual(error.exception.status, 503)
 
     def test_unsupported_collector_url_never_opens_a_request(self):
         for url in ('file:///tmp/collector', 'http://user:password@localhost', 'http://localhost/?secret=x'):
-            with self.subTest(url=url), patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': url}), patch('urllib.request.OpenerDirector.open') as opened:
+            with self.subTest(url=url), patch.dict(os.environ, {'MONTRALOG_COLLECTOR_URL': url}), patch.object(forwarding,'open_request') as opened:
                 with self.assertRaises(AccountError): forwarding.metrics(b'{}')
                 opened.assert_not_called()

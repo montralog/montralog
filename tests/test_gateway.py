@@ -22,7 +22,7 @@ class GatewayTests(unittest.TestCase):
         scratch.mkdir(exist_ok=True)
         self.tmp=tempfile.TemporaryDirectory(dir=scratch)
         storage.DB=Path(self.tmp.name)/'data.db'
-        self.env=patch.dict(os.environ,{'MONTRALOG_READ_TOKEN':'r'*40,'MONTRALOG_INGEST_TOKEN':'w'*40,'RETENTION_DAYS':'7','PROMETHEUS_URL':'','MONTRALOG_DATABASE_URL':''})
+        self.env=patch.dict(os.environ,{'MONTRALOG_READ_TOKEN':'r'*40,'MONTRALOG_INGEST_TOKEN':'w'*40,'RETENTION_DAYS':'7','PROMETHEUS_URL':'','MONTRALOG_DATABASE_URL':'','MONTRALOG_ALLOWED_DESTINATIONS':'127.0.0.1:9090,localhost:4318'})
         self.env.start()
         initialize()
 

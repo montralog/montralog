@@ -14,28 +14,30 @@ from .accounts import AccountError, require_csrf
 from .storage import database
 from .config import MAX_BODY
 from .secret_store import seal, reveal
+from .outbound import open_request
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
 
 def validate_url(raw):
-    if not isinstance(raw,str) or len(raw)>1000 or any(c.isspace() for c in raw):raise AccountError('Enter a valid server URL.')
+    from .outbound import destination, DestinationError
     try:
-        url=urllib.parse.urlsplit(raw)
-        port=url.port
-    except ValueError:raise AccountError('Enter a valid server URL.') from None
-    if url.scheme not in ('http','https') or not url.hostname or url.username or url.password or url.query or url.fragment or '%' in url.hostname or (port is not None and not 1<=port<=65535):
-        raise AccountError('Use an HTTP or HTTPS server URL without embedded credentials, query or fragment.')
-    if url.hostname.lower().rstrip('.') in ('metadata.google.internal','metadata','instance-data'):
-        raise AccountError('Metadata endpoints cannot be used as data sources.')
-    try:addresses={entry[4][0] for entry in socket.getaddrinfo(url.hostname,port or (443 if url.scheme=='https' else 80),type=socket.SOCK_STREAM)}
-    except OSError:raise AccountError('Server name could not be resolved. Use an address reachable from Montralog.') from None
-    for address in addresses:
-        ip=ipaddress.ip_address(address)
-        if ip.version==6 and ip.ipv4_mapped:ip=ip.ipv4_mapped
-        if ip.is_link_local or ip.is_multicast or ip.is_unspecified or str(ip) in ('169.254.169.254','fd00:ec2::254','100.100.100.200'):
-            raise AccountError('Link-local, metadata, multicast and unspecified addresses are not supported.')
-    return raw.rstrip('/')
+        parsed, _, _ = destination(raw, private_origins=builtin_origins(raw))
+        if parsed.query:
+            raise DestinationError('Base endpoints cannot contain query parameters.')
+        return raw.rstrip('/')
+    except DestinationError as error:
+        raise AccountError(str(error)) from None
+
+
+def builtin_origins(raw):
+    # Only the operator-configured bundled endpoint receives the internal exception.
+    configured = os.getenv('PROMETHEUS_URL', '').rstrip('/')
+    if configured and raw.rstrip('/') == configured:
+        parsed = urllib.parse.urlsplit(configured)
+        return (f'{parsed.hostname}:{parsed.port or (443 if parsed.scheme == "https" else 80)}',)
+    return ()
+
 
 def finite_json_number(value):
     number = float(value)
@@ -56,7 +58,7 @@ def query(source,path,params=None):
         url=base+'/api/v1/'+path
         if params:url+='?'+urllib.parse.urlencode(params)
         request=urllib.request.Request(url,headers=headers)
-        with urllib.request.build_opener(NoRedirect()).open(request,timeout=8) as response:
+        with open_request(request, timeout=8, private_origins=builtin_origins(source['url'])) as response:
             raw=response.read(MAX_BODY+1)
             if len(raw)>MAX_BODY:raise ValueError('Response too large')
             result=json.loads(raw,parse_float=finite_json_number,parse_constant=finite_json_number)
@@ -103,8 +105,13 @@ def route(method,data,user,environ):
         url=validate_url(url)
         with database() as db:old=db.execute('SELECT * FROM data_sources WHERE id=?',(ident,)).fetchone() if ident else None
         if ident and not old:raise AccountError('Connection not found.',404)
-        if old and old['auth_type']==auth and not secret:secret=reveal(old['secret'])
+        if old and old['auth_type']==auth and not secret:
+            if auth!='none' and old['url'].rstrip('/')!=url:
+                raise AccountError('Re-enter the credential when changing its server endpoint.')
+            secret=reveal(old['secret'])
         if auth=='none':secret='';username=''
+        if auth!='none' and urllib.parse.urlsplit(url).scheme!='https':
+            raise AccountError('Saved credentials require an HTTPS data source.')
         if auth=='basic' and (not username or not secret):raise AccountError('Enter the server username and password.')
         if auth=='bearer' and not secret:raise AccountError('Enter the server bearer credential.')
         source={'id':ident,'name':name.strip(),'url':url,'auth_type':auth,'username':username,'secret':secret}

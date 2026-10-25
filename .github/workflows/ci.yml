@@ -5,6 +5,9 @@ on:
   workflow_call:
 permissions:
   contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   application:
     runs-on: ubuntu-latest
@@ -75,13 +78,13 @@ jobs:
           chmod +x /tmp/kind-linux-amd64
           mv /tmp/kind-linux-amd64 /tmp/kind
       - run: /tmp/kind create cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig" --wait 120s
-      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.5.1 .
+      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.6.0 .
       - run: |
           docker pull prom/prometheus:v3.13.3
           docker pull prom/alertmanager:v0.28.1
           docker pull otel/opentelemetry-collector-contrib:0.161.0
           docker pull postgres:17.6-alpine
-          for image in ghcr.io/montralog/montralog:0.5.1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
+          for image in ghcr.io/montralog/montralog:0.6.0 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
             python scripts/load_kind_gateway.py --image "$image"
           done
       - run: python scripts/cluster_smoke.py --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"
@@ -115,7 +118,7 @@ jobs:
           docker image save -o image-scan/image.tar montralog:security
           docker image inspect montralog:security --format '{{.Id}}' > image-scan/image-id.txt
           TRIVY_IMAGE=aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
-          docker run --rm -v "$PWD/image-scan:/scan:ro" -v "$PWD/security-reports:/reports" "$TRIVY_IMAGE" image --input /scan/image.tar --scanners vuln --severity HIGH,CRITICAL --list-all-pkgs --format json --output /reports/image.json
+          docker run --rm -v "$PWD/image-scan:/scan:ro" -v "$PWD/security-reports:/reports" "$TRIVY_IMAGE" image --input /scan/image.tar --scanners vuln --list-all-pkgs --format json --output /reports/image.json
           python scripts/check_security_report.py security-reports/image.json --summary security-reports/summary.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -149,3 +152,19 @@ jobs:
         with:
           name: browser-test-report
           path: tests/browser/playwright-report/
+
+  resilience:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: docker build --build-arg VCS_REF="$GITHUB_SHA" -t montralog:acceptance .
+      - run: python scripts/check_bootstrap.py --image montralog:acceptance --output acceptance-reports/bootstrap.json
+      - run: python scripts/acceptance_load.py --image montralog:acceptance --output acceptance-reports/load.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-reports
+          path: acceptance-reports/
+          retention-days: 90

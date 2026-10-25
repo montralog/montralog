@@ -47,16 +47,13 @@ Basic passwords and bearer credentials are submitted only through authenticated,
 CSRF-protected administrator routes. The API never returns the secret. Editing
 with a blank credential preserves the existing secret when authentication mode is
 unchanged. Choosing No authentication clears stored credentials for that source.
-Credentials are stored in the protected application database, without a separate
-at-rest encryption layer. Protect database files, backups and remote access.
+Credentials are encrypted using the deployment's operator-held key. Saved Basic/bearer credentials require HTTPS; certificate verification cannot be disabled. Migrate old plaintext records using the [Docker upgrade guide](CONTAINERS.md).
 
-Connections intentionally support internal monitoring servers. Link-local,
-metadata, unspecified and multicast destinations are rejected, including DNS
-results. Redirects, embedded URL credentials, query strings and fragments are
-rejected. Connection administration should remain limited to trusted operators;
-apply deployment egress policy for a stricter allowed-host boundary. Responses
-and requests are bounded, with an eight-second HTTP timeout. DNS resolution
-follows the host's resolver behavior.
+Private destinations require an operator entry in `MONTRALOG_ALLOWED_DESTINATIONS`, for example `metrics.internal:9090,host.docker.internal:9090`. Set this in the private environment file and recreate the gateway and notification worker. Match the exact hostname and port; wildcards are not supported. Approve only DNS names and services you control. The operator-configured bundled Prometheus endpoint is already approved.
+
+All resolved addresses are validated on each request. Connections use those numeric addresses directly, preserving TLS hostname verification; redirects and environment proxies are not followed. Link-local/metadata, multicast and unspecified destinations are always denied, even if allowlisted. Private DNS addresses may change between requests for approved internal services; use Docker networking and egress controls to restrict those services further.
+
+Only the operator-configured collector may use HTTP with credentials, through the explicit `MONTRALOG_ALLOW_INSECURE_COLLECTOR=true` setting in the isolated Docker network. It is not a general exception for saved data sources. Do not expose that network or reuse its credentials across customers.
 
 ## Supported sources
 
