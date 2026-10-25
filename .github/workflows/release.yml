@@ -80,10 +80,10 @@ jobs:
         with:
           name: browser-test-report
           path: ${{ runner.temp }}/browser-report
-      - uses: actions/download-artifact@v4
-        with:
-          name: acceptance-reports
-          path: dist/acceptance-reports
+      - name: Measure the exact scanned and published image
+        run: |
+          python scripts/check_bootstrap.py --image montralog:security --output dist/acceptance-reports/bootstrap.json
+          python scripts/acceptance_load.py --image montralog:security --output dist/acceptance-reports/load.json
       - name: Package security evidence and checksums
         run: |
           tar -czf dist/montralog-0.6.0-security-reports.tar.gz -C dist security-reports

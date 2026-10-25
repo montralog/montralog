@@ -80,7 +80,9 @@ class SecretStoreTests(unittest.TestCase):
             self.assertEqual(secret_store.encrypt_existing(), 0)
             with storage.database() as db:
                 db.execute('INSERT INTO notification_channels VALUES (?,?,?,?,?,?)', ('restore-channel', 'Restore fixture', 'slack', 'legacy-webhook-fixture', 1, 0))
+            self.assertEqual(secret_store.verify_existing(), {'encrypted':0,'plaintext':1})
             self.assertEqual(secret_store.encrypt_existing(), 1)
+            self.assertEqual(secret_store.verify_existing(), {'encrypted':1,'plaintext':0})
             backup = Path(self.tmp.name) / 'encrypted-backup.db'
             with storage.database() as source, closing(sqlite3.connect(backup)) as target:
                 source.backup(target)
@@ -89,6 +91,7 @@ class SecretStoreTests(unittest.TestCase):
                 for candidate in ('', Fernet.generate_key().decode()):
                     with patch.dict(os.environ, {'MONTRALOG_ENCRYPTION_KEY': candidate}):
                         with self.assertRaises(storage.StorageError): secret_store.encrypt_existing()
+                        with self.assertRaises(storage.StorageError): secret_store.verify_existing()
                 with storage.database() as db:
                     stored = db.execute("SELECT secret FROM notification_channels WHERE id='restore-channel'").fetchone()[0]
                 self.assertTrue(stored.startswith(secret_store.PREFIX))

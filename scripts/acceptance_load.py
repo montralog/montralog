@@ -1,6 +1,7 @@
 """Reproducible Docker-only acceptance probe using disposable synthetic data."""
 import argparse
 import concurrent.futures
+import datetime
 import json
 import os
 from pathlib import Path
@@ -36,6 +37,8 @@ def main():
     import base64
     key = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
     report = {'result': 'FAIL', 'image': args.image, 'platform': 'Docker Linux containers',
+              'started_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'container_limits':{'cpus':1,'memory_mib':512,'pids':128},
               'workload': {'batches':args.batches,'batch_size':args.batch_size,'clients':args.clients},
               'limits': ['Synthetic local workload, not an organization capacity guarantee.',
                          'Gateway restart and SQLite write-lock injection; not PostgreSQL failover.',
@@ -74,6 +77,7 @@ def main():
         ready()
         image_id = docker('image', 'inspect', args.image, '--format', '{{.Id}}')
         report['image_id'] = image_id
+        report['source_revision'] = docker('image','inspect',args.image,'--format','{{index .Config.Labels "org.opencontainers.image.revision"}}')
         queries = []
         def batch(index):
             records = [{'service':'acceptance','environment':'synthetic','severity':'ERROR',
