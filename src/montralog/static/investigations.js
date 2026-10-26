@@ -1,6 +1,11 @@
 'use strict';
 titles.investigations=['Investigate with evidence.','Correlate observed logs, traces and changes. Model output is a hypothesis, never a verified cause.'];
 let investigationResult=null,runbookPlan=null;
+let assistantOwner='';
+function resetAssistantIdentity(){
+ const owner=currentUser?.id||'';
+ if(assistantOwner!==owner){investigationResult=null;runbookPlan=null;panelAssistantRun=null;document.querySelector('#ai-panel-dialog')?.remove();assistantOwner=owner;}
+}
 const beforeInvestigations=workspaceView;
 function investigationReportHTML(result){
  if(!result)return '';
@@ -8,6 +13,7 @@ function investigationReportHTML(result){
  return `<section class="card"><div class="section-head"><h2>Investigation ${esc(result.id.slice(0,8))}</h2>${badge(result.status||'complete')}<button data-investigation-open="${esc(result.id)}">Refresh result</button></div><p>${esc(a.summary)}</p><small>${esc(r.provider)} / ${esc(r.model)} · ${result.cache_hit?'Reused evidence snapshot':'New evidence snapshot'} · Causality is not proven.</small>${(a.hypotheses||[]).map(h=>`<article class="pattern"><h3>${esc(h.claim)}</h3><p>Evidence: ${h.evidence_ids.map(id=>`<a href="#evidence-${esc(id.replace(/[^A-Za-z0-9]/g,'-'))}">${esc(id)}</a>`).join(', ')}</p><p><b>Uncertainty:</b> ${esc(h.uncertainty)}</p><p><b>Next check:</b> ${esc(h.next_check)}</p></article>`).join('')}<div class="callout">${fmt(b.noise.logs_in_window)} logs · ${fmt(b.noise.unique_patterns)} patterns · ${fmt(b.noise.repeated_records)} repeated records. Grouping reduces model input; original telemetry and alerting are not suppressed.</div>${agentDetailsHTML(r)}<h3>Observed evidence</h3>${b.evidence.length?b.evidence.map(item=>`<article class="pattern" id="evidence-${esc(item.id.replace(/[^A-Za-z0-9]/g,'-'))}"><b>${esc(item.id)} · ${esc(item.type)} · ${esc(item.service)}</b><small>${date(item.time)}${item.occurrences?' · '+fmt(item.occurrences)+' occurrences':''}</small><pre>${esc(item.message||item.name||'')}</pre></article>`).join(''):empty('Not enough evidence','Connect telemetry or choose another service/window.')}<details><summary>Token usage reported by provider</summary><pre>${esc(JSON.stringify(r.usage,null,2))}</pre></details></section><section class="card"><h2>Reviewed diagnostic runbook</h2><p>The model cannot run commands. The first allowlisted action rechecks an existing Prometheus connection without changing infrastructure. Review, approve and execute are separate steps.</p><form id="runbook-propose"><label>Saved source ID <input name="source_id" value="builtin" required maxlength="64"></label><button>Create read-only plan</button></form></section>`;
 }
 workspaceView=async function(next){
+ resetAssistantIdentity();
  if(next!=='investigations')return beforeInvestigations(next);
  if(currentUser?.role!=='admin')return empty('Administrator access required','Evidence sharing, model budgets and runbook approval are restricted to administrators.');
  const [cfg,sources,rules,metrics]=await Promise.all([accountAPI('control/investigations'),accountAPI('control/data-sources'),accountAPI('control/rules'),api('dashboards')]);
@@ -46,6 +52,7 @@ function panelAssistantHTML(){
  return `<section class="card"><h3>${esc(result.status)} · Evidence-linked advice</h3><p>${esc(a.summary)}</p>${(a.hypotheses||[]).map(h=>`<h3>${esc(h.claim)}</h3><p><b>Uncertainty:</b> ${esc(h.uncertainty)}</p><p><b>Recommended check:</b> ${esc(h.next_check)}</p>`).join('')}${agentDetailsHTML(r)}<p>Hypotheses are unverified. No infrastructure changes were made.</p><button id="panel-ai-refresh">Refresh analysis</button><button id="panel-ai-open">Open full evidence report</button></section>`;
 }
 async function openPanelAssistant(context){
+ resetAssistantIdentity();
  document.querySelector('#ai-panel-dialog')?.remove();panelAssistantRun=null;
  const dialog=document.createElement('dialog');dialog.id='ai-panel-dialog';dialog.className='ai-assistant-dialog';
  document.body.appendChild(dialog);dialog.innerHTML='<p>Loading assistant…</p>';dialog.showModal();
