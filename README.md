@@ -6,7 +6,9 @@
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Install and operate it with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current stable release: [0.8.0](https://github.com/montralog/montralog/releases/tag/v0.8.0) — Docker installation and isolated customer deployments.** See [published releases](https://github.com/montralog/montralog/releases), [security and test reports](docs/reports/README.md), and the [production acceptance matrix](docs/PRODUCTION.md). Use only a published version and its image digest for deployment.
+**Current published stable release: [0.7.0](https://github.com/montralog/montralog/releases/tag/v0.7.0) — Docker installation and isolated customer deployments.** See [published releases](https://github.com/montralog/montralog/releases), [security and test reports](docs/reports/README.md), and the [production acceptance matrix](docs/PRODUCTION.md). Use only a published version and its image digest for deployment.
+
+**Development branch:** 0.8.0 adds the read-only agentic assistant described below. Its release image is not published yet; do not expect `docker compose pull` to retrieve it. For an isolated source preview, see [the preview guide](docs/AI-PREVIEW.md).
 
 ## See Montralog in action
 
