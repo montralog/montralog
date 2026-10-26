@@ -41,3 +41,7 @@ The baseline image report used a HIGH/CRITICAL output filter. It is not an all-s
 Coverage includes HTTP credentials, redirect statuses, private/metadata/invalid endpoints, DNS changes and connection pinning; tenant database/session/token boundaries; encrypted migration and wrong/lost-key restore; concurrent ingestion/query measurement, storage failure retry, gateway restart, alert queue persistence and worker-process recovery.
 
 The load probe uses disposable Docker containers, synthetic data and stubbed Slack delivery with accelerated retry deadlines. It reports throughput, counts, latency and recovery time. Actual Slack receipt, sustained sizing, host/disk failure and live SSO remain deployment acceptance tasks. Failed probes are not passing evidence.
+
+## Version 0.7.0
+
+See the [independent-agent review and validation scope](0.7.0/README.md). Release assets publish exact-image scans, inventories, acceptance measurements and local-model evaluation; older version reports are retained as historical evidence.
