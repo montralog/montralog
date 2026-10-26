@@ -9,29 +9,60 @@ from .outbound import open_request,endpoint,DestinationError
 PROVIDERS=('ollama','openai','openai-compatible','anthropic','gemini')
 
 
-def config():
-    provider=os.getenv('MONTRALOG_AI_PROVIDER','ollama')
-    model=os.getenv('MONTRALOG_AI_MODEL','qwen3:4b' if provider=='ollama' else '')
-    base=os.getenv('MONTRALOG_AI_URL',{'ollama':'http://ollama:11434','openai':'https://api.openai.com/v1',
-        'anthropic':'https://api.anthropic.com/v1','gemini':'https://generativelanguage.googleapis.com/v1beta'}.get(provider,'')).rstrip('/')
+def profile_catalog():
+    raw=os.getenv('MONTRALOG_AI_PROFILES','{}') or '{}'
+    if len(raw)>32000:raise ValueError('AI profile configuration is too large.')
+    profiles=json.loads(raw)
+    if not isinstance(profiles,dict) or len(profiles)>12:raise ValueError('Configure at most 12 approved model profiles.')
+    for ident,settings in profiles.items():
+        if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,39}',ident) or not isinstance(settings,dict):raise ValueError('Invalid AI profile.')
+        if set(settings)-{'provider','model','url','key_env','local_http'}:raise ValueError('Unsupported AI profile setting.')
+        if 'key_env' in settings and not re.fullmatch(r'[A-Z][A-Z0-9_]{0,99}',settings['key_env']):raise ValueError('Use an environment variable name for the private API key.')
+    return profiles
+
+
+def public_profiles():
+    result=[{'id':'','provider':os.getenv('MONTRALOG_AI_PROVIDER','ollama'),'model':os.getenv('MONTRALOG_AI_MODEL','qwen3:4b')}]
+    for ident,settings in profile_catalog().items():
+        result.append({'id':ident,'provider':str(settings.get('provider','ollama')),'model':str(settings.get('model',''))})
+    return result
+
+
+def config(profile=''):
+    approved={}
+    if profile:
+        approved=profile_catalog().get(profile)
+        if approved is None:raise ValueError('Model profile is not approved by the operator.')
+    provider=approved.get('provider',os.getenv('MONTRALOG_AI_PROVIDER','ollama'))
+    model=approved.get('model',os.getenv('MONTRALOG_AI_MODEL','qwen3:4b' if provider=='ollama' else ''))
+    base=approved.get('url',os.getenv('MONTRALOG_AI_URL',{'ollama':'http://ollama:11434','openai':'https://api.openai.com/v1',
+        'anthropic':'https://api.anthropic.com/v1','gemini':'https://generativelanguage.googleapis.com/v1beta'}.get(provider,''))).rstrip('/')
     if provider not in PROVIDERS or not re.fullmatch(r'[A-Za-z0-9_.:/-]{1,100}',model):raise ValueError('Configure a supported AI provider and model.')
     parsed,port=endpoint(base)
     if parsed.query:raise ValueError('AI base URL cannot contain query parameters.')
-    local=provider=='ollama' and parsed.scheme=='http' and os.getenv('MONTRALOG_AI_LOCAL_HTTP','').lower()=='true' and parsed.hostname in ('ollama','localhost','127.0.0.1','::1','host.docker.internal')
+    local=provider=='ollama' and parsed.scheme=='http' and (approved.get('local_http') is True if profile else os.getenv('MONTRALOG_AI_LOCAL_HTTP','').lower()=='true') and parsed.hostname in ('ollama','localhost','127.0.0.1','::1','host.docker.internal')
     if parsed.scheme!='https' and not local:raise ValueError('AI providers require HTTPS; local Ollama requires explicit local HTTP opt-in.')
-    key=os.getenv('MONTRALOG_AI_API_KEY','')
+    key_name=approved.get('key_env','MONTRALOG_AI_API_KEY')
+    key=os.getenv(key_name,'')
+    if not key and profile:
+        raw_keys=os.getenv('MONTRALOG_AI_PROFILE_KEYS','{}') or '{}'
+        if len(raw_keys)>100000:raise ValueError('Profile key configuration is too large.')
+        keys=json.loads(raw_keys)
+        if not isinstance(keys,dict):raise ValueError('Invalid private profile key mapping.')
+        key=keys.get(key_name,'')
+    if not isinstance(key,str):raise ValueError('Provider key must be private text.')
     if '\n' in key or '\r' in key or len(key)>8192:raise ValueError('Invalid provider key.')
     if provider!='ollama' and not key:raise ValueError('Configure the provider API key privately.')
     return {'provider':provider,'model':model,'base':base,'key':key,'local':local,'origin':(parsed.hostname,port)}
 
 
-def generate(system,evidence):
-    cfg=config();provider=cfg['provider'];model=cfg['model'];base=cfg['base']
+def generate(system,evidence,profile='',response_schema=None):
+    cfg=config(profile);provider=cfg['provider'];model=cfg['model'];base=cfg['base']
     limit=1500
     messages=[{'role':'system','content':system},{'role':'user','content':evidence}]
     headers={'Content-Type':'application/json'}
     if provider=='ollama':
-        url=base+'/api/chat';body={'model':model,'messages':messages,'stream':False,'think':False,'format':'json',
+        url=base+'/api/chat';body={'model':model,'messages':messages,'stream':False,'think':False,'format':response_schema or 'json',
             'options':{'num_predict':limit,'num_ctx':8192,'temperature':0},'keep_alive':'5m'}
     elif provider=='openai':
         url=base+'/responses';headers['Authorization']='Bearer '+cfg['key']

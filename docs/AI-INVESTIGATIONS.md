@@ -34,3 +34,40 @@ The only implemented runbook is a read-only data-source health recheck. It requi
 Hosted-provider contract tests use synthetic mocked replies. The local-ai gate also downloads Qwen3 4B and performs real local inference on three synthetic cases, including untrusted log instructions. It checks JSON/citation format and records latency and token counters. These tests do not establish hosted-provider compatibility or root-cause accuracy; live credentials and deployment-specific evaluation are required before adoption.
 
 References: [Ollama API](https://docs.ollama.com/api/chat), [Qwen3 4B](https://ollama.com/library/qwen3:4b), [OpenAI structured output](https://developers.openai.com/api/docs/guides/structured-outputs), [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create), [Gemini generateContent](https://ai.google.dev/api/generate-content).
+
+
+## Agentic assistant (0.8)
+
+The assistant uses Montralog's connected data sources directly; an MCP server is not required. There is no general-purpose MCP client or arbitrary remote tool execution in this release. Administrators choose an approved model, source, metric, question and optional alert. Dashboard panels expose **Ask AI**; alerts expose **Investigate**. Both open a side dialog while preserving the dashboard. Refresh the queued report to inspect its progress, or open the full evidence report.
+
+The agent captures local logs, failed spans and changes, reads the selected Prometheus metric, and may request at most two follow-up snapshot/trend tools from the built-in metric catalog. Total provider calls are capped at three. It cannot choose a URL, connection credential, arbitrary PromQL, shell command, or another source. The selected source configuration is fingerprinted; changes before execution require resubmission. Source-wide metrics are explicitly labelled: service attribution is not inferred from unrelated host samples. Saved data-source credentials stay on the server and never enter the model prompt.
+
+The result distinguishes observed evidence, unverified hypotheses, literal supporting excerpts, missing evidence and recommended read-only checks. Each hypothesis must cite captured record IDs and include an exact excerpt from the referenced message/name; fabricated references or excerpts fail validation. This checks provenance, not semantic truth or proof of causality. Missing or unavailable metrics remain missing evidence, not a zero-valued healthy measurement. A model/provider error, invalid output, repeated/unknown tool or exhausted step limit fails closed. The tool trace records the read-only inspection steps. No infrastructure remediation is performed by the agent.
+
+Agent mode reserves **94,500 conservative units** before queueing: three calls, each at most 30,000 UTF-8 prompt bytes plus 1,500 output tokens. Requests/day counts submitted investigations, not individual model calls. Reservations are conservative and are not refunded on failure; they are not a monetary invoice. The optional AI Compose file defaults to 300,000 units/day, enough for three maximum-size agent reservations. A backend using the older 100,000 default allows one. Set `MONTRALOG_AI_DAILY_TOKEN_BUDGET` and `MONTRALOG_AI_DAILY_REQUESTS` to your approved limits. Hosted sharing consent covers bounded reads from the selected source as well as captured logs; inspect that scope before approving.
+
+### Alert playbooks
+
+Each alert can save a runbook context, up to eight read-only checks and recovery criteria. A linked investigation captures that alert's condition and runbook; the alert's service/environment and metric source override conflicting submitted filters. Runbooks guide analysis; text in a runbook cannot grant tools or execute commands. The existing explicitly approved source recheck remains a separate administrative action. This release starts investigations on request, not automatically on every alert transition.
+
+### Approved model choices
+
+Operators define `MONTRALOG_AI_PROFILES` as a private JSON object. Browser users can select these approved IDs; they cannot add arbitrary endpoints or keys. The default deployment model remains available. Example private customer environment additions:
+
+```dotenv
+MONTRALOG_AI_PROFILES='{"company":{"provider":"openai-compatible","model":"approved-company-model","url":"https://models.example.com/v1","key_env":"COMPANY_AI_KEY"},"local":{"provider":"ollama","model":"qwen3:4b","url":"http://ollama:11434","local_http":true}}'
+MONTRALOG_AI_PROFILE_KEYS='{"COMPANY_AI_KEY":"REPLACE_PRIVATELY"}'
+MONTRALOG_AI_EGRESS=true
+```
+
+`models.example.com` is a placeholder, not a working provider. Use your approved real endpoint/model. Protect the environment file and never publish its values. Profile keys can alternatively come from named process environment variables. The optional Compose file maps the profile/key JSON to gateway and worker; a bare host variable must be explicitly passed if you use that alternative. Restart both services after a profile change. Hosted profiles require HTTPS and per-investigation approval. Private company endpoints also need an exact `hostname:port` entry in `MONTRALOG_ALLOWED_DESTINATIONS`; this does not permit metadata/link-local endpoints. Keep default-model and profile settings consistent on gateway and worker.
+
+Local models require the selected weights to be downloaded to Ollama. Hosted profiles support OpenAI Responses, compatible chat completions, Anthropic Messages and Gemini generateContent; their real credentials, entitlements and model behavior require operator validation. The browser receives only profile IDs, provider names and model names, never keys or endpoint credentials.
+
+All agent metric reads use the captured investigation window, including follow-up queries. Queue delay does not silently shift the metric window away from the log snapshot. Reports reused from the cache retain their original captured window.
+
+An agent may return **insufficient evidence** with no hypothesis. The application does not require a model to invent a cause when relevant observations are absent.
+
+A malformed final analysis may be corrected within the same three-call cap and reservation. Invalid evidence is never displayed as an accepted hypothesis. Transport failures are not silently retried; exhausted corrections result in a failed report.
+
+Local Ollama agent responses use [schema-constrained output](https://ollama.com/blog/structured-outputs), including allowed evidence IDs and captured excerpt choices. Other provider adapters retain server-side validation and bounded corrections; a provider/model must be evaluated for the required output contract before adoption. Schema conformance still does not prove the model's causal explanation.

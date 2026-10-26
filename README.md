@@ -6,7 +6,9 @@
 
 Montralog brings logs, traces, recurring log patterns, Prometheus metrics, dashboards and alerts into one workspace. Install and operate it with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Current stable release: [0.7.0](https://github.com/montralog/montralog/releases/tag/v0.7.0) — Docker installation and isolated customer deployments.** See [published releases](https://github.com/montralog/montralog/releases), [security and test reports](docs/reports/README.md), and the [production acceptance matrix](docs/PRODUCTION.md). Use only a published version and its image digest for deployment.
+**Current published stable release: [0.7.0](https://github.com/montralog/montralog/releases/tag/v0.7.0) — Docker installation and isolated customer deployments.** See [published releases](https://github.com/montralog/montralog/releases), [security and test reports](docs/reports/README.md), and the [production acceptance matrix](docs/PRODUCTION.md). Use only a published version and its image digest for deployment.
+
+**Development branch:** 0.8.0 adds the read-only agentic assistant described below. Its release image is not published yet; do not expect `docker compose pull` to retrieve it. For an isolated source preview, see [the preview guide](docs/AI-PREVIEW.md).
 
 ## See Montralog in action
 
@@ -54,7 +56,7 @@ Prerequisites: Docker Engine/Desktop using Linux containers and Docker Compose v
 ```sh
 git clone https://github.com/montralog/montralog.git
 cd montralog
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.7.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -68,7 +70,7 @@ Check startup with `docker compose ps` and open the workspace. Follow the [Docke
 
 ## Investigations and assurance
 
-Version 0.7.0 adds customer-bound credentials, verified backups, replay-safe ingestion, alert recovery tests and optional local AI investigations. See [isolation and backup assurance](docs/ASSURANCE.md), [AI setup and limitations](docs/AI-INVESTIGATIONS.md), and the [independent-agent review](docs/reports/0.7.0/security-review.md). A stable version is not a production certification; validate your own deployment.
+Version 0.8.0 adds a bounded read-only investigation agent, dashboard/panel assistance, alert runbooks and operator-approved model choices. Customer-bound credentials, verified backups and reliable ingestion/alerts remain part of the stack. See [isolation and backup assurance](docs/ASSURANCE.md), [AI setup and limitations](docs/AI-INVESTIGATIONS.md), and the [assistant review scope](docs/reports/0.8.0/review.md). A stable version is not a production certification; validate your own deployment.
 
 ## Start exploring
 

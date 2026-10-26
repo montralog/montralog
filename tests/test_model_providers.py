@@ -38,6 +38,13 @@ class ProviderContractTests(unittest.TestCase):
                 with outbound.open_request(urllib.request.Request('http://ollama:11434/api/chat',data=b'{}'),private_origins=('ollama:11434',),insecure_credential_origin=('ollama',11434),require_private=True):pass
             connect.assert_not_called()
 
+    def test_ollama_receives_schema_instead_of_unconstrained_json_mode(self):
+        schema={'type':'object','properties':{'summary':{'type':'string'}}}
+        raw=json.dumps({'done':True,'message':{'content':'{"summary":"fixture"}'}}).encode()
+        with patch.dict(os.environ,{'MONTRALOG_AI_PROVIDER':'ollama','MONTRALOG_AI_MODEL':'fixture','MONTRALOG_AI_URL':'https://provider.example'}),patch.object(model_providers,'open_request',return_value=io.BytesIO(raw)) as send:
+            model_providers.generate('JSON','fixture',response_schema=schema)
+            self.assertEqual(json.loads(send.call_args.args[0].data)['format'],schema)
+
     def test_http_hosted_endpoint_cannot_receive_credentials(self):
         with patch.dict(os.environ,{'MONTRALOG_AI_PROVIDER':'openai','MONTRALOG_AI_MODEL':'fixture','MONTRALOG_AI_URL':'http://provider.example','MONTRALOG_AI_API_KEY':'fixture'}):
             with self.assertRaises(ValueError):model_providers.config()

@@ -14,4 +14,4 @@ Storage: {{ .Values.database.mode }}.
 
 TLS, source instrumentation, exporter targets, database backups, network-policy
 support in the cluster CNI and external alert delivery must be verified by operators.
-This release candidate does not establish production availability or capacity guarantees.
+A stable release alone does not establish production availability or capacity guarantees.

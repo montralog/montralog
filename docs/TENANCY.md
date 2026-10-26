@@ -7,7 +7,7 @@ Montralog uses **silo tenancy**: one Compose project, gateway, database, Prometh
 From the release source folder, choose three unused local ports:
 
 ```sh
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.7.0 /install/scripts/create_tenant.py --tenant acme --http-port 8180 --otlp-http-port 4418 --otlp-grpc-port 4417
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/create_tenant.py --tenant acme --http-port 8180 --otlp-http-port 4418 --otlp-grpc-port 4417
 docker compose --env-file .local/tenants/acme.env pull
 docker compose --env-file .local/tenants/acme.env up -d --wait
 docker compose --env-file .local/tenants/acme.env exec gateway python -m montralog create-user --username admin --name Administrator

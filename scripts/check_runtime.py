@@ -9,7 +9,7 @@ import psycopg
 from montralog.config import VERSION
 from montralog.security import machine_token
 
-assert VERSION == '0.7.0'
+assert VERSION == '0.8.0'
 assert os.geteuid() == 10001
 assert platform.machine() == 'x86_64'
 assert not Path('/app/.env').exists()
