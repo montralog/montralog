@@ -19,7 +19,7 @@ Open Investigations, choose a service/window, opt into model analysis and submit
 
 ## Other providers
 
-The bounded adapter supports Ollama, OpenAI Responses, compatible chat-completion endpoints, Anthropic Messages and Gemini generateContent. Configure the same private environment values on gateway and investigation worker: `MONTRALOG_AI_ENABLED=true`, `MONTRALOG_AI_PROVIDER`, `MONTRALOG_AI_MODEL`, `MONTRALOG_AI_URL`, and `MONTRALOG_AI_API_KEY`. Hosted providers require HTTPS, `MONTRALOG_AI_EGRESS=true` and explicit sharing consent for each investigation. Never put a provider key in the browser, repository or public report. Local HTTP is reserved for explicitly configured local Ollama.
+The bounded adapter supports Ollama, OpenAI Responses, compatible chat-completion endpoints, Anthropic Messages and Gemini generateContent. The optional Compose file maps these settings from your private customer environment file to both gateway and investigation worker. Set: `MONTRALOG_AI_ENABLED=true`, `MONTRALOG_AI_PROVIDER`, `MONTRALOG_AI_MODEL`, `MONTRALOG_AI_URL`, and `MONTRALOG_AI_API_KEY`. Hosted providers require HTTPS, `MONTRALOG_AI_EGRESS=true` and explicit sharing consent for each investigation. Never put a provider key in the browser, repository or public report. Local HTTP is reserved for explicitly configured local Ollama.
 
 The snapshot includes selected redacted message excerpts, service/environment names, timestamps, trace IDs and customer ID. It excludes arbitrary log attributes and configuration secrets. Redaction is best effort; classify the remaining telemetry before permitting external processing. A configured hosted endpoint may bill the operator.
 
