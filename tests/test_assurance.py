@@ -100,6 +100,7 @@ class AssuranceTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM logs').fetchone()[0],0)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM ingest_receipts').fetchone()[0],0)
 
+    @patch.dict(os.environ,{'MONTRALOG_ENCRYPTION_KEY':''})
     def test_http_idempotency_replay_conflict_and_private_digest(self):
         key='synthetic-receipt-001'
         items=[{'service':'checkout','message':'password=low-entropy'}]
@@ -110,3 +111,5 @@ class AssuranceTests(unittest.TestCase):
         self.assertEqual(self.call('/api/overview')[1]['totals']['logs'],1)
         with storage.database() as db:stored=db.execute('SELECT body_hash FROM ingest_receipts').fetchone()[0]
         self.assertNotEqual(stored,hashlib.sha256(json.dumps(items).encode()).hexdigest())
+        import hmac
+        self.assertNotEqual(stored,hmac.new(b'',json.dumps(items).encode(),hashlib.sha256).hexdigest())

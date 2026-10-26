@@ -129,7 +129,7 @@ def application(environ, start_response):
                         if path=='/v1/metrics' or not re.fullmatch(r'[A-Za-z0-9_.:-]{16,128}',receipt_value):
                             raise ValueError('Unsupported or invalid idempotency key')
                         scoped=tenant_id()+'\0'+hashlib.sha256(candidate.encode()).hexdigest()+'\0'+path+'\0'+receipt_value
-                        receipt=(hashlib.sha256(scoped.encode()).hexdigest(),hmac.new(os.getenv('MONTRALOG_ENCRYPTION_KEY',os.getenv('MONTRALOG_INGEST_TOKEN','')).encode(),raw,hashlib.sha256).hexdigest())
+                        receipt=(hashlib.sha256(scoped.encode()).hexdigest(),hmac.new((os.getenv('MONTRALOG_ENCRYPTION_KEY') or os.getenv('MONTRALOG_INGEST_TOKEN','')).encode(),raw,hashlib.sha256).hexdigest())
                     if path=='/v1/metrics':
                         from .forwarding import metrics as forward_metrics
                         body=forward_metrics(raw)
