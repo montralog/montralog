@@ -31,6 +31,6 @@ Every accepted hypothesis must reference IDs in its captured evidence. The UI li
 
 The only implemented runbook is a read-only data-source health recheck. It requires an explicit proposal, typed approval, an unchanged source configuration, a five-minute approval window and a separate execution action. Every step is audited and replay is rejected. Privileged automated remediation remains a future feature requiring its own runner, permission boundaries, rollback and review.
 
-Provider contract tests use synthetic mocked replies. They do not establish real hosted-provider compatibility or model quality; live credentials and deployment-specific evaluation are required before adoption.
+Hosted-provider contract tests use synthetic mocked replies. The local-ai gate also downloads Qwen3 4B and performs real local inference on three synthetic cases, including untrusted log instructions. It checks JSON/citation format and records latency and token counters. These tests do not establish hosted-provider compatibility or root-cause accuracy; live credentials and deployment-specific evaluation are required before adoption.
 
 References: [Ollama API](https://docs.ollama.com/api/chat), [Qwen3 4B](https://ollama.com/library/qwen3:4b), [OpenAI structured output](https://developers.openai.com/api/docs/guides/structured-outputs), [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create), [Gemini generateContent](https://ai.google.dev/api/generate-content).

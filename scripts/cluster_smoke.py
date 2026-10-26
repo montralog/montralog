@@ -40,7 +40,7 @@ def main():
     gateway='deployment/verify-montralog'
     def exec_gateway(*command):
         run([*kubectl,'exec',gateway,'-c','gateway','--',*command])
-    exec_gateway('python','-c',"from montralog.secret_store import seal,reveal; value=seal('kubernetes-fixture'); assert value.startswith('enc:v1:'); assert reveal(value)=='kubernetes-fixture'; print('PASS: operator-managed encryption Secret is active')")
+    exec_gateway('python','-c',"from montralog.secret_store import seal,reveal; value=seal('kubernetes-fixture'); assert value.startswith('enc:v2:'); assert reveal(value)=='kubernetes-fixture'; print('PASS: operator-managed encryption Secret is active')")
     exec_gateway('env','MONTRALOG_REQUIRE_PROMETHEUS=1','python','scripts/smoke.py')
     exec_gateway('env','OTEL_SMOKE_URL=http://verify-montralog-collector:4318','python','scripts/collector_smoke.py')
     # Pod restart must preserve SQLite telemetry on its PVC.

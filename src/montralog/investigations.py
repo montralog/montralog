@@ -29,7 +29,7 @@ def evidence(data):
         if value:clauses.append(field+'=?');values.append(value)
     where=' AND '.join(clauses);items=[]
     with database() as db:
-        total=db.execute('SELECT COUNT(*),COUNT(DISTINCT pattern) FROM logs WHERE '+where,values).fetchone()
+        total=db.execute('SELECT COUNT(*) AS log_count,COUNT(DISTINCT pattern) AS pattern_count FROM logs WHERE '+where,values).fetchone()
         groups=list(db.execute('SELECT pattern,COUNT(*) occurrences,MAX(id) sample FROM logs WHERE '+where+' GROUP BY pattern ORDER BY occurrences DESC,pattern LIMIT 12',values))
         for group in groups:
             row=db.execute('SELECT id,time,service,environment,severity,message,trace_id FROM logs WHERE id=?',(group['sample'],)).fetchone()

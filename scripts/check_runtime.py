@@ -29,6 +29,6 @@ with tempfile.TemporaryDirectory(prefix='montralog-runtime-') as temporary:
     os.environ['MONTRALOG_ENCRYPTION_KEY'] = Fernet.generate_key().decode()
     from montralog.wsgi import application
     encrypted = seal('isolated-runtime-fixture')
-    assert encrypted.startswith('enc:v1:') and reveal(encrypted)=='isolated-runtime-fixture'
+    assert encrypted.startswith('enc:v2:') and reveal(encrypted)=='isolated-runtime-fixture'
     assert psycopg.pq.version() > 0
 print('PASS: version, non-root runtime, architecture, crypto, PostgreSQL driver and required-key startup')
