@@ -82,22 +82,22 @@ Use `docker compose ps` to check services. `docker compose stop` retains named v
 
 ```mermaid
 flowchart TB
-  Browser[Browser: dashboards, logs, alerts, investigations] --> Gateway[Montralog gateway: login, authorization and APIs]
-  Apps[Instrumented applications] --> Collector[OpenTelemetry Collector: durable queue]
+  Browser["Browser: dashboards, logs, alerts, investigations"] --> Gateway["Montralog gateway: login, authorization and APIs"]
+  Apps["Instrumented applications"] --> Collector["OpenTelemetry Collector: durable queue"]
   Collector -->|Logs and traces| Gateway
-  Collector -->|Metrics endpoint| Prometheus[Prometheus]
-  Exporters[Server, Docker and Kubernetes exporters] -->|Scraped by| Prometheus
-  Gateway --> DB[(Application database: SQLite default / optional PostgreSQL)]
+  Collector -->|Metrics endpoint| Prometheus["Prometheus"]
+  Exporters["Server, Docker and Kubernetes exporters"] -->|Scraped by| Prometheus
+  Gateway --> DB[("Application database: SQLite default / optional PostgreSQL")]
   Gateway -->|Saved connection / fixed queries| Prometheus
-  Prometheus -->|Rules| Alertmanager[Alertmanager]
-  Alerts[Montralog notification worker] --> DB
+  Prometheus -->|Rules| Alertmanager["Alertmanager"]
+  Alerts["Montralog notification worker"] --> DB
   Alerts --> Prometheus
-  Alerts -->|Optional contact point| Slack[Slack]
-  Retention[Retention worker] --> DB
-  Agent[Optional investigation worker] --> DB
+  Alerts -->|Optional contact point| Slack["Slack"]
+  Retention["Retention worker"] --> DB
+  Agent["Optional investigation worker"] --> DB
   Agent -->|Bounded read-only tools| Prometheus
-  Agent --> Local[Local Ollama model]
-  Agent -. Explicit hosted consent .-> Hosted[Approved hosted/company model]
+  Agent --> Local["Local Ollama model"]
+  Agent -. Explicit hosted consent .-> Hosted["Approved hosted/company model"]
 ```
 
 The gateway serves the UI and authenticated APIs. The application database holds telemetry records, accounts, dashboards, alert state and investigations. Prometheus stores metric time series. The notification worker evaluates Montralog rules and persists delivery retries; Prometheus/Alertmanager have their own metric-rule pipeline. The optional investigation worker processes queued analyses independently of browser requests.

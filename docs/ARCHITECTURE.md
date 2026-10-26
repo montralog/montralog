@@ -11,7 +11,7 @@ flowchart LR
   Collector -->|Logs and traces| Gateway
   Collector -->|Metrics endpoint| Metrics[Prometheus]
   Exporters[Infrastructure exporters] -->|Scraped by| Metrics
-  Gateway --> DB[(SQLite / optional PostgreSQL)]
+  Gateway --> DB[("SQLite / optional PostgreSQL")]
   Gateway --> Metrics
   Metrics --> AM[Alertmanager]
   Notifications[Notification worker] --> DB
