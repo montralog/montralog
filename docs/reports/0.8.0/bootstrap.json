@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Docker-only setup",
+    "operator file ownership and private POSIX modes",
+    "no credential overwrite",
+    "independent tenant IDs/tokens/keys",
+    "port collision rejection",
+    "path traversal rejection"
+  ],
+  "limits": "Windows private-file access also depends on host ACLs; no customer data used."
+}

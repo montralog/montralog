@@ -1,0 +1,12 @@
+{
+  "version": "0.8.0",
+  "schema": 7,
+  "source_revision": "3c7a4bfcf598577c07ff69565ed05c3f338828ec",
+  "verification_run": "https://github.com/montralog/montralog/actions/runs/40376265345",
+  "release": "https://github.com/montralog/montralog/releases/tag/v0.8.0",
+  "image": "ghcr.io/montralog/montralog@sha256:1bd18840968c3e01eb833a83c6ab53ace48e5ea3096be35e1edd04863aa8d555",
+  "tests": {"python_versions": ["3.11", "3.13"], "discovered_per_version": 282, "passed_per_version": 280, "skipped_per_version": 2, "browser": 7, "renderer": 3, "real_local_model_synthetic_cases": 4},
+  "scan": {"known_image_vulnerabilities": 0, "static_high": 0, "static_medium": 28, "static_low": 2},
+  "all_ten_published_asset_checksums_verified": true,
+  "limits": ["Separate customer Docker stacks, not shared-database SaaS.", "New-agent separate review was partial, not external professional penetration testing.", "Short synthetic workload, not sustained capacity or SLA.", "Slack stubbed; hosted models and live identity tenants require operator verification."]
+}

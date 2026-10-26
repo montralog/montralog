@@ -1,0 +1,10 @@
+904ec123482ce6b484efd18f62383c697de3fa7f5f8439872c34ec1daeac2cc8  IMAGE_DIGESTS.txt
+11bece445d07d5c5098be459be608c4863c50eb9aceba29b55914284c72d6407  montralog-0.8.0-acceptance-reports.tar.gz
+c7899439ff3478f71560b1b5d7e00461ee2c7952f489e02f76738332be766e0e  montralog-0.8.0-ai-evaluation.tar.gz
+9ab6d6854a1db66291bf5b1469641aae8b9e34366a200222a3d94ac343e8cf3e  montralog-0.8.0-browser-tests.tar.gz
+bb44fd34a4c91a1531893159a96c09e2351ac1096a3d4a1e489b41868c9eec9a  montralog-0.8.0-dependencies.cdx.json
+302188430b8df2a13f1a64c5e23d073bd431aa7d1a99a01ec096c7d212bb8468  montralog-0.8.0-py3-none-any.whl
+b6b5fff93965b34e28fd65ef4e9d8379ac43445d1afcf168910b1234bd384d5b  montralog-0.8.0-security-reports.tar.gz
+3151fc70db8cc0aa1881ca21aaa920849754b8068c0d672b9c9d385436a31023  montralog-0.8.0-source.zip
+96ee60b78608ec0bf567caee7c8f607d4505b9e7f77e30aaab46012f3be0bda1  montralog-0.8.0.tar.gz
+aa1537fd5ffd8b4458add6c6d6513f74cad008c9c4fe8533d838b208eafe9525  montralog-0.8.0.tgz
