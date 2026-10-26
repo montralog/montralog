@@ -32,7 +32,7 @@ async function studioPanel(input,minutes){
   html+='<small class="panel-caption">Up to 100 log records, 100 patterns, 100 traces or 100 changes per query. Filters apply to this panel.</small>';
  }
  }catch(e){html=empty('Panel unavailable',e.message);}
- return `<article class="card studio-panel ${p.width==='full'?'panel-full':''}"><div class="section-head"><h2>${esc(title)}</h2>${typeof currentUser!=='undefined'&&currentUser?.role==='admin'?`<button data-ai-panel="${esc(encodeURIComponent(JSON.stringify({source_id:p.datasource||'',metric:p.metric||'cpu',service:p.service||'',environment:p.environment||'',minutes:Math.min(60,Number(minutes)),question:'Explain this panel: '+title})))}">Ask AI</button>`:''}<span class="badge">${esc(p.visual.toUpperCase())}</span></div>${html}</article>`;
+ return `<article class="card studio-panel ${p.width==='full'?'panel-full':''}"><div class="section-head"><h2>${esc(title)}</h2>${typeof currentUser!=='undefined'&&currentUser?.role==='admin'?`<button data-ai-panel="${esc(encodeURIComponent(JSON.stringify({source_id:p.datasource||'',metric:p.metric||'cpu',service:p.service||'',environment:p.environment||'',q:p.q||'',severity:p.severity||'',minutes:Math.min(60,Number(minutes)),question:'Explain this panel: '+title})))}">Ask AI</button>`:''}<span class="badge">${esc(p.visual.toUpperCase())}</span></div>${html}</article>`;
 }
 function panelEditor(){
  const p=editingPanel>=0?normalPanel(dashboardDraft.definition.panels[editingPanel]):{source:'metric',visual:'line',metric:'cpu',title:'',width:'half'};

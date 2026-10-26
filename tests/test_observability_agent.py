@@ -83,6 +83,16 @@ class AgentTests(test_investigations.InvestigationTests):
         context=json.dumps(result['body']['report']['context'])
         self.assertNotIn('hidden',context);self.assertNotIn('alice@example.com',context)
 
+    def test_panel_log_filters_are_preserved_without_filtering_changes(self):
+        from montralog.ingestion import ingest
+        ingest('logs',[{'service':'checkout','severity':'INFO','message':'Database timeout unrelated informational event'},{'service':'checkout','severity':'ERROR','message':'Unrelated error'}])
+        result=self.request('/api/control/investigations','POST',{'agentic':True,'service':'checkout','q':'Database timeout','severity':'ERROR'})
+        self.assertEqual(result['status'],200,result['body'])
+        bundle=result['body']['report']['evidence']
+        self.assertEqual(bundle['noise']['logs_in_window'],10)
+        self.assertEqual(bundle['scope']['severity'],'ERROR')
+        self.assertEqual(bundle['scope']['q'],'Database timeout')
+
     def test_changed_source_fails_before_model_or_metric_read(self):
         with self.local():
             self.queue_agent()

@@ -22,16 +22,25 @@ def safe_text(value,maximum=1000):
 
 def evidence(data):
     service=text(data.get('service',''),200);environment=text(data.get('environment',''),200)
+    query_text=text(data.get('q',''),200);severity=text(data.get('severity',''),10)
+    if severity not in ('','ERROR','FATAL','WARN','INFO','DEBUG','TRACE'):raise AccountError('Invalid log severity.')
     minutes=data.get('minutes',15)
     if type(minutes) is not int or not 1<=minutes<=60:raise AccountError('Choose a window from 1-60 minutes.')
     window_end=time.time();window_start=window_end-minutes*60
     clauses=['time>=?','time<=?'];values=[window_start,window_end]
     for field,value in (('service',service),('environment',environment)):
         if value:clauses.append(field+'=?');values.append(value)
+    # Log-only filters must not hide related changes or failed spans.
+    log_clauses=list(clauses);log_values=list(values)
+    if severity:log_clauses.append('severity=?');log_values.append(severity)
+    if query_text:
+        log_clauses.append("LOWER(message) LIKE LOWER(?) ESCAPE '\\'")
+        log_values.append('%'+query_text.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%')
+    log_where=' AND '.join(log_clauses)
     where=' AND '.join(clauses);items=[]
     with database() as db:
-        total=db.execute('SELECT COUNT(*) AS log_count,COUNT(DISTINCT pattern) AS pattern_count FROM logs WHERE '+where,values).fetchone()
-        groups=list(db.execute('SELECT pattern,COUNT(*) occurrences,MAX(id) sample FROM logs WHERE '+where+' GROUP BY pattern ORDER BY occurrences DESC,pattern LIMIT 12',values))
+        total=db.execute('SELECT COUNT(*) AS log_count,COUNT(DISTINCT pattern) AS pattern_count FROM logs WHERE '+log_where,log_values).fetchone()
+        groups=list(db.execute('SELECT pattern,COUNT(*) occurrences,MAX(id) sample FROM logs WHERE '+log_where+' GROUP BY pattern ORDER BY occurrences DESC,pattern LIMIT 12',log_values))
         for group in groups:
             row=db.execute('SELECT id,time,service,environment,severity,message,trace_id FROM logs WHERE id=?',(group['sample'],)).fetchone()
             items.append({'id':'L:'+str(row['id']),'type':'log','time':row['time'],'service':safe_text(row['service'],200),
@@ -42,7 +51,7 @@ def evidence(data):
         for row in db.execute("SELECT trace_id,span_id,time,service,name,duration_ms FROM spans WHERE "+where+" AND status='ERROR' ORDER BY time DESC LIMIT 10",values):
             items.append({'id':'S:'+row['trace_id']+':'+row['span_id'],'type':'failed_span','time':row['time'],'service':safe_text(row['service'],200),'name':safe_text(row['name'],500),'duration_ms':row['duration_ms']})
     # Never send attributes, API credentials, people, settings or database contents.
-    bundle={'tenant':tenant_id(),'scope':{'service':safe_text(service,200),'environment':safe_text(environment,200),'minutes':minutes,'start':window_start,'end':window_end},
+    bundle={'tenant':tenant_id(),'scope':{'service':safe_text(service,200),'environment':safe_text(environment,200),'q':safe_text(query_text,200),'severity':severity,'minutes':minutes,'start':window_start,'end':window_end},
         'evidence':items[:24],'noise':{'logs_in_window':total[0],'unique_patterns':total[1],
             'repeated_records':max(0,total[0]-total[1]),'model_log_excerpts':min(12,len(groups))},
         'limits':['Selected excerpts, not complete telemetry.','Temporal correlation does not establish causality.']}
@@ -86,7 +95,7 @@ def investigate(data,user):
     if agentic and data.get('alert_id'):
         with database() as db:alert=db.execute('SELECT definition FROM alert_rules WHERE id=?',(str(data['alert_id']),)).fetchone()
         if not alert:raise AccountError('Alert not found.',404)
-        definition=json.loads(alert[0]);data={**data,**{key:definition.get(key,'') for key in ('service','environment')}}
+        definition=json.loads(alert[0]);data={**data,**{key:definition.get(key,'') for key in ('service','environment','q','severity')}}
     bundle=evidence(data);use_model=data.get('use_model') is True
     profile=text(data.get('profile_id',''),40)
     agent=None
