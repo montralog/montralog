@@ -81,25 +81,39 @@ def reserve_budget(size):
 
 
 def investigate(data,user):
+    agentic=data.get('agentic') is True
+    if agentic and data.get('alert_id'):
+        with database() as db:alert=db.execute('SELECT definition FROM alert_rules WHERE id=?',(str(data['alert_id']),)).fetchone()
+        if not alert:raise AccountError('Alert not found.',404)
+        definition=json.loads(alert[0]);data={**data,**{key:definition.get(key,'') for key in ('service','environment')}}
     bundle=evidence(data);use_model=data.get('use_model') is True
+    profile=text(data.get('profile_id',''),40)
+    agent=None
+    if agentic:
+        from .observability_agent import context
+        agent=context(data,bundle)
     provider='evidence-only';model='none';cfg=None
     if use_model:
         if os.getenv('MONTRALOG_AI_ENABLED','').lower()!='true':raise AccountError('Enable an approved AI provider in the private Docker configuration.')
-        cfg=model_providers.config();provider=cfg['provider'];model=cfg['model']
+        cfg=model_providers.config(profile);provider=cfg['provider'];model=cfg['model']
         if not cfg['local'] and (os.getenv('MONTRALOG_AI_EGRESS','').lower()!='true' or data.get('confirm_egress') is not True):
             raise AccountError('Hosted AI requires operator egress opt-in and explicit evidence sharing confirmation.')
-    fingerprint=hashlib.sha256(json.dumps([bundle,provider,model,cfg['base'] if cfg else ''],sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps([bundle,provider,model,cfg['base'] if cfg else '',profile,agent],sort_keys=True).encode()).hexdigest()
     with database() as db:
         cached=db.execute("SELECT * FROM investigation_runs WHERE user_id=? AND fingerprint=? AND status IN ('complete','queued','running') AND created_at>? ORDER BY created_at DESC LIMIT 1",(user['id'],fingerprint,time.time()-300)).fetchone()
     if cached:return {'id':cached['id'],'status':cached['status'],'report':public_report(json.loads(cached['report'])),'cache_hit':True}
     report={'evidence':bundle,'analysis':{'summary':'Evidence collected. No model called.','hypotheses':[],'causality_proven':False},
         'provider':provider,'model':model,'usage':{},'remediation':'No infrastructure commands are executed by models.'}
+    report['profile_id']=profile
+    if agent:
+        report['_agent']=agent
+        report['context']={key:value for key,value in agent.items() if key!='source_fingerprint'}
     status='complete'
-    if use_model and bundle['evidence']:
+    if use_model and (bundle['evidence'] or agent):
         payload=json.dumps(bundle,ensure_ascii=False,allow_nan=False)
         with database() as db:
             if db.execute('SELECT COUNT(*) FROM investigation_runs').fetchone()[0]>=10000:raise AccountError('Investigation history capacity reached; apply retention.')
-        reserve_budget(len((SYSTEM+payload).encode())+1500)
+        reserve_budget(3*(30000+1500) if agent else len((SYSTEM+payload).encode())+1500)
         status='queued';report['analysis']['summary']='Queued for the private AI worker. No conclusion yet.'
         report['_base_fingerprint']=hashlib.sha256(cfg['base'].encode()).hexdigest()
         report['_egress_approved']=data.get('confirm_egress') is True
@@ -126,19 +140,29 @@ def process_one():
         row=db.execute("SELECT * FROM investigation_runs WHERE status='queued' ORDER BY created_at LIMIT 1"+lock).fetchone()
         if not row:return False
         row=dict(row)
-        db.execute("UPDATE investigation_runs SET status='running',lease_owner=?,lease_until=? WHERE id=?",(owner,now+600,row['id']))
+        db.execute("UPDATE investigation_runs SET status='running',lease_owner=?,lease_until=? WHERE id=?",(owner,now+1200,row['id']))
         db.execute('INSERT INTO access_audit VALUES (?,?,?,?,?)',(secrets.token_hex(16),row['user_id'],'investigation-attempt',row['id'],now))
     report=json.loads(row['report']);status='complete'
     try:
-        cfg=model_providers.config()
-        if os.getenv('MONTRALOG_AI_ENABLED','').lower()!='true':raise ValueError('AI disabled')
-        with database() as db:role=db.execute('SELECT role FROM user_roles WHERE user_id=?',(row['user_id'],)).fetchone()
-        if not role or role[0]!='admin':raise ValueError('Requesting administrator no longer authorized')
-        if cfg['provider']!=row['provider'] or cfg['model']!=row['model'] or hashlib.sha256(cfg['base'].encode()).hexdigest()!=report.get('_base_fingerprint'):
-            raise ValueError('Provider policy changed')
-        if not cfg['local'] and (os.getenv('MONTRALOG_AI_EGRESS','').lower()!='true' or not report.get('_egress_approved')):raise ValueError('Egress not approved')
-        result,usage=model_providers.generate(SYSTEM,json.dumps(report['evidence'],ensure_ascii=False,allow_nan=False))
-        report['analysis']=validated_model(result,report['evidence']);report['usage']=usage
+        def authorize():
+            cfg=model_providers.config(report.get('profile_id',''))
+            if os.getenv('MONTRALOG_AI_ENABLED','').lower()!='true':raise ValueError('AI disabled')
+            with database() as db:role=db.execute('SELECT role FROM user_roles WHERE user_id=?',(row['user_id'],)).fetchone()
+            if not role or role[0]!='admin':raise ValueError('Requesting administrator no longer authorized')
+            if cfg['provider']!=row['provider'] or cfg['model']!=row['model'] or hashlib.sha256(cfg['base'].encode()).hexdigest()!=report.get('_base_fingerprint'):
+                raise ValueError('Provider policy changed')
+            if not cfg['local'] and (os.getenv('MONTRALOG_AI_EGRESS','').lower()!='true' or not report.get('_egress_approved')):raise ValueError('Egress not approved')
+            return cfg
+        cfg=authorize()
+        if report.get('_agent'):
+            from .observability_agent import run
+            analysis,usage,trace=run(report,report.get('profile_id',''),authorize=authorize)
+            report['analysis']=analysis;report['usage']=usage;report['tool_trace']=trace
+        else:
+            payload=json.dumps(report['evidence'],ensure_ascii=False,allow_nan=False)
+            if report.get('profile_id'):result,usage=model_providers.generate(SYSTEM,payload,profile=report['profile_id'])
+            else:result,usage=model_providers.generate(SYSTEM,payload)
+            report['analysis']=validated_model(result,report['evidence']);report['usage']=usage
     except Exception:
         status='failed';report['analysis']={'summary':'Analysis failed validation, provider access or policy. Review configuration; no action was executed.','hypotheses':[],'causality_proven':False}
     with database() as db:
@@ -154,7 +178,7 @@ def route(method,data,user,environ):
             runs=[dict(row) for row in db.execute('SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? ORDER BY created_at DESC LIMIT 50',(user['id'],))]
         return {'items':runs,'providers':model_providers.PROVIDERS,'enabled':os.getenv('MONTRALOG_AI_ENABLED','').lower()=='true',
             'provider':os.getenv('MONTRALOG_AI_PROVIDER','ollama'),'model':os.getenv('MONTRALOG_AI_MODEL','qwen3:4b'),
-            'external_egress':os.getenv('MONTRALOG_AI_EGRESS','').lower()=='true','automatic_remediation':False}
+            'profiles':model_providers.public_profiles(),'agentic_tools':['metric_snapshot','metric_trend'],'external_egress':os.getenv('MONTRALOG_AI_EGRESS','').lower()=='true','automatic_remediation':False}
     if method!='POST':raise AccountError('Not found',404)
     require_csrf(environ,user)
     action=data.get('action','investigate')

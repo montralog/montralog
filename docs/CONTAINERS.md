@@ -7,7 +7,7 @@ Requirements: Docker Engine/Desktop with Linux containers and Compose v2. Publis
 Download the release source ZIP or check out its Git tag. From that folder in PowerShell or a POSIX shell:
 
 ```sh
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.7.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator

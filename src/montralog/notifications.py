@@ -99,6 +99,23 @@ def route(path,method,data,user,environ):
         channels=d.get('channels',[])
         if not isinstance(channels,list) or len(channels)>20 or not all(isinstance(c,str) for c in channels):raise AccountError('Invalid notification routes.')
         clean['channels']=list(dict.fromkeys(channels))
+        datasource=d.get('datasource','')
+        if not isinstance(datasource,str) or len(datasource)>64:raise AccountError('Invalid metric data source.')
+        if datasource:
+            from .connections import resolve
+            resolve(datasource)
+        clean['datasource']=datasource
+        runbook=d.get('runbook',{})
+        if not isinstance(runbook,dict) or set(runbook)-{'summary','checks','success_criteria'}:raise AccountError('Invalid runbook.')
+        from .validation import redact
+        checks=runbook.get('checks',[])
+        if not isinstance(checks,list) or len(checks)>8 or not all(isinstance(item,str) and 1<=len(item)<=500 for item in checks):raise AccountError('Runbooks allow up to eight short read-only checks.')
+        clean['runbook']={'checks':[redact(item) for item in checks]}
+        for field in ('summary','success_criteria'):
+            value=runbook.get(field,'')
+            if not isinstance(value,str) or len(value)>1000:raise AccountError('Runbook text is too long.')
+            clean['runbook'][field]=redact(value)
+
         with database() as db:
             for c in channels:
                 if not db.execute('SELECT id FROM notification_channels WHERE id=?',(c,)).fetchone():raise AccountError('Unknown channel.')
@@ -115,7 +132,7 @@ def route(path,method,data,user,environ):
 
 def evaluate(definition):
     if definition['source']=='metric':
-        result=prometheus('query',{'query':PANELS[definition['metric']][1]})
+        result=prometheus('query',{'query':PANELS[definition['metric']][1]},source_id=definition['datasource']) if definition.get('datasource') else prometheus('query',{'query':PANELS[definition['metric']][1]})
         if not result.get('available') or result.get('status')!='success':return None,'Metric backend unavailable'
         values=[float(s['value'][1]) for s in result.get('data',{}).get('result',[]) if math.isfinite(float(s['value'][1]))]
         if not values:return None,'No current metric samples'

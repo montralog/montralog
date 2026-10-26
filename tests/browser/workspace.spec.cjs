@@ -81,3 +81,36 @@ test('investigations show captured evidence and keep model analysis optional', a
   await expect(page.getByText('Browser fixture error', {exact:true})).toBeVisible();
   expect(await page.evaluate(() => window.__montralogXss)).toBeUndefined();
 });
+
+test('alert runbooks persist and open the evidence assistant', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="alerts"]').click();
+  await expect(page.locator('#studio-rule-form')).toBeVisible();
+  await page.locator('#studio-rule-form [name="name"]').fill('Browser runbook alert');
+  await page.locator('#studio-rule-form [name="runbook_summary"]').fill('Check the database dependency');
+  await page.locator('#studio-rule-form [name="runbook_checks"]').fill('Inspect timeout logs\nCompare database health');
+  await page.locator('#studio-rule-form [name="runbook_success"]').fill('Errors return to baseline');
+  await page.getByRole('button',{name:'Save rule',exact:true}).click();
+  const row=page.locator('tr').filter({hasText:'Browser runbook alert'});
+  await expect(row).toBeVisible();
+  await row.getByRole('button',{name:'Investigate',exact:true}).click();
+  await expect(page.locator('#ai-panel-dialog')).toBeVisible();
+  await expect(page.locator('#panel-ai-create [name="alert_id"]')).not.toHaveValue('');
+  await page.locator('#panel-ai-create button').click();
+  await expect(page.locator('#panel-ai-result')).toContainText('Evidence-linked advice');
+  await page.getByRole('button',{name:'Close AI assistant',exact:true}).click();
+  await row.getByRole('button',{name:'Edit',exact:true}).click();
+  await expect(page.locator('#studio-rule-form [name="runbook_summary"]')).toHaveValue('Check the database dependency');
+});
+
+test('dashboard panels open a scoped assistant without leaving the dashboard', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  const saved=page.locator('.dashboard-card').filter({has:page.getByRole('heading',{name:'Browser incident dashboard',exact:true})});
+  await saved.getByRole('button',{name:'Open \u2192',exact:true}).click();
+  await page.locator('[data-ai-panel]').first().click();
+  await expect(page.locator('#ai-panel-dialog')).toBeVisible();
+  await expect(page.locator('#panel-ai-create [name="question"]')).toHaveValue('Explain this panel: Checkout errors');
+  await page.getByRole('button',{name:'Close AI assistant',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Checkout errors',exact:true})).toBeVisible();
+});

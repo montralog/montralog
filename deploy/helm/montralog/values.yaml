@@ -1,7 +1,7 @@
 # Public release image; pin image.digest for production rollouts.
 image:
   repository: ghcr.io/montralog/montralog
-  tag: 0.7.0
+  tag: 0.8.0
   digest: ""
   pullPolicy: IfNotPresent
 imagePullSecrets: []
