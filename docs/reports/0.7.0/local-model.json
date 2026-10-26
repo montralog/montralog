@@ -1,0 +1,36 @@
+{
+  "result": "PASS",
+  "provider": "ollama",
+  "model": "qwen3:4b",
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case": "timeout",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 16.749,
+      "usage": {
+        "input": 178,
+        "output": 81
+      }
+    },
+    {
+      "case": "capacity",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 9.628,
+      "usage": {
+        "input": 178,
+        "output": 91
+      }
+    },
+    {
+      "case": "untrusted",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 14.897,
+      "usage": {
+        "input": 188,
+        "output": 140
+      }
+    }
+  ],
+  "limits": "Small local-model format/citation evaluation; not root-cause accuracy certification or hosted-provider validation."
+}

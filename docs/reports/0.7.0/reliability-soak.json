@@ -1,0 +1,97 @@
+{
+  "result": "PASS",
+  "image": "montralog:security",
+  "started_at_utc": "2026-10-26T06:52:21.816230+00:00",
+  "container_limits": {
+    "cpus": 1,
+    "memory_mib": 512,
+    "pids": 128
+  },
+  "workload": {
+    "requested_duration_seconds": 30,
+    "clients": 4,
+    "batch_size": 50,
+    "max_events": 100000,
+    "target_unique_events_per_second": 1000
+  },
+  "limits": [
+    "Disposable synthetic SQLite workload; not PostgreSQL/native failover or production sizing.",
+    "Only explicit idempotency keys are replayed; deduplication depends on receipt retention and credential scope.",
+    "Slack is stubbed and retry deadline is advanced; no external notifications are sent.",
+    "Gateway restart and verified application snapshot restore do not test disk/host failure or other backend volumes."
+  ],
+  "stage": "complete",
+  "image_id": "sha256:e331ddfe4342642954f920c1af9590286275802dcbdbca8a3f8244c30c9b800a",
+  "source_revision": "bd51221da55e05f0c294cb7468728b8c0268f405",
+  "ingestion": {
+    "acknowledged_unique_events": 30000,
+    "stored_events": 30000,
+    "missing_events": 0,
+    "extra_events": 0,
+    "elapsed_seconds": 30.229,
+    "unique_events_per_second": 992.44,
+    "allocated_batches": 600,
+    "acknowledged_batches": 600,
+    "event_cap_reached": false,
+    "batch_latency_ms": {
+      "p50": 7.046,
+      "p95": 218.956
+    },
+    "query_latency_ms": {
+      "count": 114,
+      "p50": 5.214,
+      "p95": 45.678
+    },
+    "transport": {
+      "requests": 835,
+      "http_retries": 0,
+      "network_retries": 0,
+      "terminal_errors": 0,
+      "duplicate_requests": 120
+    }
+  },
+  "alert_initial": {
+    "state": "pending",
+    "attempts": 1,
+    "incident": "firing"
+  },
+  "backup": {
+    "created": true,
+    "manifest_checksum_integrity_and_silo_verified": true,
+    "wrong_silo_rejected": true
+  },
+  "restart": {
+    "recovery_seconds": 1.247,
+    "before": 30000,
+    "after_restart": 30000,
+    "after_replay": 30000,
+    "replayed_batches": 5,
+    "duplicates_added": 0
+  },
+  "alert_recovery": {
+    "worker_process_recovery": true,
+    "firing_then_resolution": true,
+    "deliveries": [
+      {
+        "status": "sent",
+        "attempts": 2
+      },
+      {
+        "status": "sent",
+        "attempts": 1
+      }
+    ],
+    "external_sender": "stubbed",
+    "retry_deadline": "advanced in fixture"
+  },
+  "restore": {
+    "restored_logs": 30000,
+    "encrypted_credentials_verified": true,
+    "pending_delivery_restored": true,
+    "idempotency_receipts_restored": true
+  },
+  "cleanup": {
+    "container": true,
+    "volume": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "os": "3.24.3",
+  "os_packages": 29,
+  "python_packages": 7,
+  "high": 0,
+  "critical": 0,
+  "severity_counts": {
+    "UNKNOWN": 0,
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 0,
+    "CRITICAL": 0
+  },
+  "scope": "Scanner snapshot for this image; not an independent security audit"
+}

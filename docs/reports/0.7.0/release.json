@@ -1,0 +1,42 @@
+{
+  "version": "0.7.0",
+  "schema": 7,
+  "source_revision": "bd51221da55e05f0c294cb7468728b8c0268f405",
+  "merge_revision": "7579a28331e46a1a7994722f14280a6404518428",
+  "verification_run": "https://github.com/montralog/montralog/actions/runs/40281893403",
+  "release": "https://github.com/montralog/montralog/releases/tag/v0.7.0",
+  "image": "ghcr.io/montralog/montralog@sha256:e331ddfe4342642954f920c1af9590286275802dcbdbca8a3f8244c30c9b800a",
+  "tests": {
+    "python_versions": [
+      "3.11",
+      "3.13"
+    ],
+    "discovered_per_version": 236,
+    "passed_per_version": 234,
+    "skipped_per_version": 2,
+    "skip_reason": "SQLite-only backup cases in PostgreSQL subclasses; PostgreSQL requires native backup/PITR",
+    "browser": 5,
+    "renderer": 3,
+    "real_local_model_synthetic_cases": 3
+  },
+  "scan": {
+    "known_image_vulnerabilities": 0,
+    "static_high": 0,
+    "static_medium": 28,
+    "static_low": 2,
+    "static_note": "B608 SQL-construction warnings and B105 empty-secret defaults retained for review; clean image scan is not proof of application security"
+  },
+  "verified_download_checksums": [
+    "IMAGE_DIGESTS.txt",
+    "montralog-0.7.0-acceptance-reports.tar.gz",
+    "montralog-0.7.0-ai-evaluation.tar.gz",
+    "montralog-0.7.0-dependencies.cdx.json",
+    "montralog-0.7.0-security-reports.tar.gz"
+  ],
+  "limits": [
+    "Customer-silo Docker deployment, not shared-database SaaS.",
+    "Independent-agent review, not external professional penetration test.",
+    "Short synthetic load/restart tests, not sustained capacity/SLA.",
+    "Slack sender stubbed; hosted models and organization identity tenants need operator validation."
+  ]
+}
