@@ -56,13 +56,13 @@ def config(profile=''):
     return {'provider':provider,'model':model,'base':base,'key':key,'local':local,'origin':(parsed.hostname,port)}
 
 
-def generate(system,evidence,profile=''):
+def generate(system,evidence,profile='',response_schema=None):
     cfg=config(profile);provider=cfg['provider'];model=cfg['model'];base=cfg['base']
     limit=1500
     messages=[{'role':'system','content':system},{'role':'user','content':evidence}]
     headers={'Content-Type':'application/json'}
     if provider=='ollama':
-        url=base+'/api/chat';body={'model':model,'messages':messages,'stream':False,'think':False,'format':'json',
+        url=base+'/api/chat';body={'model':model,'messages':messages,'stream':False,'think':False,'format':response_schema or 'json',
             'options':{'num_predict':limit,'num_ctx':8192,'temperature':0},'keep_alive':'5m'}
     elif provider=='openai':
         url=base+'/responses';headers['Authorization']='Bearer '+cfg['key']

@@ -69,3 +69,5 @@ All agent metric reads use the captured investigation window, including follow-u
 An agent may return **insufficient evidence** with no hypothesis. The application does not require a model to invent a cause when relevant observations are absent.
 
 A malformed final analysis may be corrected within the same three-call cap and reservation. Invalid evidence is never displayed as an accepted hypothesis. Transport failures are not silently retried; exhausted corrections result in a failed report.
+
+Local Ollama agent responses use [schema-constrained output](https://ollama.com/blog/structured-outputs), including allowed evidence IDs and captured excerpt choices. Other provider adapters retain server-side validation and bounded corrections; a provider/model must be evaluated for the required output contract before adoption. Schema conformance still does not prove the model's causal explanation.
