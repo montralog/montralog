@@ -97,6 +97,14 @@ class AgentTests(test_investigations.InvestigationTests):
         self.assertEqual(result['report']['context']['alert']['runbook']['checks'],['Inspect database health'])
 
 class AbstentionTests(unittest.TestCase):
+    def test_last_call_schema_requires_final_answer_and_omits_repeat_reads(self):
+        bundle={'evidence':[{'id':'L:1','message':'Observed database timeout'}]}
+        final=observability_agent.response_schema(bundle,allow_tools=False)
+        self.assertEqual(final['properties']['tool_request']['anyOf'],[{'type':'null'}])
+        tools=observability_agent.response_schema(bundle,seen={('metric_snapshot','cpu')})['properties']['tool_request']['anyOf']
+        snapshot=next(item for item in tools if item.get('properties',{}).get('tool',{}).get('enum')==['metric_snapshot'])
+        self.assertNotIn('cpu',snapshot['properties']['metric']['enum'])
+
     def test_insufficient_evidence_can_abstain_without_inventing_a_cause(self):
         result=observability_agent.validate_final({'summary':'Insufficient evidence for a causal explanation','hypotheses':[],'missing_evidence':['No working metric source or relevant logs']},{'evidence':[]})
         self.assertEqual(result['verdict'],'insufficient_evidence');self.assertFalse(result['causality_proven'])

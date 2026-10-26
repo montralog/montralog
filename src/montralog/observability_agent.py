@@ -87,13 +87,18 @@ def validate_final(result,bundle):
     return analysis
 
 
-def response_schema(bundle):
+def response_schema(bundle,seen=(),allow_tools=True):
     ids=[item['id'] for item in bundle['evidence']]
     excerpts=list(dict.fromkeys(str(item.get('message',item.get('name','')))[:240] for item in bundle['evidence'] if len(str(item.get('message',item.get('name',''))))>=8))
     quote={'type':'object','properties':{'id':{'type':'string','enum':ids},'quote':{'type':'string','enum':excerpts}},'required':['id','quote'],'additionalProperties':False}
     hypothesis={'type':'object','properties':{'claim':{'type':'string'},'evidence_ids':{'type':'array','items':{'type':'string','enum':ids},'minItems':1,'maxItems':12},'evidence_quotes':{'type':'array','items':quote,'minItems':1,'maxItems':4},'uncertainty':{'type':'string'},'next_check':{'type':'string'}},'required':['claim','evidence_ids','evidence_quotes','uncertainty','next_check'],'additionalProperties':False}
-    tool={'type':'object','properties':{'tool':{'type':'string','enum':['metric_snapshot','metric_trend']},'metric':{'type':'string','enum':list(PANELS)}},'required':['tool','metric'],'additionalProperties':False}
-    return {'type':'object','properties':{'tool_request':{'anyOf':[{'type':'null'},tool]},'summary':{'type':'string'},'hypotheses':{'type':'array','items':hypothesis,'maxItems':3},'missing_evidence':{'type':'array','items':{'type':'string'},'maxItems':6}},'required':['tool_request','summary','hypotheses','missing_evidence'],'additionalProperties':False}
+    choices=[{'type':'null'}]
+    if allow_tools:
+        for name in ('metric_snapshot','metric_trend'):
+            metrics=[metric for metric in PANELS if (name,metric) not in seen]
+            if metrics:choices.append({'type':'object','properties':{'tool':{'type':'string','enum':[name]},'metric':{'type':'string','enum':metrics}},'required':['tool','metric'],'additionalProperties':False})
+    return {'type':'object','properties':{'tool_request':{'anyOf':choices},'summary':{'type':'string'},'hypotheses':{'type':'array','items':hypothesis,'maxItems':3},'missing_evidence':{'type':'array','items':{'type':'string'},'maxItems':6}},'required':['tool_request','summary','hypotheses','missing_evidence'],'additionalProperties':False}
+
 
 
 def run(report,profile='',authorize=lambda:None):
@@ -111,11 +116,11 @@ Every hypothesis MUST contain evidence_quotes (1-4 objects). Each quote MUST be 
     context_public={k:v for k,v in config.items() if k!='source_fingerprint'}
     seen={('metric_snapshot',config['metric'])};correction=None
     for step in range(MAX_CALLS):
-        payload=json.dumps({'context':context_public,'evidence':bundle,'tool_trace':trace,'format_correction':correction},ensure_ascii=False,allow_nan=False)
+        payload=json.dumps({'context':context_public,'evidence':bundle,'tool_trace':trace,'format_correction':correction,'remaining_tool_reads':MAX_CALLS-step-1},ensure_ascii=False,allow_nan=False)
         if len((instructions+payload).encode())>MAX_PROMPT_BYTES:raise ValueError('Agent evidence exceeds the approved prompt budget.')
         authorize()
-        if profile:result,usage=model_providers.generate(instructions,payload,profile=profile,response_schema=response_schema(bundle))
-        else:result,usage=model_providers.generate(instructions,payload,response_schema=response_schema(bundle))
+        if profile:result,usage=model_providers.generate(instructions,payload,profile=profile,response_schema=response_schema(bundle,seen,step<MAX_CALLS-1))
+        else:result,usage=model_providers.generate(instructions,payload,response_schema=response_schema(bundle,seen,step<MAX_CALLS-1))
         for key,value in usage.items():usage_total[key]=usage_total.get(key,0)+value
         request=result.get('tool_request')
         if request is None:
