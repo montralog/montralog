@@ -33,7 +33,7 @@ def main():
         parser.error('Bounded workload required: batches 1-10000, batch-size 1-1000, clients 1-64')
     suffix = secrets.token_hex(8)
     name, volume = 'mtl-acceptance-'+suffix, 'mtl-acceptance-data-'+suffix
-    read, ingest = secrets.token_urlsafe(40), secrets.token_urlsafe(40)
+    read, ingest = ('mtls1.acceptance-'+suffix+'.'+scope+'.'+secrets.token_urlsafe(40) for scope in ('read','ingest'))
     import base64
     key = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
     report = {'result': 'FAIL', 'image': args.image, 'platform': 'Docker Linux containers',

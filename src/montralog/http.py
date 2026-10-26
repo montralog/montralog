@@ -4,7 +4,7 @@ import sqlite3
 import urllib.parse
 from .config import VERSION, ROOT, MAX_BODY
 from .storage import database, StorageError
-from .ingestion import ingest
+from .ingestion import ingest,IdempotencyConflict
 from .otlp import otel_logs_or_spans
 from .queries import query_view
 from .metrics import PANELS, prometheus
@@ -23,7 +23,9 @@ def application(environ, start_response):
         headers.append(('X-Montralog-Tenant', tenant))
         if environ.get('HTTP_X_MONTRALOG_TENANT', tenant) != tenant:
             raise accounts.AccountError('Tenant does not match this deployment.', 403)
-        if path in ('/','/app.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
+        if path=='/investigations.js' and method=='GET':
+            content_type='application/javascript';body=(ROOT/'static'/'investigations.js').read_bytes()
+        elif path in ('/','/app.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
             filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
             body = (ROOT/'static'/filename).read_bytes()
         elif path in ('/healthz','/livez') and method == 'GET':
@@ -52,7 +54,13 @@ def application(environ, start_response):
             from . import studio, notifications
             user=accounts.session(environ)
             data=read_json(environ) if method=='POST' else {}
-            if path=='/api/control/identity':
+            if path=='/api/control/investigations':
+                from .investigations import route
+                body=route(method,data,user,environ)
+            elif path=='/api/control/runbooks':
+                from .investigations import runbooks
+                body=runbooks(method,data,user,environ)
+            elif path=='/api/control/identity':
                 from .identity import settings as identity_settings
                 body=identity_settings(method,data,user,environ)
             elif path=='/api/control/access':
@@ -113,17 +121,27 @@ def application(environ, start_response):
                     if len(raw) != length:
                         raise ValueError('Truncated request')
                     data = json.loads(raw)
+                    receipt=None
+                    receipt_value=environ.get('HTTP_IDEMPOTENCY_KEY','')
+                    if receipt_value:
+                        import hashlib,re,hmac
+                        if path=='/v1/metrics' or not re.fullmatch(r'[A-Za-z0-9_.:-]{16,128}',receipt_value):
+                            raise ValueError('Unsupported or invalid idempotency key')
+                        scoped=tenant_id()+'\0'+hashlib.sha256(candidate.encode()).hexdigest()+'\0'+path+'\0'+receipt_value
+                        receipt=(hashlib.sha256(scoped.encode()).hexdigest(),hmac.new(os.getenv('MONTRALOG_ENCRYPTION_KEY',os.getenv('MONTRALOG_INGEST_TOKEN','')).encode(),raw,hashlib.sha256).hexdigest())
                     if path=='/v1/metrics':
                         from .forwarding import metrics as forward_metrics
                         body=forward_metrics(raw)
                     elif path.startswith('/v1/'):
-                        otel_logs_or_spans(data, 'logs' if path.endswith('logs') else 'spans')
+                        otel_logs_or_spans(data, 'logs' if path.endswith('logs') else 'spans',receipt=receipt)
                         body = {}
                     else:
-                        body = {'accepted':ingest(path.split('/')[-1],data)}
+                        body = {'accepted':ingest(path.split('/')[-1],data,receipt=receipt)}
                         status = 201
             else:
                 status,body = 404,{'error':'Not found'}
+    except IdempotencyConflict:
+        status,body=409,{'error':'Idempotency key conflicts with an earlier payload.'}
     except accounts.AccountError as error:
         status,body = error.status,{'error':error.message}
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError, RecursionError):
@@ -136,7 +154,7 @@ def application(environ, start_response):
         status,body = 500,{'error':'Internal server error'}
     if not isinstance(body, bytes):
         body = json.dumps(body,allow_nan=False).encode()
-    labels = {302:'Found',200:'OK',201:'Created',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',429:'Too Many Requests',413:'Content Too Large',415:'Unsupported Media Type',500:'Internal Server Error',503:'Service Unavailable'}
+    labels = {302:'Found',200:'OK',201:'Created',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',409:'Conflict',429:'Too Many Requests',413:'Content Too Large',415:'Unsupported Media Type',500:'Internal Server Error',503:'Service Unavailable'}
     start_response(f'{status} {labels[status]}',headers+[('Content-Type',content_type),('Content-Length',str(len(body)))])
     return [body]
 

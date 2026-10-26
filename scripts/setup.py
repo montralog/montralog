@@ -15,12 +15,13 @@ if hasattr(os, 'geteuid') and os.geteuid() == 0:
     # when the bind-mounted checkout belongs to a non-root host operator.
     owner = root.stat()
     os.fchown(fd, owner.st_uid, owner.st_gid)
+tenant='tenant-'+secrets.token_hex(8)
 with os.fdopen(fd, 'w') as out:
-    out.write('MONTRALOG_TENANT_ID=tenant-' + secrets.token_hex(8) + '\n')
-    out.write('MONTRALOG_READ_TOKEN=' + secrets.token_urlsafe(36) + '\n')
-    out.write('MONTRALOG_INGEST_TOKEN=' + secrets.token_urlsafe(36) + '\n')
+    out.write('MONTRALOG_TENANT_ID=' + tenant + '\n')
+    out.write('MONTRALOG_READ_TOKEN=mtls1.'+tenant+'.read.' + secrets.token_urlsafe(36) + '\n')
+    out.write('MONTRALOG_INGEST_TOKEN=mtls1.'+tenant+'.ingest.' + secrets.token_urlsafe(36) + '\n')
     out.write('MONTRALOG_ENCRYPTION_KEY=' + base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('ascii') + '\n')
-    out.write('MONTRALOG_ENCRYPTION_REQUIRED=true\n')
+    out.write('MONTRALOG_ENCRYPTION_REQUIRED=true\nMONTRALOG_SILO_STRICT=true\n')
     out.write('RETENTION_DAYS=7\n')
 print('Created .env. Keep it private and restrict Windows file permissions.')
 print('Run: docker compose pull, then docker compose up -d --wait')

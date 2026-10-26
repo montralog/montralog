@@ -60,3 +60,7 @@ Recover a lost active key from its separate protected backup. Without any origin
 ## Release verification
 
 [Public reports](reports/README.md) include scan JSON, inventories, static findings, checksums, image digest, provenance and failure/recovery results. Pin the released image digest. See [production acceptance](PRODUCTION.md). Older Helm artifacts remain available for compatibility; Docker is the documented installation path for this release line.
+
+## Version 0.7 upgrade
+
+Follow [ASSURANCE.md](ASSURANCE.md) for rotated customer-bound credentials, the backup manifest, verified restore commands and the legacy-image recovery path. The commands above describe the 0.6 release; do not skip the 0.7 upgrade steps.

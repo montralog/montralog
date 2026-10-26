@@ -91,11 +91,20 @@ def login(data, environ):
     key = hashlib.sha256((environ.get('REMOTE_ADDR', '') + ':' + username).encode()).hexdigest()
     now = time.time()
     with database() as db:
+        if postgres_enabled():
+            db.execute('SELECT pg_advisory_xact_lock(76674702)')
+        else:
+            db.execute('BEGIN IMMEDIATE')
         db.execute('DELETE FROM login_attempts WHERE attempted_at<?', (now-900,))
-        count = db.execute('SELECT COUNT(*) FROM login_attempts WHERE attempt_key=?', (key,)).fetchone()[0]
-        if count >= 10:
-            raise AccountError('Too many attempts. Try again in 15 minutes.', 429)
-        db.execute('INSERT INTO login_attempts(id,attempt_key,attempted_at) VALUES (?,?,?)', (secrets.token_hex(16), key, now))
+        source = hashlib.sha256(environ.get('REMOTE_ADDR','').encode()).hexdigest()
+        account = hashlib.sha256(username.encode()).hexdigest()
+        budgets=((key,10),('source:'+source,30),('account:'+account,15),('global',300))
+        for attempt_key,limit in budgets:
+            count=db.execute('SELECT COUNT(*) FROM login_attempts WHERE attempt_key=?',(attempt_key,)).fetchone()[0]
+            if count>=limit:
+                raise AccountError('Too many attempts. Try again in 15 minutes.',429)
+        for attempt_key,_ in budgets:
+            db.execute('INSERT INTO login_attempts(id,attempt_key,attempted_at) VALUES (?,?,?)',(secrets.token_hex(16),attempt_key,now))
         row = db.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
     # Equal-cost verification for unknown usernames avoids easy account enumeration.
     encoded = row['password_hash'] if row else f'{ITERATIONS}$' + '00'*16 + '$' + '00'*32

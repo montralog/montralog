@@ -16,6 +16,7 @@ from wsgiref.simple_server import make_server, WSGIRequestHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 from montralog import storage
+from montralog.security import machine_token
 from montralog.accounts import create_account
 from montralog.http import application
 
@@ -27,7 +28,7 @@ class QuietHandler(WSGIRequestHandler):
 
 def main():
     # This process ignores operator storage and credentials. Only temporary data is used.
-    read_token, ingest_token = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    read_token, ingest_token = machine_token('read'), machine_token('ingest')
     os.environ.update(MONTRALOG_DATABASE_URL='', MONTRALOG_READ_TOKEN=read_token,
                       MONTRALOG_INGEST_TOKEN=ingest_token, MONTRALOG_COOKIE_SECURE='false')
     with tempfile.TemporaryDirectory(prefix='montralog-review-') as temporary:

@@ -1,0 +1,11 @@
+ALTER TABLE deployment_identity ADD COLUMN key_fingerprint TEXT NOT NULL DEFAULT '';
+ALTER TABLE alert_states ADD COLUMN last_known_state TEXT NOT NULL DEFAULT 'normal';
+UPDATE alert_states SET last_known_state=state WHERE state IN ('normal','pending','firing');
+ALTER TABLE notification_outbox ADD COLUMN lease_owner TEXT NOT NULL DEFAULT '';
+ALTER TABLE notification_outbox ADD COLUMN lease_until DOUBLE PRECISION NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS ingest_receipts (receipt_key TEXT PRIMARY KEY, body_hash TEXT NOT NULL, accepted INTEGER NOT NULL, created_at DOUBLE PRECISION NOT NULL);
+CREATE INDEX IF NOT EXISTS receipts_created ON ingest_receipts(created_at);
+CREATE TABLE IF NOT EXISTS investigation_runs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, fingerprint TEXT NOT NULL, status TEXT NOT NULL, report TEXT NOT NULL, provider TEXT NOT NULL, model TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL, lease_owner TEXT NOT NULL DEFAULT '', lease_until DOUBLE PRECISION NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS investigations_user ON investigation_runs(user_id,created_at);
+CREATE TABLE IF NOT EXISTS ai_budget (bucket TEXT PRIMARY KEY, requests INTEGER NOT NULL, reserved_tokens INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS remediation_plans (id TEXT PRIMARY KEY, run_id TEXT NOT NULL, owner_id TEXT NOT NULL, action TEXT NOT NULL, definition TEXT NOT NULL, state TEXT NOT NULL, expires_at DOUBLE PRECISION NOT NULL, approved_by TEXT NOT NULL, result TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL);

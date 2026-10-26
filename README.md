@@ -66,6 +66,10 @@ Choose a unique password at the prompt. Fresh installations have no shared defau
 
 Check startup with `docker compose ps` and open the workspace. Follow the [Docker guide](docs/CONTAINERS.md) for upgrades, backup and recovery. For multiple customers, use [separate customer stacks](docs/TENANCY.md); do not reuse credentials or volumes.
 
+## Investigations and assurance
+
+The next 0.7.0 release adds customer-bound credentials, verified backups, replay-safe ingestion, alert recovery tests and optional local AI investigations. See [isolation and backup assurance](docs/ASSURANCE.md), [AI setup and limitations](docs/AI-INVESTIGATIONS.md), and the [independent-agent review](docs/reports/0.7.0/security-review.md). Release candidates on this branch are not a production certification.
+
 ## Start exploring
 
 1. Open **Connect data** and test the bundled Prometheus endpoint, `http://prometheus:9090`.

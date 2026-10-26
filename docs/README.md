@@ -45,3 +45,6 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 Historical versioned verification reports describe their stated versions only. They do not certify the current application or a different deployment.
 
 Historical Helm/Kubernetes guides remain for existing installations; use the Docker guide for new installations.
+
+- [Isolation, backup and reliability assurance](ASSURANCE.md)
+- [Optional AI investigations](AI-INVESTIGATIONS.md)

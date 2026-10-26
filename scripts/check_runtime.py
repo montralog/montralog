@@ -7,15 +7,16 @@ import tempfile
 from cryptography.fernet import Fernet
 import psycopg
 from montralog.config import VERSION
+from montralog.security import machine_token
 
-assert VERSION == '0.6.0'
+assert VERSION == '0.7.0'
 assert os.geteuid() == 10001
 assert platform.machine() == 'x86_64'
 assert not Path('/app/.env').exists()
 assert os.getenv('MONTRALOG_ENCRYPTION_REQUIRED') == 'true'
 with tempfile.TemporaryDirectory(prefix='montralog-runtime-') as temporary:
     os.environ.update(MONTRALOG_DB=str(Path(temporary)/'runtime.db'), MONTRALOG_DATABASE_URL='',
-        MONTRALOG_READ_TOKEN=secrets.token_urlsafe(32), MONTRALOG_INGEST_TOKEN=secrets.token_urlsafe(32),
+        MONTRALOG_READ_TOKEN=machine_token('read'), MONTRALOG_INGEST_TOKEN=machine_token('ingest'),
         MONTRALOG_ENCRYPTION_KEY='')
     from montralog.secret_store import cipher, seal, reveal
     from montralog.storage import StorageError

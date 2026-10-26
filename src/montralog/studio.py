@@ -49,7 +49,7 @@ def clean_definition(definition):
     return {'minutes':minutes,'panels':clean}
 
 def token_valid(raw,scope):
-    if not raw.startswith('mtl_') or not 40<=len(raw)<=100:return False
+    if not raw.startswith('mtl_') or not 40<=len(raw)<=160:return False
     digest=hashlib.sha256(raw.encode()).hexdigest()
     with database() as db:
         row=db.execute('SELECT id FROM api_tokens WHERE token_hash=? AND scope=? AND revoked=0 AND expires_at>?',(digest,scope,time.time())).fetchone()
@@ -68,7 +68,8 @@ def tokens_route(method,data,user,environ):
     name=data.get('name','');scope=data.get('scope','read');days=int(data.get('days',30))
     if not isinstance(name,str) or not 1<=len(name.strip())<=80 or scope not in ('read','ingest') or days not in (1,7,30,90):
         raise AccountError('Choose a name, read/ingest scope and a supported expiry.')
-    raw='mtl_'+secrets.token_urlsafe(36);now=time.time()
+    from .tenancy import tenant_id
+    raw='mtl_'+tenant_id()+'.'+secrets.token_urlsafe(36);now=time.time()
     with database() as db:
         if db.execute('SELECT COUNT(*) FROM api_tokens WHERE revoked=0 AND expires_at>?',(now,)).fetchone()[0]>=100:
             raise AccountError('Maximum of 100 active API tokens reached.')

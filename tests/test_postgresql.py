@@ -13,7 +13,7 @@ class PostgresGatewayTests(test_gateway.GatewayTests):
         self.env=patch.dict(os.environ,{
             'MONTRALOG_DATABASE_URL':os.environ['MONTRALOG_TEST_DATABASE_URL'],
             'MONTRALOG_READ_TOKEN':'r'*40,'MONTRALOG_INGEST_TOKEN':'w'*40,
-            'RETENTION_DAYS':'7','PROMETHEUS_URL':'','MONTRALOG_ALLOWED_DESTINATIONS':'127.0.0.1:9090,localhost:4318'})
+            'MONTRALOG_SILO_STRICT':'false','MONTRALOG_TENANT_ID':'default','RETENTION_DAYS':'7','PROMETHEUS_URL':'','MONTRALOG_ALLOWED_DESTINATIONS':'127.0.0.1:9090,localhost:4318'})
         self.env.start()
         # Require an explicit test URL and database name before clearing test records.
         from urllib.parse import urlparse
@@ -21,7 +21,7 @@ class PostgresGatewayTests(test_gateway.GatewayTests):
             raise RuntimeError('Tests require an isolated database named montralog_test')
         storage.initialize()
         with storage.database() as db:
-            db.execute('TRUNCATE identity_states,external_identities,identity_providers,access_members,access_collections,access_audit,logs,spans,samples,events,sessions,dashboards,users,login_attempts,user_roles,api_tokens,notification_channels,alert_rules,alert_states,notification_inbox,notification_outbox,worker_heartbeat,data_sources RESTART IDENTITY')
+            db.execute('TRUNCATE remediation_plans,investigation_runs,ai_budget,ingest_receipts,identity_states,external_identities,identity_providers,access_members,access_collections,access_audit,logs,spans,samples,events,sessions,dashboards,users,login_attempts,user_roles,api_tokens,notification_channels,alert_rules,alert_states,notification_inbox,notification_outbox,worker_heartbeat,data_sources RESTART IDENTITY')
 
     def tearDown(self):
         self.env.stop()
@@ -104,3 +104,19 @@ import test_secret_store
 class PostgresSecretStoreTests(test_secret_store.SecretStoreTests):
     setUp = PostgresGatewayTests.setUp
     tearDown = PostgresGatewayTests.tearDown
+
+import test_delivery_reliability
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'),'No isolated PostgreSQL test database supplied')
+class PostgresDeliveryReliabilityTests(test_delivery_reliability.DeliveryReliabilityTests):
+    def setUp(self):
+        with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
+            super().setUp()
+    tearDown=PostgresGatewayTests.tearDown
+
+import test_investigations
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'),'No isolated PostgreSQL test database supplied')
+class PostgresInvestigationTests(test_investigations.InvestigationTests):
+    def setUp(self):
+        with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
+            super().setUp()
+    tearDown=PostgresGatewayTests.tearDown

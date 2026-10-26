@@ -1,0 +1,45 @@
+# Optional local AI. Use together with compose.yaml; no model service host port.
+services:
+  gateway:
+    environment: &ai
+      MONTRALOG_AI_ENABLED: "true"
+      MONTRALOG_AI_PROVIDER: ollama
+      MONTRALOG_AI_MODEL: ${MONTRALOG_AI_MODEL:-qwen3:4b}
+      MONTRALOG_AI_URL: http://ollama:11434
+      MONTRALOG_AI_LOCAL_HTTP: "true"
+      MONTRALOG_AI_EGRESS: "false"
+      MONTRALOG_AI_DAILY_REQUESTS: ${MONTRALOG_AI_DAILY_REQUESTS:-20}
+      MONTRALOG_AI_DAILY_TOKEN_BUDGET: ${MONTRALOG_AI_DAILY_TOKEN_BUDGET:-100000}
+  investigations:
+    image: ghcr.io/montralog/montralog:0.7.0
+    environment:
+      <<: *ai
+      MONTRALOG_SILO_STRICT: "true"
+      MONTRALOG_TENANT_ID: ${MONTRALOG_TENANT_ID:?Run setup first}
+      MONTRALOG_ENCRYPTION_KEY: ${MONTRALOG_ENCRYPTION_KEY:?Run setup first}
+      MONTRALOG_ENCRYPTION_REQUIRED: "true"
+      MONTRALOG_DB: /data/montralog.db
+    command: [python, -m, montralog.investigations]
+    volumes: [montralog-data:/data]
+    depends_on:
+      gateway: {condition: service_healthy}
+      ollama: {condition: service_started}
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 64
+    restart: unless-stopped
+  ollama:
+    image: ollama/ollama:0.40.11@sha256:459985308d740b99071719baec2740a60f5b2b2d9b835c171991ae25690203da
+    volumes: [ollama-data:/root/.ollama]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 6g
+    cpus: 4
+    pids_limit: 256
+    restart: unless-stopped
+volumes:
+  ollama-data:
+

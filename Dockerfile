@@ -2,11 +2,11 @@ FROM python:3.13-alpine@sha256:bf12ecc0bea3f171d55145dd02c78b5eeb09f30ee2ac9cc2b
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/montralog/montralog" \
       org.opencontainers.image.url="https://github.com/montralog/montralog" \
-      org.opencontainers.image.version="0.6.0" \
+      org.opencontainers.image.version="0.7.0" \
       org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="Montralog monitoring, tracing, logging and tracking"
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db MONTRALOG_ENCRYPTION_REQUIRED=true
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db MONTRALOG_ENCRYPTION_REQUIRED=true MONTRALOG_SILO_STRICT=true
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
