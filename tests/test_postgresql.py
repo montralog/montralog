@@ -120,3 +120,10 @@ class PostgresInvestigationTests(test_investigations.InvestigationTests):
         with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
             super().setUp()
     tearDown=PostgresGatewayTests.tearDown
+import test_assurance
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'),'No isolated PostgreSQL test database supplied')
+class PostgresAssuranceTests(test_assurance.AssuranceTests):
+    setUp=PostgresGatewayTests.setUp
+    tearDown=PostgresGatewayTests.tearDown
+    @unittest.skip('SQLite snapshot command; PostgreSQL requires native backup/PITR')
+    def test_backup_private_integrity_restore_and_wrong_silo_key(self):pass

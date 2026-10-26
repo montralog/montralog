@@ -15,7 +15,7 @@ Templates are under [templates/](https://github.com/montralog/montralog/tree/mai
 
 Kubernetes 1.27+, Helm 3, a working persistent-volume storage class and access to the public Linux/amd64 Montralog image. The public Helm repository is https://montralog.github.io/montralog. The chart uses `ghcr.io/montralog/montralog:0.7.0` by default. Pin `image.digest` for production.
 
-Create namespace `observability`. Create a Secret named `montralog-auth` in that namespace containing distinct random `read-token` and `ingest-token` values of at least 32 characters each. Use protected files or a secret manager. Keep secret values out of Git, Helm values and command history. See the full [credentials guide](https://github.com/montralog/montralog/blob/main/docs/KUBERNETES.md#credentials).
+Create namespace `observability`. Create a Secret named `montralog-auth` in that namespace containing customer-bound `read-token` and `ingest-token` values. For the chart default customer identity `default`, use `mtls1.default.read.` and `mtls1.default.ingest.` followed by independent cryptographically random URL-safe strings of at least 43 characters each. Use protected files or a secret manager. Keep secret values out of Git, Helm values and command history. See the full [credentials guide](https://github.com/montralog/montralog/blob/main/docs/KUBERNETES.md#credentials).
 
 ## Install the released chart
 

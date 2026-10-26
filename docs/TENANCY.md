@@ -26,3 +26,5 @@ Open `http://localhost:8180`. Repeat with a different ID and ports. Generated `C
 Configure a separate hostname and TLS route for each remotely accessible customer. Never reuse environment files or keys, mount another customer's volume, join data networks or expose the Docker daemon to customers. Docker host/root operators remain trusted; stronger isolation against host compromise requires separate hosts/VMs.
 
 Tests cover database reassignment, wrong tenant headers, cross-customer tokens/sessions and separate storage/configuration. This establishes a tested silo boundary, not shared-database SaaS, billing/provisioning automation, independent security certification or HA. Follow [production acceptance](PRODUCTION.md).
+
+Version 0.7 adds strict token namespaces, master-key fingerprints, customer-derived ciphertext and an offline duplicate-configuration audit. Follow [ASSURANCE.md](ASSURANCE.md), including its 0.6 upgrade and restore steps.
