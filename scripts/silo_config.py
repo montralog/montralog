@@ -53,6 +53,9 @@ def upgrade(source,destination):
     values['MONTRALOG_SILO_STRICT']='true'
     values['MONTRALOG_ENCRYPTION_REQUIRED']='true'
     fd=os.open(destination,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+    if hasattr(os,'geteuid') and os.geteuid()==0:
+        owner=Path(source).stat()
+        os.fchown(fd,owner.st_uid,owner.st_gid)
     with os.fdopen(fd,'w') as out:out.writelines(k+'='+v+'\n' for k,v in values.items())
 
 
