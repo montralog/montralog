@@ -91,12 +91,17 @@ jobs:
         with:
           name: browser-test-report
           path: ${{ runner.temp }}/browser-report
+      - uses: actions/download-artifact@v4
+        with:
+          name: local-ai-evaluation
+          path: dist/ai-reports
       - name: Package security evidence and checksums
         run: |
           tar -czf dist/montralog-0.7.0-security-reports.tar.gz -C dist security-reports
           tar -czf dist/montralog-0.7.0-browser-tests.tar.gz -C "$RUNNER_TEMP" browser-report
           tar -czf dist/montralog-0.7.0-acceptance-reports.tar.gz -C dist acceptance-reports
-          rm -r dist/security-reports dist/acceptance-reports
+          tar -czf dist/montralog-0.7.0-ai-evaluation.tar.gz -C dist ai-reports
+          rm -r dist/security-reports dist/acceptance-reports dist/ai-reports
           cd dist
           sha256sum * > SHA256SUMS.txt
       - name: Publish stable release from the verified commit
