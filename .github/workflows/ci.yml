@@ -48,6 +48,7 @@ jobs:
         with: {python-version: "3.13"}
       - run: python scripts/setup.py
       - run: docker compose config --quiet
+      - run: docker compose -f compose.yaml -f deploy/docker/compose.ai.yaml config --quiet
       - run: docker compose run --rm --no-deps --entrypoint promtool prometheus check config /etc/prometheus/prometheus.yml
       - run: docker run --rm -v "$PWD/deploy/docker:/rules:ro" --workdir /rules --entrypoint promtool prom/prometheus:v3.13.3 test rules rule-tests.yml
       - run: docker compose run --rm --no-deps collector validate --config=/etc/otelcol/config.yml

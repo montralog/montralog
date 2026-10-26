@@ -30,10 +30,11 @@ class GatewayTests(unittest.TestCase):
         self.env.stop()
         self.tmp.cleanup()
 
-    def call(self,path,method='GET',payload=None,token='r'*40,query='',content_type='application/json',length=None):
+    def call(self,path,method='GET',payload=None,token='r'*40,query='',content_type='application/json',length=None,idempotency_key=None):
         data=json.dumps(payload).encode() if payload is not None else b''
         env={'PATH_INFO':path,'REQUEST_METHOD':method,'QUERY_STRING':query,'HTTP_AUTHORIZATION':'Bearer '+token,
              'CONTENT_TYPE':content_type,'CONTENT_LENGTH':str(len(data) if length is None else length),'wsgi.input':io.BytesIO(data)}
+        if idempotency_key is not None:env['HTTP_IDEMPOTENCY_KEY']=idempotency_key
         captured={}
         def start(status,headers):
             captured.update(status=int(status.split()[0]),headers=dict(headers))

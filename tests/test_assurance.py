@@ -99,3 +99,14 @@ class AssuranceTests(unittest.TestCase):
         with storage.database() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM logs').fetchone()[0],0)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM ingest_receipts').fetchone()[0],0)
+
+    def test_http_idempotency_replay_conflict_and_private_digest(self):
+        key='synthetic-receipt-001'
+        items=[{'service':'checkout','message':'password=low-entropy'}]
+        args=('/api/logs','POST',items,'w'*40)
+        self.assertEqual(self.call(*args,idempotency_key=key)[0]['status'],201)
+        self.assertEqual(self.call(*args,idempotency_key=key)[0]['status'],201)
+        self.assertEqual(self.call('/api/logs','POST',[{'service':'checkout','message':'changed'}],'w'*40,idempotency_key=key)[0]['status'],409)
+        self.assertEqual(self.call('/api/overview')[1]['totals']['logs'],1)
+        with storage.database() as db:stored=db.execute('SELECT body_hash FROM ingest_receipts').fetchone()[0]
+        self.assertNotEqual(stored,hashlib.sha256(json.dumps(items).encode()).hexdigest())
