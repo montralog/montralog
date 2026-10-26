@@ -1,6 +1,6 @@
 # Montralog documentation
 
-Start with the [repository quickstart](../README.md#quickstart), then follow the evaluation walkthrough.
+Start with the [repository quickstart](../README.md#quickstart-docker), then follow the evaluation walkthrough.
 
 ## Install and deploy
 
@@ -27,11 +27,13 @@ Start with the [repository quickstart](../README.md#quickstart), then follow the
 - [Published scan and acceptance reports](reports/README.md)
 - [Test cases and execution](TESTING.md)
 
-- [Current security changes and upgrade](SECURITY-0.6.0.md)
-- [Current release notes](RELEASE-0.6.0.md)
+- [Current release evidence](reports/0.8.0/README.md)
+- [Agent review scope](reports/0.8.0/review.md)
+- [Historical 0.6 security changes and upgrade](SECURITY-0.6.0.md)
+- [Current release notes](RELEASE-0.8.0.md)
 - [Historical 0.5.1 verification](SECURITY_VERIFICATION-0.5.1.md)
 
-- [Executed functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
+- [Executed functional review â€” 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
 
 - [Project structure](PROJECT_STRUCTURE.md)
 - [Architecture](ARCHITECTURE.md)

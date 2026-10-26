@@ -1,11 +1,11 @@
 <p align="center"><img src="docs/assets/montralog-mark.svg" width="96" alt="Montralog"></p>
 <h1 align="center">Montralog</h1>
-<p align="center"><strong>Monitoring · Tracing · Logging · Tracking</strong><br>Self-hosted observability with evidence-first AI investigations.</p>
-<p align="center"><a href="#see-it-in-action">Screenshots</a> · <a href="#quickstart-docker">Install</a> · <a href="#architecture">Architecture</a> · <a href="#configure-your-ai-model">AI setup</a> · <a href="docs/README.md">Documentation</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+<p align="center"><strong>Monitoring Â· Tracing Â· Logging Â· Tracking</strong><br>Self-hosted observability with evidence-first AI investigations.</p>
+<p align="center"><a href="#see-it-in-action">Screenshots</a> Â· <a href="#quickstart-docker">Install</a> Â· <a href="#architecture">Architecture</a> Â· <a href="#configure-your-ai-model">AI setup</a> Â· <a href="docs/README.md">Documentation</a> Â· <a href="CONTRIBUTING.md">Contribute</a></p>
 
 Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timelines and alerts into one workspace. Start without AI, or connect an operator-approved model to investigate captured evidence and recommend checks. Run it on your own infrastructure with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Version 0.8.0** introduces a bounded, read-only investigation agent, dashboard assistance, alert runbooks and selectable model profiles. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) · [Release verification](https://github.com/montralog/montralog/actions/runs/40376265345) · [Public evidence](docs/reports/0.8.0/README.md).
+**Version 0.8.0** introduces a bounded, read-only investigation agent, dashboard assistance, alert runbooks and selectable model profiles. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) Â· [Release verification](https://github.com/montralog/montralog/actions/runs/40376265345) Â· [Public evidence](docs/reports/0.8.0/README.md).
 
 ## What you can do
 
@@ -21,6 +21,8 @@ Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timeli
 | Use company login | Entra ID, Google Workspace and Okta OIDC configuration; requires your registration and live validation |
 | Monitor infrastructure | Instrument applications and connect exporters for servers, Docker and Kubernetes; optional host/Docker agent |
 | Operate customer stacks | Separate database, credentials, encryption key, network and volumes per customer |
+
+<a id="see-montralog-in-action"></a>
 
 ## See it in action
 
@@ -49,6 +51,8 @@ From a panel choose **Ask AI**, or from an alert choose **Investigate**. The age
 In this demo, timeout logs reported **100/100 connections**, a deployment changed the pool from **20 to 100**, and resource samples showed **96.5% CPU / 92% memory**. The agent inspected CPU, then requested memory and container CPU. It identified missing database limits and load measurements; the application retained the result as an **unverified hypothesis**.
 
 ![Literal evidence, missing database measurements and the agent's read-only metric tool trace](docs/assets/screenshots/agent-evidence.png)
+
+<a id="quickstart"></a>
 
 ## Quickstart: Docker
 
