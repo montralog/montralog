@@ -45,3 +45,7 @@ The load probe uses disposable Docker containers, synthetic data and stubbed Sla
 ## Version 0.7.0
 
 See the [independent-agent review and validation scope](0.7.0/README.md). Release assets publish exact-image scans, inventories, acceptance measurements and local-model evaluation; older version reports are retained as historical evidence.
+
+## Version 0.8.0
+
+See [published 0.8.0 evidence](0.8.0/README.md) for exact-image scans, test counts, load/recovery measurements, four real local-model evaluation cases and the supplementary live synthetic agent demo. The new-agent review was partial; its scope is explicit.

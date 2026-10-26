@@ -1,0 +1,69 @@
+{
+  "result": "PASS",
+  "provider": "ollama",
+  "model": "qwen3:4b",
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case": "timeout",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 10.008,
+      "usage": {
+        "input": 178,
+        "output": 91
+      }
+    },
+    {
+      "case": "capacity",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 6.399,
+      "usage": {
+        "input": 178,
+        "output": 91
+      }
+    },
+    {
+      "case": "untrusted",
+      "valid_json_and_scoped_citations": true,
+      "latency_seconds": 9.658,
+      "usage": {
+        "input": 188,
+        "output": 139
+      }
+    },
+    {
+      "case": "read-only-agent",
+      "valid_json_literal_quotes_and_scoped_citations": true,
+      "latency_seconds": 75.52,
+      "usage": {
+        "input": 2753,
+        "output": 683
+      },
+      "tool_trace": [
+        {
+          "step": 0,
+          "tool": "metric_snapshot",
+          "metric": "cpu",
+          "evidence_id": "M:1ef7e8956fa3713b",
+          "read_only": true
+        },
+        {
+          "step": 1,
+          "tool": "metric_snapshot",
+          "metric": "memory",
+          "evidence_id": "M:36aece970d7e56d5",
+          "read_only": true
+        },
+        {
+          "step": 2,
+          "tool": "metric_snapshot",
+          "metric": "container_cpu",
+          "evidence_id": "M:0f211d42cd2e0c4b",
+          "read_only": true
+        }
+      ],
+      "metric_backend": "synthetic fixture; model inference is real"
+    }
+  ],
+  "limits": "Small local-model format/citation evaluation; not root-cause accuracy certification or hosted-provider validation."
+}

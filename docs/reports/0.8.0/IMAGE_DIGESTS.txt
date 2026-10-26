@@ -1,0 +1,1 @@
+ghcr.io/montralog/montralog@sha256:1bd18840968c3e01eb833a83c6ab53ace48e5ea3096be35e1edd04863aa8d555
