@@ -63,3 +63,7 @@ MONTRALOG_AI_EGRESS=true
 `models.example.com` is a placeholder, not a working provider. Use your approved real endpoint/model. Protect the environment file and never publish its values. Profile keys can alternatively come from named process environment variables. The optional Compose file maps the profile/key JSON to gateway and worker; a bare host variable must be explicitly passed if you use that alternative. Restart both services after a profile change. Hosted profiles require HTTPS and per-investigation approval. Private company endpoints also need an exact `hostname:port` entry in `MONTRALOG_ALLOWED_DESTINATIONS`; this does not permit metadata/link-local endpoints. Keep default-model and profile settings consistent on gateway and worker.
 
 Local models require the selected weights to be downloaded to Ollama. Hosted profiles support OpenAI Responses, compatible chat completions, Anthropic Messages and Gemini generateContent; their real credentials, entitlements and model behavior require operator validation. The browser receives only profile IDs, provider names and model names, never keys or endpoint credentials.
+
+All agent metric reads use the captured investigation window, including follow-up queries. Queue delay does not silently shift the metric window away from the log snapshot. Reports reused from the cache retain their original captured window.
+
+An agent may return **insufficient evidence** with no hypothesis. The application does not require a model to invent a cause when relevant observations are absent.

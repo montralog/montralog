@@ -24,7 +24,8 @@ def evidence(data):
     service=text(data.get('service',''),200);environment=text(data.get('environment',''),200)
     minutes=data.get('minutes',15)
     if type(minutes) is not int or not 1<=minutes<=60:raise AccountError('Choose a window from 1-60 minutes.')
-    clauses=['time>=?'];values=[time.time()-minutes*60]
+    window_end=time.time();window_start=window_end-minutes*60
+    clauses=['time>=?','time<=?'];values=[window_start,window_end]
     for field,value in (('service',service),('environment',environment)):
         if value:clauses.append(field+'=?');values.append(value)
     where=' AND '.join(clauses);items=[]
@@ -41,7 +42,7 @@ def evidence(data):
         for row in db.execute("SELECT trace_id,span_id,time,service,name,duration_ms FROM spans WHERE "+where+" AND status='ERROR' ORDER BY time DESC LIMIT 10",values):
             items.append({'id':'S:'+row['trace_id']+':'+row['span_id'],'type':'failed_span','time':row['time'],'service':safe_text(row['service'],200),'name':safe_text(row['name'],500),'duration_ms':row['duration_ms']})
     # Never send attributes, API credentials, people, settings or database contents.
-    bundle={'tenant':tenant_id(),'scope':{'service':safe_text(service,200),'environment':safe_text(environment,200),'minutes':minutes},
+    bundle={'tenant':tenant_id(),'scope':{'service':safe_text(service,200),'environment':safe_text(environment,200),'minutes':minutes,'start':window_start,'end':window_end},
         'evidence':items[:24],'noise':{'logs_in_window':total[0],'unique_patterns':total[1],
             'repeated_records':max(0,total[0]-total[1]),'model_log_excerpts':min(12,len(groups))},
         'limits':['Selected excerpts, not complete telemetry.','Temporal correlation does not establish causality.']}
@@ -98,7 +99,9 @@ def investigate(data,user):
         cfg=model_providers.config(profile);provider=cfg['provider'];model=cfg['model']
         if not cfg['local'] and (os.getenv('MONTRALOG_AI_EGRESS','').lower()!='true' or data.get('confirm_egress') is not True):
             raise AccountError('Hosted AI requires operator egress opt-in and explicit evidence sharing confirmation.')
-    fingerprint=hashlib.sha256(json.dumps([bundle,provider,model,cfg['base'] if cfg else '',profile,agent],sort_keys=True).encode()).hexdigest()
+    fingerprint_bundle={**bundle,'scope':{key:value for key,value in bundle['scope'].items() if key not in ('start','end')}}
+    fingerprint_agent={key:value for key,value in (agent or {}).items() if key not in ('window_start','window_end')}
+    fingerprint=hashlib.sha256(json.dumps([fingerprint_bundle,provider,model,cfg['base'] if cfg else '',profile,fingerprint_agent],sort_keys=True).encode()).hexdigest()
     with database() as db:
         cached=db.execute("SELECT * FROM investigation_runs WHERE user_id=? AND fingerprint=? AND status IN ('complete','queued','running') AND created_at>? ORDER BY created_at DESC LIMIT 1",(user['id'],fingerprint,time.time()-300)).fetchone()
     if cached:return {'id':cached['id'],'status':cached['status'],'report':public_report(json.loads(cached['report'])),'cache_hit':True}

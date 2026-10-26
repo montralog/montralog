@@ -26,6 +26,8 @@ class AgentTests(test_investigations.InvestigationTests):
             with patch.object(connections,'query',return_value=metric) as query,patch.object(model_providers,'generate',side_effect=replies) as model:
                 self.assertTrue(investigations.process_one());self.assertEqual(model.call_count,2)
                 self.assertEqual(query.call_args_list[0].args[1],'query');self.assertEqual(query.call_args_list[1].args[1],'query_range')
+                self.assertEqual(query.call_args_list[0].args[2]['time'],run['report']['evidence']['scope']['end'])
+                self.assertEqual(query.call_args_list[1].args[2]['end'],run['report']['evidence']['scope']['end'])
                 self.assertNotIn('never-send',model.call_args.args[1])
             opened=self.request('/api/control/investigations','POST',{'action':'open','id':run['id']})['body']
             self.assertEqual(opened['status'],'complete');self.assertEqual(len(opened['report']['tool_trace']),2)
@@ -84,6 +86,11 @@ class AgentTests(test_investigations.InvestigationTests):
         result=self.request('/api/control/investigations','POST',{'agentic':True,'alert_id':rule['body']['id'],'service':'unrelated'})['body']
         self.assertEqual(result['report']['evidence']['scope']['service'],'checkout')
         self.assertEqual(result['report']['context']['alert']['runbook']['checks'],['Inspect database health'])
+
+class AbstentionTests(unittest.TestCase):
+    def test_insufficient_evidence_can_abstain_without_inventing_a_cause(self):
+        result=observability_agent.validate_final({'summary':'Insufficient evidence for a causal explanation','hypotheses':[],'missing_evidence':['No working metric source or relevant logs']},{'evidence':[]})
+        self.assertEqual(result['verdict'],'insufficient_evidence');self.assertFalse(result['causality_proven'])
 
 class ProfileTests(unittest.TestCase):
     def test_approved_profiles_use_private_keys_without_global_env_changes(self):
