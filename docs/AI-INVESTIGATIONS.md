@@ -67,3 +67,5 @@ Local models require the selected weights to be downloaded to Ollama. Hosted pro
 All agent metric reads use the captured investigation window, including follow-up queries. Queue delay does not silently shift the metric window away from the log snapshot. Reports reused from the cache retain their original captured window.
 
 An agent may return **insufficient evidence** with no hypothesis. The application does not require a model to invent a cause when relevant observations are absent.
+
+A malformed final analysis may be corrected within the same three-call cap and reservation. Invalid evidence is never displayed as an accepted hypothesis. Transport failures are not silently retried; exhausted corrections result in a failed report.

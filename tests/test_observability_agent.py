@@ -59,6 +59,15 @@ class AgentTests(test_investigations.InvestigationTests):
                 investigations.process_one()
             opened=self.request('/api/control/investigations','POST',{'action':'open','id':run['id']})['body'];self.assertEqual(opened['status'],'failed')
 
+    def test_format_correction_stays_inside_reserved_call_limit(self):
+        with self.local():
+            run=self.queue_agent();invalid=self.final(run);invalid['hypotheses'][0].pop('evidence_quotes')
+            with patch.object(connections,'query',return_value={'available':False}),patch.object(model_providers,'generate',side_effect=[(invalid,{}),(self.final(run),{})]) as model:
+                investigations.process_one();self.assertEqual(model.call_count,2)
+            opened=self.request('/api/control/investigations','POST',{'action':'open','id':run['id']})['body']
+            self.assertEqual(opened['status'],'complete')
+            self.assertTrue(any(t['tool']=='analysis-format-correction' for t in opened['report']['tool_trace']))
+
     def test_three_call_limit_and_no_fourth_provider_request(self):
         with self.local():
             self.queue_agent()
