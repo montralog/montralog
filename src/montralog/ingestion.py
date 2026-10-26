@@ -5,7 +5,11 @@ from .storage import database
 from .config import MAX_BATCH
 
 
-def ingest(kind, items):
+class IdempotencyConflict(ValueError):
+    pass
+
+
+def ingest(kind, items, receipt=None):
     if not isinstance(items, list) or not 1 <= len(items) <= MAX_BATCH or not all(isinstance(i, dict) for i in items):
         raise ValueError('Expected an array of 1–1000 objects')
     rows = []
@@ -41,7 +45,21 @@ def ingest(kind, items):
            'samples': 'INSERT INTO samples(time,service,environment,name,value,unit) VALUES (?,?,?,?,?,?)',
            'events': 'INSERT INTO events(time,service,environment,kind,message) VALUES (?,?,?,?,?)'}
     with database() as db:
+        if receipt:
+            from .storage import postgres_enabled,StorageError
+            if not postgres_enabled():db.execute('BEGIN IMMEDIATE')
+            receipt_key,body_hash=receipt
+            db.execute('DELETE FROM ingest_receipts WHERE created_at<?',(now-86400,))
+            row=db.execute('SELECT body_hash,accepted FROM ingest_receipts WHERE receipt_key=?',(receipt_key,)).fetchone()
+            if not row:
+                if db.execute('SELECT COUNT(*) FROM ingest_receipts').fetchone()[0]>=100000:
+                    raise StorageError('Idempotency receipt capacity reached; retry later.')
+                db.execute('INSERT INTO ingest_receipts VALUES (?,?,?,?) ON CONFLICT(receipt_key) DO NOTHING',(receipt_key,body_hash,-1,now))
+                row=db.execute('SELECT body_hash,accepted FROM ingest_receipts WHERE receipt_key=?',(receipt_key,)).fetchone()
+            if row['body_hash']!=body_hash:raise IdempotencyConflict('Idempotency key was already used for another payload')
+            if row['accepted']>=0:return row['accepted']
         before = db.total_changes
         db.executemany(sql[kind], rows)
         accepted = db.total_changes - before
+        if receipt:db.execute('UPDATE ingest_receipts SET accepted=? WHERE receipt_key=?',(accepted,receipt[0]))
     return accepted

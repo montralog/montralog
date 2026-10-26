@@ -8,7 +8,7 @@ import time
 import urllib.request
 from .accounts import AccountError, require_csrf
 from .studio import admin
-from .storage import database
+from .storage import database, postgres_enabled
 from .metrics import PANELS, prometheus
 from .validation import number
 from .secret_store import seal, reveal
@@ -41,7 +41,7 @@ def route(path,method,data,user,environ):
         action=data.get('action','save');ident=str(data.get('id',''))
         if action=='delete':
             with database() as db:
-                db.execute("UPDATE notification_outbox SET status='cancelled' WHERE channel_id=? AND status='pending'",(ident,))
+                db.execute("UPDATE notification_outbox SET status='cancelled',lease_owner='',lease_until=0 WHERE channel_id=? AND status='pending'",(ident,))
                 db.execute('DELETE FROM notification_channels WHERE id=?',(ident,))
             return {'ok':True}
         if action=='test':
@@ -72,7 +72,7 @@ def route(path,method,data,user,environ):
     if path=='/api/control/rules':
         if method=='GET':
             with database() as db:
-                rows=[dict(r) for r in db.execute('SELECT r.*,s.state,s.value,s.checked_at,s.detail FROM alert_rules r LEFT JOIN alert_states s ON s.rule_id=r.id ORDER BY r.created_at DESC')]
+                rows=[dict(r) for r in db.execute('SELECT r.*,s.state,s.last_known_state,s.value,s.checked_at,s.detail FROM alert_rules r LEFT JOIN alert_states s ON s.rule_id=r.id ORDER BY r.created_at DESC')]
             for row in rows:row['definition']=json.loads(row['definition'])
             return {'items':rows}
         ident=str(data.get('id',''))
@@ -138,33 +138,76 @@ def tick():
         d=json.loads(rule['definition'])
         try:value,detail=evaluate(d)
         except Exception:value,detail=None,'Evaluation failed; check backend availability'
+        observed_at=time.time()
         with database() as db:
+            # State transitions and outbox insertion must commit together, even
+            # when two workers evaluate a rule before either state row exists.
+            if not postgres_enabled():db.execute('BEGIN IMMEDIATE')
+            lock=' FOR UPDATE' if postgres_enabled() else ''
+            active=db.execute('SELECT id,definition FROM alert_rules WHERE id=? AND enabled=1'+lock,(rule['id'],)).fetchone()
+            if not active or active['definition']!=rule['definition']:continue
             previous=db.execute('SELECT * FROM alert_states WHERE rule_id=?',(rule['id'],)).fetchone()
-            old=previous['state'] if previous else 'normal';since=previous['since_at'] if previous else now
+            if previous and previous['checked_at']>observed_at:continue
+            old=previous['state'] if previous else 'normal'
+            known=previous['last_known_state'] if previous else 'normal'
+            since=previous['since_at'] if previous else observed_at
+            # Unknown describes evaluation health, not incident resolution.
             if value is None:state='unknown'
             elif (value>d['threshold'] if d['op']=='gt' else value<d['threshold']):
-                if old not in ('pending','firing'):since=now
-                state='firing' if now-since>=d['for_seconds'] else 'pending'
-            else:state='normal';since=now
-            db.execute('INSERT INTO alert_states(rule_id,state,value,since_at,checked_at,detail) VALUES (?,?,?,?,?,?) ON CONFLICT(rule_id) DO UPDATE SET state=excluded.state,value=excluded.value,since_at=excluded.since_at,checked_at=excluded.checked_at,detail=excluded.detail',
-                       (rule['id'],state,value,since,now,detail))
-            if (state=='firing' and old!='firing') or (state=='normal' and old=='firing'):
+                if known=='firing':state='firing'
+                else:
+                    if known!='pending' or old=='unknown':since=observed_at
+                    state='firing' if observed_at-since>=d['for_seconds'] else 'pending'
+            else:state='normal';since=observed_at
+            new_known=known if state=='unknown' else state
+            db.execute('INSERT INTO alert_states(rule_id,state,last_known_state,value,since_at,checked_at,detail) VALUES (?,?,?,?,?,?,?) ON CONFLICT(rule_id) DO UPDATE SET state=excluded.state,last_known_state=excluded.last_known_state,value=excluded.value,since_at=excluded.since_at,checked_at=excluded.checked_at,detail=excluded.detail',
+                       (rule['id'],state,new_known,value,since,observed_at,detail))
+            if (state=='firing' and known!='firing') or (state=='normal' and known=='firing'):
                 title=('FIRING' if state=='firing' else 'RESOLVED')+' · '+rule['name']
                 message=f'{title}\nObserved: {value:g}; threshold: {d["op"]} {d["threshold"]:g}. {detail}.'
-                db.execute('INSERT INTO notification_inbox(id,title,message,state,created_at) VALUES (?,?,?,?,?)',(secrets.token_hex(16),title,message,state,now))
+                db.execute('INSERT INTO notification_inbox(id,title,message,state,created_at) VALUES (?,?,?,?,?)',(secrets.token_hex(16),title,message,state,observed_at))
                 for channel in d['channels']:
                     if db.execute('SELECT id FROM notification_channels WHERE id=? AND enabled=1',(channel,)).fetchone():
-                        db.execute('INSERT INTO notification_outbox(id,channel_id,message,status,attempts,next_attempt,created_at,last_error) VALUES (?,?,?,?,?,?,?,?)',(secrets.token_hex(16),channel,message,'pending',0,now,now,''))
+                        db.execute('INSERT INTO notification_outbox(id,channel_id,message,status,attempts,next_attempt,created_at,last_error) VALUES (?,?,?,?,?,?,?,?)',(secrets.token_hex(16),channel,message,'pending',0,observed_at,observed_at,''))
     deliver()
 
+DELIVERY_LEASE_SECONDS=120
+DELIVERY_BATCH_LIMIT=20
+
+
+def claim_delivery():
+    """Lease one due delivery; never hold a database lock during network IO."""
+    now=time.time();owner=secrets.token_hex(16)
+    with database() as db:
+        if not postgres_enabled():db.execute('BEGIN IMMEDIATE')
+        lock=' FOR UPDATE OF o SKIP LOCKED' if postgres_enabled() else ''
+        row=db.execute("SELECT o.*,c.secret,c.enabled FROM notification_outbox o JOIN notification_channels c ON c.id=o.channel_id WHERE o.status='pending' AND o.next_attempt<=? AND o.lease_until<=? AND c.enabled=1 ORDER BY o.created_at,o.id LIMIT 1"+lock,(now,now)).fetchone()
+        if not row:return None
+        item=dict(row)
+        if item['attempts']>=5:
+            db.execute("UPDATE notification_outbox SET status='failed',lease_owner='',lease_until=0,last_error=? WHERE id=?",('Delivery retry limit reached; operator review required',item['id']))
+            return False
+        db.execute('UPDATE notification_outbox SET lease_owner=?,lease_until=? WHERE id=?',(owner,now+DELIVERY_LEASE_SECONDS,item['id']))
+        item['lease_owner']=owner
+        return item
+
+
 def deliver():
-    now=time.time()
-    with database() as db:items=[dict(r) for r in db.execute("SELECT o.*,c.secret,c.enabled FROM notification_outbox o JOIN notification_channels c ON c.id=o.channel_id WHERE o.status='pending' AND o.next_attempt<=? ORDER BY o.created_at LIMIT 20",(now,))]
-    for item in items:
-        if not item['enabled']:continue
+    # Claim immediately before each send: an advance batch lease could expire
+    # on later rows while this worker is still sending earlier notifications.
+    for _ in range(DELIVERY_BATCH_LIMIT):
+        item=claim_delivery()
+        if item is None:break
+        if item is False:continue
         try:send_slack(reveal(item['secret']),item['message']);status,error='sent',''
         except Exception:status,error=('failed' if item['attempts']>=4 else 'pending'),'Slack delivery failed; check the webhook, channel and network'
-        with database() as db:db.execute('UPDATE notification_outbox SET status=?,attempts=?,next_attempt=?,last_error=? WHERE id=?',(status,item['attempts']+1,now+min(900,30*2**item['attempts']),error,item['id']))
+        completed_at=time.time()
+        with database() as db:
+            # A stale sender cannot acknowledge another owner's newer lease or
+            # overwrite operator cancellation. Crash-after-send duplicates are
+            # still possible: external delivery remains at-least-once.
+            db.execute("UPDATE notification_outbox SET status=?,attempts=?,next_attempt=?,last_error=?,lease_owner='',lease_until=0 WHERE id=? AND lease_owner=? AND status='pending'",
+                       (status,item['attempts']+1,completed_at+min(900,30*2**item['attempts']),error,item['id'],item['lease_owner']))
 
 def main():
     from .secret_store import cipher

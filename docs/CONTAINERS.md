@@ -7,7 +7,7 @@ Requirements: Docker Engine/Desktop with Linux containers and Compose v2. Publis
 Download the release source ZIP or check out its Git tag. From that folder in PowerShell or a POSIX shell:
 
 ```sh
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.6.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.7.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -36,6 +36,7 @@ Preserve the original `.env`, customer identity and encryption key separately fr
 ```sh
 docker compose exec gateway python -m montralog backup --destination /data/pre-upgrade.db
 docker compose cp gateway:/data/pre-upgrade.db ./pre-upgrade.db
+docker compose cp gateway:/data/pre-upgrade.db.manifest.json ./pre-upgrade.db.manifest.json
 ```
 
 Use a new backup filename each time. Protect the downloaded database. This backs up application SQLite data, not Prometheus or Collector volumes. PostgreSQL needs native backups/PITR. Obtain the new release source/Compose files without overwriting private configuration, then:
@@ -60,3 +61,7 @@ Recover a lost active key from its separate protected backup. Without any origin
 ## Release verification
 
 [Public reports](reports/README.md) include scan JSON, inventories, static findings, checksums, image digest, provenance and failure/recovery results. Pin the released image digest. See [production acceptance](PRODUCTION.md). Older Helm artifacts remain available for compatibility; Docker is the documented installation path for this release line.
+
+## Version 0.7 upgrade
+
+Follow [ASSURANCE.md](ASSURANCE.md) for rotated customer-bound credentials, the backup manifest, verified restore commands and the legacy-image recovery path. The snapshot commands above apply to 0.7. Before upgrading an older installation, create its backup with the original image; do not skip the credential upgrade steps.

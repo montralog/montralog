@@ -1,6 +1,6 @@
 # Organization rollout and acceptance
 
-Use this checklist to record the evidence for your own deployment of 0.6.0. Release CI covers reproducible fixtures; your service mix and operational objectives determine acceptance in your organization.
+Use this checklist to record the evidence for your own deployment of 0.7.0. Release CI covers reproducible fixtures; your service mix and operational objectives determine acceptance in your organization.
 
 | Area | Required organization evidence |
 |---|---|

@@ -36,9 +36,9 @@ def main():
         os.fchown(fd, owner.st_uid, owner.st_gid)
     values = {'COMPOSE_PROJECT_NAME':'montralog-'+args.tenant, 'MONTRALOG_TENANT_ID':args.tenant,
         'MONTRALOG_HTTP_PORT':args.http_port,'MONTRALOG_OTLP_HTTP_PORT':args.otlp_http_port,'MONTRALOG_OTLP_GRPC_PORT':args.otlp_grpc_port,
-        'MONTRALOG_READ_TOKEN':secrets.token_urlsafe(36),'MONTRALOG_INGEST_TOKEN':secrets.token_urlsafe(36),
+        'MONTRALOG_READ_TOKEN':'mtls1.'+args.tenant+'.read.'+secrets.token_urlsafe(36),'MONTRALOG_INGEST_TOKEN':'mtls1.'+args.tenant+'.ingest.'+secrets.token_urlsafe(36),
         'MONTRALOG_ENCRYPTION_KEY':base64.urlsafe_b64encode(secrets.token_bytes(32)).decode(),
-        'MONTRALOG_ENCRYPTION_REQUIRED':'true','RETENTION_DAYS':7}
+        'MONTRALOG_ENCRYPTION_REQUIRED':'true','MONTRALOG_SILO_STRICT':'true','RETENTION_DAYS':7}
     with os.fdopen(fd,'w') as output:
         output.writelines(f'{k}={v}\n' for k,v in values.items())
     print(f'Created private customer configuration: .local/tenants/{args.tenant}.env')

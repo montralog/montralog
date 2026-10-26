@@ -75,8 +75,11 @@ class FunctionalReviewTests(unittest.TestCase):
             self.assertEqual(len(self.request('/api/control/inbox')['body']['items']), count)
         with storage.database() as db:
             db.execute('DELETE FROM logs')
-        notifications.tick()
-        notifications.tick()
+        # Keep the simulated clock monotonic after the firing observations;
+        # an older evaluation must not overwrite a newer committed state.
+        for seconds in (32, 33):
+            with patch('montralog.notifications.time.time', return_value=now + seconds):
+                notifications.tick()
         self.assertEqual(self.request('/api/control/rules')['body']['items'][0]['state'], 'normal')
         states = [item['state'] for item in self.request('/api/control/inbox')['body']['items']]
         self.assertCountEqual(states, ['firing', 'normal'])

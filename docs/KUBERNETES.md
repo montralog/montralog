@@ -117,3 +117,7 @@ storage class, CNI enforcement, backups, alert delivery and actual node failures
 See VERIFICATION.md for evidence from this machine.
 
 Browser accounts, session endpoints and personal dashboards are described in [ACCOUNTS.md](ACCOUNTS.md). Browser sessions have telemetry read access; ingestion still requires the separate ingest bearer token.
+
+## Version 0.7 compatibility note
+
+Docker Compose is the supported installation path. Retained chart users must use customer-bound credentials: `mtls1.default.read.` and `mtls1.default.ingest.` plus independent random URL-safe suffixes of 43–128 characters for the default identity. Old arbitrary tokens are rejected by the new image. Preserve encryption keys and follow [ASSURANCE.md](ASSURANCE.md) before upgrading.

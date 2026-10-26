@@ -33,14 +33,14 @@ def main():
     apply({'apiVersion':'v1','kind':'Namespace','metadata':{'name':namespace}})
     auth_exists=subprocess.run([*kubectl,'get','secret','montralog-auth','-o','name'],capture_output=True).returncode==0
     if not auth_exists:
-        apply({'apiVersion':'v1','kind':'Secret','metadata':{'name':'montralog-auth'},'stringData':{'read-token':secrets.token_urlsafe(36),'ingest-token':secrets.token_urlsafe(36)}})
+        apply({'apiVersion':'v1','kind':'Secret','metadata':{'name':'montralog-auth'},'stringData':{'read-token':'mtls1.default.read.'+secrets.token_urlsafe(36),'ingest-token':'mtls1.default.ingest.'+secrets.token_urlsafe(36)}})
     apply({'apiVersion':'v1','kind':'Secret','metadata':{'name':'montralog-encryption'},'stringData':{'encryption-key':base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()}})
     chart=root/'deploy/helm/montralog'
     run([helm,'upgrade','--install',release,str(chart),'--kubeconfig',str(args.kubeconfig),'--namespace',namespace,'--wait','--timeout','4m'])
     gateway='deployment/verify-montralog'
     def exec_gateway(*command):
         run([*kubectl,'exec',gateway,'-c','gateway','--',*command])
-    exec_gateway('python','-c',"from montralog.secret_store import seal,reveal; value=seal('kubernetes-fixture'); assert value.startswith('enc:v1:'); assert reveal(value)=='kubernetes-fixture'; print('PASS: operator-managed encryption Secret is active')")
+    exec_gateway('python','-c',"from montralog.secret_store import seal,reveal; value=seal('kubernetes-fixture'); assert value.startswith('enc:v2:'); assert reveal(value)=='kubernetes-fixture'; print('PASS: operator-managed encryption Secret is active')")
     exec_gateway('env','MONTRALOG_REQUIRE_PROMETHEUS=1','python','scripts/smoke.py')
     exec_gateway('env','OTEL_SMOKE_URL=http://verify-montralog-collector:4318','python','scripts/collector_smoke.py')
     # Pod restart must preserve SQLite telemetry on its PVC.

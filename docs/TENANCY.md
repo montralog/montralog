@@ -7,7 +7,7 @@ Montralog uses **silo tenancy**: one Compose project, gateway, database, Prometh
 From the release source folder, choose three unused local ports:
 
 ```sh
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.6.0 /install/scripts/create_tenant.py --tenant acme --http-port 8180 --otlp-http-port 4418 --otlp-grpc-port 4417
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.7.0 /install/scripts/create_tenant.py --tenant acme --http-port 8180 --otlp-http-port 4418 --otlp-grpc-port 4417
 docker compose --env-file .local/tenants/acme.env pull
 docker compose --env-file .local/tenants/acme.env up -d --wait
 docker compose --env-file .local/tenants/acme.env exec gateway python -m montralog create-user --username admin --name Administrator
@@ -26,3 +26,5 @@ Open `http://localhost:8180`. Repeat with a different ID and ports. Generated `C
 Configure a separate hostname and TLS route for each remotely accessible customer. Never reuse environment files or keys, mount another customer's volume, join data networks or expose the Docker daemon to customers. Docker host/root operators remain trusted; stronger isolation against host compromise requires separate hosts/VMs.
 
 Tests cover database reassignment, wrong tenant headers, cross-customer tokens/sessions and separate storage/configuration. This establishes a tested silo boundary, not shared-database SaaS, billing/provisioning automation, independent security certification or HA. Follow [production acceptance](PRODUCTION.md).
+
+Version 0.7 adds strict token namespaces, master-key fingerprints, customer-derived ciphertext and an offline duplicate-configuration audit. Follow [ASSURANCE.md](ASSURANCE.md), including its 0.6 upgrade and restore steps.

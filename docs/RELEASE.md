@@ -1,6 +1,6 @@
 # Release status
 
-The Docker isolation and security release line is **0.6.0**, schema **6**. Use [the published release](https://github.com/montralog/montralog/releases/tag/v0.6.0) and its checksums/image digest, [Docker installation](CONTAINERS.md), [security upgrade](SECURITY-0.6.0.md) and [public reports](reports/README.md).
+The Docker isolation and security release line is **0.7.0**, schema **6**. Use [the published release](https://github.com/montralog/montralog/releases/tag/v0.7.0) and its checksums/image digest, [Docker installation](CONTAINERS.md), [security upgrade](SECURITY-0.7.0.md) and [public reports](reports/README.md).
 
 Customer hosting uses separate Docker stacks; shared-gateway/database SaaS is disabled. Production acceptance remains environment-specific: [readiness matrix](PRODUCTION.md).
 

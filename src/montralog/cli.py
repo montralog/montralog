@@ -9,11 +9,18 @@ from .security import validate_config
 
 def main():
     parser=argparse.ArgumentParser(prog='montralog')
-    parser.add_argument('command',choices=['serve','prune','backup','migrate','create-user','reset-password','encrypt-secrets','verify-secrets'],default='serve',nargs='?')
+    parser.add_argument('command',choices=['serve','prune','backup','verify-backup','restore-backup','migrate','create-user','reset-password','encrypt-secrets','verify-secrets'],default='serve',nargs='?')
     parser.add_argument('--destination')
+    parser.add_argument('--source')
     parser.add_argument('--username')
     parser.add_argument('--name')
     args=parser.parse_args()
+    if args.command in ('verify-backup','restore-backup'):
+        from . import backup
+        if not args.source or (args.command=='restore-backup' and not args.destination):parser.error('Provide --source and a new --destination for restore.')
+        result=backup.verify(args.source) if args.command=='verify-backup' else backup.restore(args.source,args.destination)
+        print('Backup verified for silo '+result['tenant_id']+'. Original key must be preserved separately.')
+        return
     storage.initialize()
     if args.command in ('create-user','reset-password'):
         from getpass import getpass
@@ -41,7 +48,7 @@ def main():
         from .secret_store import verify_existing
         result=verify_existing()
         print(json.dumps(result))
-        if result['plaintext']:
+        if result['plaintext'] or result.get('legacy',0):
             raise SystemExit('Plaintext integration credentials remain; run encrypt-secrets after backup.')
     elif args.command=='encrypt-secrets':
         from .secret_store import encrypt_existing
@@ -51,16 +58,11 @@ def main():
     elif args.command=='prune':
         print(f'Retention applied: {storage.prune()} days')
     elif args.command=='backup':
-        if storage.postgres_enabled():
-            parser.error('Use PostgreSQL native backups/PITR; this command backs up SQLite only')
         if not args.destination:
             parser.error('--destination required')
-        destination=Path(args.destination)
-        if destination.exists() or destination.resolve()==storage.DB.resolve():
-            parser.error('Backup destination must be a new file')
-        with storage.database() as source,closing(sqlite3.connect(destination)) as target:
-            source.backup(target)
-        print('Backup completed')
+        from .backup import create
+        create(args.destination)
+        print('Private backup and integrity manifest created. Preserve both and the separate encryption key.')
     else:
         validate_config()
         from wsgiref.simple_server import make_server

@@ -10,7 +10,7 @@ def otel_attributes(entries):
         out[entry['key']] = next(iter(value.values()), '')
     return out
 
-def otel_logs_or_spans(payload, kind):
+def otel_logs_or_spans(payload, kind, receipt=None):
     root, scopes, records = ('resourceLogs', 'scopeLogs', 'logRecords') if kind == 'logs' else ('resourceSpans', 'scopeSpans', 'spans')
     if not isinstance(payload, dict) or root not in payload or not isinstance(payload[root], list):
         raise ValueError('Expected OTLP JSON envelope')
@@ -31,4 +31,4 @@ def otel_logs_or_spans(payload, kind):
                     start, end = int(record['startTimeUnixNano']), int(record['endTimeUnixNano'])
                     item.update(time=start / 1e9, duration_ms=(end-start)/1e6, span_id=record['spanId'], parent_id=record.get('parentSpanId', ''), name=record.get('name', 'unnamed'), status={0:'UNSET',1:'OK',2:'ERROR'}.get(record.get('status', {}).get('code', 0), 'UNSET'))
                 items.append(item)
-    return ingest(kind, items) if items else 0
+    return ingest(kind, items, receipt=receipt) if items else 0

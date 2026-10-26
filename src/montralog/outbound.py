@@ -4,6 +4,8 @@ import ipaddress
 import os
 import socket
 import ssl
+import threading
+import time
 import urllib.parse
 from contextlib import contextmanager
 
@@ -41,6 +43,8 @@ def destination(raw, private_origins=()):
             ip = ipaddress.ip_address(address)
             if ip.version == 6 and ip.ipv4_mapped:
                 ip = ip.ipv4_mapped
+            if ip.version==6 and (ip.sixtofour or ip.teredo or ip in ipaddress.ip_network('64:ff9b::/96') or ip in ipaddress.ip_network('64:ff9b:1::/48')):
+                raise DestinationError('IPv4 translation and tunnel destinations are not supported.')
             if ip.is_link_local or ip.is_multicast or ip.is_unspecified or str(ip) in ('100.100.100.200', 'fd00:ec2::254'):
                 raise DestinationError('Metadata, link-local, multicast and unspecified destinations are forbidden.')
             if not ip.is_global and f'{host}:{port}' not in allowed:
@@ -53,8 +57,10 @@ def destination(raw, private_origins=()):
 
 
 @contextmanager
-def open_request(request, timeout=8, private_origins=(), insecure_credential_origin=None):
+def open_request(request, timeout=8, private_origins=(), insecure_credential_origin=None, require_private=False):
     parsed, port, addresses = destination(request.full_url, private_origins)
+    if require_private and any(ipaddress.ip_address(address).is_global for address in addresses):
+        raise DestinationError('Local-only destination resolved outside the private network.')
     if request.has_header('Authorization') or request.data is not None:
         if parsed.scheme != 'https' and (parsed.hostname, port) != insecure_credential_origin:
             raise DestinationError('Credentials and request bodies require HTTPS.')
@@ -62,12 +68,24 @@ def open_request(request, timeout=8, private_origins=(), insecure_credential_ori
     # Host header and TLS SNI/certificate verification. Environment proxies are ignored.
     connection = http.client.HTTPConnection(parsed.hostname, port, timeout=timeout)
     sock = None
+    deadline = time.monotonic() + timeout
+    def expire():
+        active = sock
+        if active is not None:
+            try: active.shutdown(socket.SHUT_RDWR)
+            except OSError: pass
+            active.close()
+    timer = threading.Timer(timeout, expire)
+    timer.daemon = True
+    timer.start()
     try:
         for address in addresses:
             try:
                 family = socket.AF_INET6 if ':' in address else socket.AF_INET
                 sock = socket.socket(family, socket.SOCK_STREAM)
-                sock.settimeout(timeout)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0: raise TimeoutError("Endpoint deadline exceeded")
+                sock.settimeout(remaining)
                 sock.connect((address, port))
                 break
             except OSError:
@@ -88,6 +106,7 @@ def open_request(request, timeout=8, private_origins=(), insecure_credential_ori
     except http.client.HTTPException:
         raise DestinationError('Endpoint returned an invalid HTTP response.') from None
     finally:
+        timer.cancel()
         connection.close()
         if sock is not None:
             sock.close()

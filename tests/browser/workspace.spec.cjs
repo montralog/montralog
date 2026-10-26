@@ -71,3 +71,13 @@ test('viewer cannot create machine tokens in the UI or access the admin API', as
   await expect(page.getByRole('button', {name: 'Create token', exact: true})).toHaveCount(0);
   expect((await page.request.get('/api/control/tokens')).status()).toBe(403);
 });
+
+test('investigations show captured evidence and keep model analysis optional', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="investigations"]').click();
+  await expect(page.getByRole('heading', {name:'New investigation', exact:true})).toBeVisible();
+  await page.locator('#investigation-create button').click();
+  await expect(page.getByRole('heading', {name:'Observed evidence', exact:true})).toBeVisible();
+  await expect(page.getByText('Browser fixture error', {exact:true})).toBeVisible();
+  expect(await page.evaluate(() => window.__montralogXss)).toBeUndefined();
+});
