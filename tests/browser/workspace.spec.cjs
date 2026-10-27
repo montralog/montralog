@@ -114,3 +114,107 @@ test('dashboard panels open a scoped assistant without leaving the dashboard', a
   await page.getByRole('button',{name:'Close AI assistant',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Checkout errors',exact:true})).toBeVisible();
 });
+
+test('empty canvas saves, pending panel edits persist, layout controls survive reload', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  await page.locator('#studio-new').click();
+  await page.getByLabel('Dashboard name', {exact:true}).fill('Builder regression dashboard');
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.getByText('Your empty dashboard is saved.',{exact:false})).toBeVisible();
+  await page.getByRole('button',{name:'＋ Add panel',exact:true}).click();
+  const editor=page.locator('#studio-panel-form');
+  await editor.getByLabel('Panel title',{exact:true}).fill('Pending log panel');
+  await editor.getByRole('combobox',{name:'Signal',exact:true}).selectOption('logs');
+  await editor.getByRole('combobox',{name:'View',exact:true}).selectOption('timeline');
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Pending log panel',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Edit dashboard',exact:true}).click();
+  await page.locator('[data-panel-duplicate="0"]').click();
+  await page.locator('[data-panel-resize="1"]').click();
+  await page.locator('[data-panel-down="0"]').click();
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.locator('#studio-dashboard-form')).toHaveCount(0);
+  await page.reload();
+  await page.locator('nav [data-view="dashboards"]').click();
+  const card=page.locator('.dashboard-card').filter({has:page.getByRole('heading',{name:'Builder regression dashboard',exact:true})});
+  await card.getByRole('button',{name:'Open →',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Pending log panel copy',exact:true})).toBeVisible();
+  const saved=(await (await page.request.get('/api/saved-dashboards')).json()).items.find(d=>d.name==='Builder regression dashboard');
+  expect(saved.definition.panels.map(p=>p.title)).toEqual(['Pending log panel copy','Pending log panel']);
+  expect(saved.definition.panels[0].width).toBe('full');
+});
+
+test('failed dashboard save preserves the draft and allows a successful retry', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  await page.locator('#studio-new').click();
+  await page.getByLabel('Dashboard name',{exact:true}).fill('Retriable dashboard');
+  let failed=false;
+  await page.route('**/api/saved-dashboards',async route=>{
+    if(route.request().method()==='POST'&&!failed){failed=true;await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Storage temporarily unavailable'})});}
+    else await route.continue();
+  });
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.locator('#studio-builder-message')).toContainText('Storage temporarily unavailable');
+  await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('Retriable dashboard');
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.getByText('Your empty dashboard is saved.',{exact:false})).toBeVisible();
+});
+
+test('panel preview preserves input and sign out clears another account draft', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  await page.locator('#studio-new').click();
+  await page.getByLabel('Dashboard name',{exact:true}).fill('Private unsaved draft');
+  await page.locator('#studio-panel-form').getByLabel('Panel title',{exact:true}).fill('Private panel draft');
+  await page.getByRole('button',{name:'Preview panel',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Current panel preview',exact:true})).toBeVisible();
+  await expect(page.locator('#studio-panel-form').getByLabel('Panel title',{exact:true})).toHaveValue('Private panel draft');
+  await page.locator('#logout').click();
+  await page.getByLabel('Username',{exact:true}).fill('viewer');
+  await page.getByLabel('Password',{exact:true}).fill(password);
+  await page.locator('#sign-in').click();
+  await expect(page.locator('#login')).toBeHidden();
+  await page.locator('nav [data-view="dashboards"]').click();
+  await expect(page.getByText('Private unsaved draft',{exact:true})).toHaveCount(0);
+  await page.locator('#studio-new').click();
+  await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('Untitled dashboard');
+});
+
+test('about page includes bundled Apache license and preserves notice text safely', async ({page}) => {
+  await signIn(page);
+  await page.getByRole('button',{name:'About & license',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'About Montralog.',exact:true})).toBeVisible();
+  await expect(page.getByText('Official project: https://github.com/montralog/montralog',{exact:false})).toBeVisible();
+  await page.getByText('Apache License 2.0',{exact:true}).click();
+  await expect(page.locator('.legal-copy').first()).toContainText('TERMS AND CONDITIONS');
+  expect((await page.request.get('/license.txt')).headers()['content-type']).toContain('text/plain');
+});
+
+test('dashboard canvas stays visible and visual choices update live panel preview', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  await page.locator('#studio-new').click();
+  await page.getByLabel('Dashboard name',{exact:true}).fill('Visible canvas dashboard');
+  const editor=page.getByRole('region',{name:'Panel editor',exact:true});
+  await editor.getByLabel('Panel title',{exact:true}).fill('Visible stat');
+  await editor.getByRole('button',{name:'Statistic',exact:true}).click();
+  await expect(editor.getByRole('combobox',{name:'View',exact:true})).toHaveValue('stat');
+  await expect(editor.getByRole('button',{name:'Statistic',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(editor.getByLabel('Service',{exact:true})).toBeHidden();
+  await editor.getByRole('combobox',{name:'Signal',exact:true}).selectOption('logs');
+  await expect(editor.getByLabel('Service',{exact:true})).toBeVisible();
+  await expect(editor.getByRole('combobox',{name:'Metric',exact:true})).toBeHidden();
+  await editor.getByRole('button',{name:'Timeline',exact:true}).click();
+  await expect(page.locator('#studio-live-preview')).toContainText('Browser fixture error');
+  await editor.getByRole('button',{name:'Add panel',exact:true}).click();
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator('.dashboard-canvas').getByRole('heading',{name:'Visible stat',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await page.getByRole('button',{name:'Edit dashboard',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Panel editor',exact:true})).toHaveCount(0);
+  await expect(page.locator('.dashboard-canvas')).toContainText('Visible stat');
+  await page.getByRole('button',{name:'Edit panel',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Panel editor',exact:true})).toBeVisible();
+});

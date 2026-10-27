@@ -17,7 +17,7 @@ def clean_definition(definition):
     minutes=int(definition.get('minutes',60))
     if minutes not in (15,60,360,1440):raise AccountError('Choose a supported time window.')
     panels=definition.get('panels',[])
-    if not isinstance(panels,list) or not 1<=len(panels)<=24:raise AccountError('Choose 1–24 panels.')
+    if not isinstance(panels,list) or not 0<=len(panels)<=24:raise AccountError('Choose up to 24 panels.')
     clean=[]
     for p in panels:
         if isinstance(p,str):

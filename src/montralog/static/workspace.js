@@ -4,6 +4,7 @@ Object.assign(titles,{
  dashboards:['Dashboards, built around your work.','Start with a template or assemble a personal view of your infrastructure.'],
  profile:['Make this workspace yours.','Manage your profile, password and active sessions.'],
  sources:['Know where your signals come from.','Inspect actual Prometheus scrape targets and observed telemetry sources.'],
+ about:['About Montralog.','Project identity, license and attribution included with this installation.'],
  settings:['Your installation, at a glance.','Deployment details and the controls available to your operator.']
 });
 async function accountAPI(path,body){
@@ -44,6 +45,11 @@ function dockerSnapshot(readings){
  return `<section class="card builder"><div class="section-head"><div><h2>Running containers</h2><p>Latest observed values · updates every 15 seconds · CPU in core equivalents</p></div>${badge(fresh?'LIVE COLLECTION':'CHECK AGENT')}</div>${rows.length?table(['Container / host','CPU cores','Memory','Memory / limit','Processes','Collection'],rows):empty('No recent container measurements','Check the local metrics agent and Docker Desktop.')}<small>Docker reports approximate memory and I/O values. Network charts show cumulative totals, not transfer rates.</small></section><div class="section-head builder"><h2>Resource history</h2><span class="badge">PROMETHEUS</span></div>`;
 }
 async function workspaceView(next){
+ if(next==='about'){
+  const [health,...copies]=await Promise.all([fetch('/healthz').then(r=>r.json()),...['license','notice','branding','third-party'].map(n=>fetch('/'+n+'.txt').then(r=>{if(!r.ok)throw Error('Bundled license information is unavailable.');return r.text();}))]);
+  return `<section class="card"><span class="eyebrow">MONTRALOG</span><h2>Your systems, understood.</h2><p>Monitoring · Tracing · Logging · Tracking · Version ${esc(health.version)}</p><p>First-party code: Apache License 2.0. Copyright 2026 Montralog contributors. Each author retains their applicable rights.</p><p>The Montralog name and visual identity identify the project; the code license does not grant general trademark rights. Dependencies and model weights retain their own terms.</p><a href="https://github.com/montralog/montralog" target="_blank" rel="noopener noreferrer">Official project repository ↗</a></section>${['Apache License 2.0','Project notice','Branding guidance','Third-party components'].map((title,i)=>`<section class="card builder"><details ${i===1?'open':''}><summary>${title}</summary><pre class="legal-copy">${esc(copies[i])}</pre></details></section>`).join('')}`;
+ }
+
  if(next==='dashboards'){
   const [saved,defs]=await Promise.all([accountAPI('saved-dashboards'),api('dashboards')]);savedDashboards=saved.items;
   if(activeDashboard){
@@ -80,6 +86,7 @@ document.addEventListener('click',async e=>{
  try{
   if(b.id==='logout'||b.dataset.action==='logout'){await accountAPI('account/logout',{});showLogin('You have signed out.');}
   if(b.id==='revoke-sessions'){await accountAPI('account/revoke',{});epoch++;await render();formMessage('Other sessions signed out.');}
+  if(typeof dashboardStudio==='function'&&(b.dataset.dashboard||b.dataset.template||b.dataset.deleteDashboard||b.id==='dashboard-back'))return;
   if(b.dataset.dashboard){activeDashboard=savedDashboards.find(d=>d.id===b.dataset.dashboard);epoch++;render();}
   if(b.dataset.template){const t=templates.find(t=>t.id===b.dataset.template);activeDashboard={name:t.name,definition:{panels:t.panels,minutes:60}};epoch++;render();}
   if(b.id==='dashboard-back'){activeDashboard=null;epoch++;render();}

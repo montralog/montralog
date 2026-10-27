@@ -7,7 +7,7 @@ const vm = require('node:vm');
 function studio(response) {
   const requests = [];
   const context = vm.createContext({
-    URLSearchParams, titles: {}, workspaceView: async () => '',
+    URLSearchParams, showLogin() {}, titles: {}, workspaceView: async () => '',
     document: {addEventListener() {}},
     esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;'),
     date: value => String(value), fmt: value => String(value),
