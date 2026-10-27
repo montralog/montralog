@@ -191,3 +191,30 @@ test('about page includes bundled Apache license and preserves notice text safel
   await expect(page.locator('.legal-copy').first()).toContainText('TERMS AND CONDITIONS');
   expect((await page.request.get('/license.txt')).headers()['content-type']).toContain('text/plain');
 });
+
+test('dashboard canvas stays visible and visual choices update live panel preview', async ({page}) => {
+  await signIn(page);
+  await page.locator('nav [data-view="dashboards"]').click();
+  await page.locator('#studio-new').click();
+  await page.getByLabel('Dashboard name',{exact:true}).fill('Visible canvas dashboard');
+  const editor=page.getByRole('region',{name:'Panel editor',exact:true});
+  await editor.getByLabel('Panel title',{exact:true}).fill('Visible stat');
+  await editor.getByRole('button',{name:'Statistic',exact:true}).click();
+  await expect(editor.getByRole('combobox',{name:'View',exact:true})).toHaveValue('stat');
+  await expect(editor.getByRole('button',{name:'Statistic',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(editor.getByLabel('Service',{exact:true})).toBeHidden();
+  await editor.getByRole('combobox',{name:'Signal',exact:true}).selectOption('logs');
+  await expect(editor.getByLabel('Service',{exact:true})).toBeVisible();
+  await expect(editor.getByRole('combobox',{name:'Metric',exact:true})).toBeHidden();
+  await editor.getByRole('button',{name:'Timeline',exact:true}).click();
+  await expect(page.locator('#studio-live-preview')).toContainText('Browser fixture error');
+  await editor.getByRole('button',{name:'Add panel',exact:true}).click();
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator('.dashboard-canvas').getByRole('heading',{name:'Visible stat',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await page.getByRole('button',{name:'Edit dashboard',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Panel editor',exact:true})).toHaveCount(0);
+  await expect(page.locator('.dashboard-canvas')).toContainText('Visible stat');
+  await page.getByRole('button',{name:'Edit panel',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Panel editor',exact:true})).toBeVisible();
+});

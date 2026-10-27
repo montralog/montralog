@@ -82,3 +82,10 @@ inbound webhook endpoint is opened.
 
 References: [Slack incoming webhooks](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/),
 [Prometheus query API](https://prometheus.io/docs/prometheus/latest/querying/api/).
+## Canvas-first editing
+
+The editable canvas shows actual panel contents with per-panel edit, duplicate, width, move and remove controls. **Add visualization** opens a separate side editor; applying the panel closes it and returns to the full canvas. Existing dashboards open in canvas mode rather than a list of panel forms.
+
+In the side editor, select a signal and visualization using the view selector or visual choice buttons. Metric panels show metric/source choices; record panels show their relevant service/environment filters, and log views expose text/severity filters. Selection changes refresh the current panel preview without replacing the form or discarding typed input. Missing source data is shown explicitly instead of fabricated examples.
+
+Use **Save dashboard** to persist the whole view. Closing an editor with unfinished changes requires applying or discarding that panel. No arbitrary PromQL or free-position layout coordinates are implemented.
