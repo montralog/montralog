@@ -1,0 +1,14 @@
+Montralog
+Copyright 2026 Montralog contributors.
+
+Official project: https://github.com/montralog/montralog
+First-party source is provided under the Apache License, Version 2.0.
+Copyright remains with the respective authors and rights holders.
+
+The Montralog name and visual identity identify the project. The source-code
+license does not grant general trademark rights. BRANDING.md provides guidance;
+it does not add restrictions to the Apache-2.0 source-code license.
+
+Separate dependencies, images and model weights retain their licenses.
+See docs/THIRD_PARTY.md. No affiliation with similarly named organizations
+is implied. This NOTICE is informational and does not modify LICENSE.

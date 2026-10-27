@@ -1,17 +1,11 @@
 # Dashboards, timelines, alerts and access — 0.3
 
-Browser access uses a username/password session. A read token is not requested
-by the UI. This local installation was requested with username `admin` and
-password `admin123`; this password is set only in its database, not installed as
-a default account in release source. Other installations create accounts using
-the operator CLI. The username `admin` receives the administrator role when
-created; existing `admin` accounts are adopted by schema migration 3. Other local
-accounts retain shared telemetry read access and personal dashboards.
+Browser access uses a username/password session. Fresh installations have no shared default password. Create an account using the operator CLI. Each account has personal dashboards; telemetry remains shared within its customer stack.
 
 ## Dashboard studio
 
 Open Dashboards → Create dashboard. Choose a name and time window; add up to 24
-panels. A panel can use:
+panels, or save an empty canvas and add panels later. Saving includes current panel edits. Use **Preview panel** to check its data before applying it. A panel can use:
 
 | Signal | Views |
 |---|---|
@@ -21,8 +15,8 @@ panels. A panel can use:
 | Changes / deployment events | Table, timeline |
 | Traces | Table, timeline |
 
-Panels have a title and half/full row width. Edit, remove or move panels up before
-saving the dashboard. Existing saved dashboards can be reopened and edited.
+Panels have a title and half/full row width. Edit, duplicate, remove, resize or move panels up/down before
+saving the dashboard. Apply or discard an unfinished panel before switching to another canvas action. Existing saved dashboards can be reopened and edited.
 Service/environment filters apply to logs, patterns, changes and traces. Literal
 message search and severity apply to log panels. Metric panels use a supported
 Prometheus query; arbitrary PromQL and arbitrary layout coordinates are not exposed.

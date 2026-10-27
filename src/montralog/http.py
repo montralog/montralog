@@ -26,6 +26,8 @@ def application(environ, start_response):
             raise accounts.AccountError('Tenant does not match this deployment.', 403)
         if path=='/investigations.js' and method=='GET':
             content_type='application/javascript';body=(ROOT/'static'/'investigations.js').read_bytes()
+        elif path in ('/license.txt','/notice.txt','/branding.txt','/third-party.txt') and method=='GET':
+            content_type='text/plain; charset=utf-8';body=(ROOT/'static'/path[1:]).read_bytes()
         elif path in ('/','/app.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
             filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
             body = (ROOT/'static'/filename).read_bytes()

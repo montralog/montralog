@@ -209,4 +209,4 @@ PostgreSQL tests require a separate disposable database named `montralog_test` a
 
 ## License and security reporting
 
-First-party code is [Apache-2.0](LICENSE). Dependencies retain their licenses; see [NOTICE](NOTICE) and [third-party components](docs/THIRD_PARTY.md). Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new). See [SECURITY.md](SECURITY.md) for scope.
+First-party code is [Apache-2.0](LICENSE), with the original license unchanged. [Branding and attribution](BRANDING.md) explain project identity without restricting the code license; the application includes **About & license** with bundled notices. Dependencies retain their licenses; see [NOTICE](NOTICE) and [third-party components](docs/THIRD_PARTY.md). Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new). See [SECURITY.md](SECURITY.md) for scope.

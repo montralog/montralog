@@ -50,6 +50,20 @@ class StudioTests(test_accounts.AccountTests):
         definition['panels'][0]['visual']='unsupported'
         self.assertEqual(self.request('/api/saved-dashboards','POST',{'name':'Bad','definition':definition})['status'],400)
 
+    def test_empty_dashboard_save_add_panels_and_owner_boundary(self):
+        self.sign_in()
+        created=self.request('/api/saved-dashboards','POST',{'name':'Empty canvas','definition':{'minutes':60,'panels':[]}})
+        self.assertEqual(created['status'],200)
+        ident=created['body']['id']
+        self.assertEqual(self.request('/api/saved-dashboards')['body']['items'][0]['definition']['panels'],[])
+        panel={'source':'logs','visual':'timeline','title':'Errors'}
+        self.assertEqual(self.request('/api/saved-dashboards','POST',{'id':ident,'name':'Built canvas','definition':{'minutes':60,'panels':[panel]}},csrf='wrong')['status'],403)
+        self.assertEqual(self.request('/api/saved-dashboards','POST',{'id':ident,'name':'Built canvas','definition':{'minutes':60,'panels':[panel]}})['status'],200)
+        self.assertEqual(self.request('/api/saved-dashboards','POST',{'name':'Too many','definition':{'minutes':60,'panels':[panel]*25}})['status'],400)
+        self.admin_login()
+        self.assertEqual(self.request('/api/saved-dashboards')['body']['items'],[])
+        self.assertEqual(self.request('/api/saved-dashboards','POST',{'id':ident,'name':'Not mine','definition':{'minutes':60,'panels':[]}})['status'],404)
+
     def test_channels_hide_secrets_validate_destination_and_retry(self):
         self.admin_login()
         self.assertEqual(self.request('/api/control/channels','POST',{'name':'bad','webhook':'http://127.0.0.1/secret'})['status'],400)
