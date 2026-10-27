@@ -1,7 +1,7 @@
 # Release status
 
-The Docker isolation and security release line is **0.8.0**, schema **6**. Use [the published release](https://github.com/montralog/montralog/releases/tag/v0.8.0) and its checksums/image digest, [Docker installation](CONTAINERS.md), [security upgrade](SECURITY-0.8.0.md) and [public reports](reports/README.md).
+This source targets **0.8.1**, schema **7**. Use [published releases](https://github.com/montralog/montralog/releases) and their checksums/image digests. Follow [Docker installation](CONTAINERS.md), [isolation and recovery](ASSURANCE.md), [release notes](RELEASE-0.8.1.md) and [public reports](reports/README.md).
 
-Customer hosting uses separate Docker stacks; shared-gateway/database SaaS is disabled. Production acceptance remains environment-specific: [readiness matrix](PRODUCTION.md).
+Changed source receives a new version; existing images, release archives and historical evidence are not replaced. Publication follows all verification gates and exact-image bootstrap/load/recovery checks. An updated source version does not itself confirm publication.
 
-Earlier releases and their immutable reports remain available as historical evidence. Changed source requires a new version; published image tags/releases are not silently replaced with new application code.
+Customer hosting uses separate Docker stacks. Deployment-specific [production acceptance](PRODUCTION.md) remains required.
