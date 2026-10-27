@@ -5,7 +5,7 @@
 
 Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timelines and alerts into one workspace. Start without AI, or connect an operator-approved model to investigate captured evidence and recommend checks. Run it on your own infrastructure with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
 
-**Version 0.8.0** introduces a bounded, read-only investigation agent, dashboard assistance, alert runbooks and selectable model profiles. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) · [Release verification](https://github.com/montralog/montralog/actions/runs/40376265345) · [Public evidence](docs/reports/0.8.0/README.md).
+**Release line: 0.8.1.** This update adds a canvas-first dashboard builder, visualization selection with live previews, reliable empty-dashboard/panel saving, and bundled license/attribution information. The bounded read-only AI assistant introduced in 0.8 remains available. [Published releases and downloads](https://github.com/montralog/montralog/releases) · [Verification workflow](https://github.com/montralog/montralog/actions/workflows/release.yml) · [Public evidence](docs/reports/README.md).
 
 ## What you can do
 
@@ -57,10 +57,10 @@ Requires Docker Engine/Desktop with **Linux containers**, Docker Compose v2 and 
 From PowerShell or a POSIX shell:
 
 ```sh
-git clone --branch v0.8.0 --depth 1 https://github.com/montralog/montralog.git
+git clone --branch v0.8.1 --depth 1 https://github.com/montralog/montralog.git
 cd montralog
 
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.1 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
