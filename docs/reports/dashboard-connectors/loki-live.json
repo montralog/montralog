@@ -1,0 +1,11 @@
+{
+  "backend": "grafana/loki:3.7.9",
+  "synthetic_only": true,
+  "connection_test": "passed",
+  "log_records": 2,
+  "pattern_groups": 1,
+  "sample_limit": 100,
+  "status": "passed",
+  "source_revision": "cde45b3",
+  "run_date": "2026-10-29"
+}

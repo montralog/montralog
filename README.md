@@ -26,6 +26,14 @@ Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timeli
 
 These are actual application screenshots. The AI example uses synthetic telemetry and a real local Qwen3 4B model; it is not a production incident or a root-cause accuracy benchmark.
 
+### Advanced dashboard development preview
+
+Gauge thresholds, panel icons and references, flexible widths, Loki log patterns
+and Tempo trace summaries are available on the dashboard development branch.
+[Capabilities and setup](docs/STUDIO.md) · [Test evidence and limits](docs/reports/dashboard-connectors/README.md).
+
+![Advanced Montralog dashboard with synthetic Prometheus, Loki and Tempo data](docs/assets/screenshots/advanced-dashboard.png)
+
 ### Dashboards and timelines
 
 Combine resource graphs, log activity and deployment events in a saved dashboard. The development dashboard builder adds guided metric aggregation with generated queries, dashboard search/duplication/switching, Dark, Light, Midnight or System appearance, gauge thresholds, contextual references, and flexible panel sizes. The development connector catalogue adds Loki logs/patterns, Tempo trace summaries, and Prometheus-compatible backend types. See the [dashboard guide](docs/STUDIO.md) for configuration.
