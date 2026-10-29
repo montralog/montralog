@@ -89,3 +89,29 @@ The editable canvas shows actual panel contents with per-panel edit, duplicate, 
 In the side editor, select a signal and visualization using the view selector or visual choice buttons. Metric panels show metric/source choices; record panels show their relevant service/environment filters, and log views expose text/severity filters. Selection changes refresh the current panel preview without replacing the form or discarding typed input. Missing source data is shown explicitly instead of fabricated examples.
 
 Use **Save dashboard** to persist the whole view. Closing an editor with unfinished changes requires applying or discarding that panel. No arbitrary PromQL or free-position layout coordinates are implemented.
+
+
+## Guided metric queries and appearance
+
+In **Dashboards → Create dashboard → Add visualization**, choose a data source,
+metric, visualization, and aggregation. **Each series** preserves the original
+metric; Average, Sum, Minimum, Maximum, and Series count aggregate it. Group by
+Instance, Host, Container, Namespace, or Service when that label exists in your
+exporter. Missing labels collapse into one unlabeled group; they do not create
+resource metadata. Count reports series, not the metric's original unit.
+
+Open **Generated Prometheus query** to inspect the expression before saving.
+The server builds queries from supported metrics and validated operations.
+This is a guided builder for the bundled metric catalog, rather than an arbitrary
+PromQL editor. Log text and severity filters remain literal record filters.
+Identical metric queries within one dashboard render share a request; subsequent
+refreshes fetch fresh data.
+
+Name and save multiple personal dashboards. Use **Find dashboard** in the library,
+**Duplicate** to start an independent copy, and **Switch dashboard** in a saved
+view to compare dashboards. Copies retain the data-source references; they do not
+copy credentials or change access permissions. Existing owner checks still apply.
+
+The header's **Theme** menu offers Dark, Light, Midnight, and System. The choice
+is stored in this browser and synchronizes across its tabs. System follows the
+operating-system preference. This is a device preference, not an account setting.

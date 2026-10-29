@@ -25,3 +25,20 @@ PANELS = {
 def prometheus(path, params=None, source_id=''):
     from .connections import resolve, query
     return query(resolve(source_id),path,params)
+
+
+def build_query(panel, aggregation='none', group_by=''):
+    """Build bounded PromQL from reviewed metrics and allowlisted operations."""
+    if panel not in PANELS:
+        raise ValueError('Unknown dashboard panel')
+    if aggregation not in ('none', 'avg', 'sum', 'min', 'max', 'count'):
+        raise ValueError('Unsupported aggregation')
+    if group_by not in ('', 'instance', 'host_name', 'container_name', 'namespace', 'service_name'):
+        raise ValueError('Unsupported grouping label')
+    if aggregation == 'none' and group_by:
+        raise ValueError('Choose an aggregation before grouping')
+    query = PANELS[panel][1]
+    if aggregation != 'none':
+        grouping = f' by ({group_by})' if group_by else ''
+        query = f'{aggregation}{grouping} ({query})'
+    return query

@@ -8,7 +8,7 @@ from .storage import database, StorageError
 from .ingestion import ingest,IdempotencyConflict
 from .otlp import otel_logs_or_spans
 from .queries import query_view
-from .metrics import PANELS, prometheus
+from .metrics import PANELS, prometheus, build_query
 from .security import token_matches
 from . import accounts
 from .tenancy import tenant_id
@@ -28,8 +28,8 @@ def application(environ, start_response):
             content_type='application/javascript';body=(ROOT/'static'/'investigations.js').read_bytes()
         elif path in ('/license.txt','/notice.txt','/branding.txt','/third-party.txt') and method=='GET':
             content_type='text/plain; charset=utf-8';body=(ROOT/'static'/path[1:]).read_bytes()
-        elif path in ('/','/app.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
-            filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
+        elif path in ('/','/app.js','/appearance.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
+            filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/appearance.js':('appearance.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
             body = (ROOT/'static'/filename).read_bytes()
         elif path in ('/healthz','/livez') and method == 'GET':
             body = {'status':'alive','version':VERSION}
@@ -99,14 +99,15 @@ def application(environ, start_response):
                         raise ValueError('Unknown dashboard panel')
                     minutes = max(1,min(1440,int(params.get('minutes','60'))))
                     now = time.time()
-                    body = prometheus('query_range',{'query':PANELS[panel][1],'start':now-minutes*60,'end':now,'step':max(15,minutes*60//120)},params.get('datasource',''))
-                    body['panel'] = {'id':panel,'title':PANELS[panel][0],'unit':PANELS[panel][2]}
+                    query = build_query(panel, params.get('aggregation','none'), params.get('group_by',''))
+                    body = prometheus('query_range',{'query':query,'start':now-minutes*60,'end':now,'step':max(15,minutes*60//120)},params.get('datasource',''))
+                    body['panel'] = {'id':panel,'title':PANELS[panel][0],'unit':'series' if params.get('aggregation')=='count' else PANELS[panel][2], 'query':query}
                 elif view == 'targets':
                     body = prometheus('targets',source_id=params.get('datasource',''))
                 elif view == 'alerts':
                     body = prometheus('alerts',source_id=params.get('datasource',''))
                 elif view == 'dashboards':
-                    body = {'items':[{'id':k,'title':v[0],'unit':v[2]} for k,v in PANELS.items()]}
+                    body = {'items':[{'id':k,'title':v[0],'unit':v[2],'query':v[1]} for k,v in PANELS.items()]}
                 elif path == '/readyz':
                     with database() as db:
                         db.execute('SELECT 1').fetchone()

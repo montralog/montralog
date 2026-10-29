@@ -6,7 +6,7 @@ import secrets
 import time
 from .accounts import AccountError, require_csrf
 from .storage import database
-from .metrics import PANELS
+from .metrics import PANELS, build_query
 
 def admin(user):
     if not user or user.get('role') != 'admin':
@@ -44,6 +44,11 @@ def clean_definition(definition):
         if datasource:
             from .connections import resolve
             resolve(datasource)
+        if source == 'metric':
+            aggregation=p.get('aggregation','none');group_by=p.get('group_by','')
+            try:build_query(metric,aggregation,group_by)
+            except ValueError as exc:raise AccountError(str(exc)) from exc
+            item.update(aggregation=aggregation,group_by=group_by)
         item['datasource']=datasource
         clean.append(item)
     return {'minutes':minutes,'panels':clean}

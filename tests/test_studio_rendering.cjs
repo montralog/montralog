@@ -47,3 +47,15 @@ test('a bar panel with only unavailable samples explains the empty state', () =>
   const {context} = studio({});
   assert.match(context.barsHTML([{label: 'missing', value: NaN}]), /No finite samples/);
 });
+
+
+test('identical metric panels share a request and distinct sources remain isolated', async () => {
+  const {context,requests}=studio({available:true,panel:{unit:'state'},data:{result:[]}});
+  const p={source:'metric',metric:'targets',visual:'line',datasource:'a',aggregation:'avg',group_by:'instance'};
+  await Promise.all([context.studioPanel(p,60),context.studioPanel({...p,visual:'stat'},60)]);
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].params.get('aggregation'),'avg');
+  assert.equal(requests[0].params.get('group_by'),'instance');
+  await context.studioPanel({...p,datasource:'b'},60);
+  assert.equal(requests.length,2);
+});
