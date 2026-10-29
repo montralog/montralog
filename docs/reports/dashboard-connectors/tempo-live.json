@@ -1,0 +1,11 @@
+{
+  "backend": "grafana/tempo:3.1.1",
+  "synthetic_only": true,
+  "connection_test": "passed",
+  "trace_summary_count": 1,
+  "trace_found": true,
+  "status": "passed",
+  "limitation": "Immediate search after ingest returned no records; retrieval passed after backend indexing delay. No indexing latency SLA was measured.",
+  "source_revision": "cde45b3",
+  "run_date": "2026-10-29"
+}

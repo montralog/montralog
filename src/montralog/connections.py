@@ -1,4 +1,4 @@
-"""Server-side saved Prometheus data sources, safe metadata and connection tests."""
+"""Server-side saved observability data sources, safe metadata and connection tests."""
 import base64
 import ipaddress
 import json
@@ -15,6 +15,15 @@ from .storage import database
 from .config import MAX_BODY
 from .secret_store import seal, reveal
 from .outbound import open_request
+
+SOURCE_KINDS = {
+    'prometheus': ('Prometheus', 'metric'), 'victoriametrics': ('VictoriaMetrics', 'metric'),
+    'mimir': ('Mimir', 'metric'), 'thanos': ('Thanos', 'metric'),
+    'loki': ('Loki', 'logs'), 'tempo': ('Tempo', 'traces'),
+}
+
+def source_signal(source):
+    return SOURCE_KINDS.get(source.get('kind','prometheus'), ('', ''))[1]
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
@@ -48,6 +57,7 @@ def finite_json_number(value):
 
 def query(source,path,params=None):
     if path not in ('query','query_range','targets','alerts'):raise ValueError('Unsupported Prometheus API')
+    if source_signal(source)!='metric':return {'available':False,'error':'This source does not provide Prometheus metrics.'}
     try:
         base=validate_url(source['url'])
         headers={'Accept':'application/json'}
@@ -79,13 +89,13 @@ def resolve(ident=''):
     return {'id':'builtin','name':'Bundled Prometheus','url':os.getenv('PROMETHEUS_URL',''),'auth_type':'none','username':'','secret':''}
 
 def public(row):
-    return {key:row[key] for key in ('id','name','url','auth_type','username','is_default','last_checked','last_status','last_detail','created_at')}
+    return {key:row[key] for key in ('id','name','url','auth_type','username','is_default','last_checked','last_status','last_detail','created_at','kind')}
 
 def route(method,data,user,environ):
     if not user:raise AccountError('Sign in to continue.',401)
     if method=='GET':
         with database() as db:items=[public(dict(r)) for r in db.execute('SELECT * FROM data_sources ORDER BY name')]
-        builtin={'id':'builtin','name':'Bundled Prometheus','url':os.getenv('PROMETHEUS_URL',''),'auth_type':'none','username':'','is_default':int(not any(r['is_default'] for r in items)),'last_checked':0,'last_status':'bundled','last_detail':'Configured by your Docker or Helm deployment','created_at':0}
+        builtin={'id':'builtin','name':'Bundled Prometheus','url':os.getenv('PROMETHEUS_URL',''),'auth_type':'none','username':'','is_default':int(not any(r['is_default'] for r in items)),'last_checked':0,'last_status':'bundled','last_detail':'Configured by your Docker or Helm deployment','created_at':0,'kind':'prometheus'}
         return {'items':[builtin,*items]}
     from .studio import admin
     admin(user);require_csrf(environ,user)
@@ -106,7 +116,7 @@ def route(method,data,user,environ):
         with database() as db:old=db.execute('SELECT * FROM data_sources WHERE id=?',(ident,)).fetchone() if ident else None
         if ident and not old:raise AccountError('Connection not found.',404)
         if old and old['auth_type']==auth and not secret:
-            if auth!='none' and old['url'].rstrip('/')!=url:
+            if auth!='none' and (old['url'].rstrip('/')!=url or data.get('kind',dict(old).get('kind','prometheus'))!=dict(old).get('kind','prometheus')):
                 raise AccountError('Re-enter the credential when changing its server endpoint.')
             secret=reveal(old['secret'])
         if auth=='none':secret='';username=''
@@ -114,10 +124,12 @@ def route(method,data,user,environ):
             raise AccountError('Saved credentials require an HTTPS data source.')
         if auth=='basic' and (not username or not secret):raise AccountError('Enter the server username and password.')
         if auth=='bearer' and not secret:raise AccountError('Enter the server bearer credential.')
-        source={'id':ident,'name':name.strip(),'url':url,'auth_type':auth,'username':username,'secret':secret}
-    result=query(source,'query',{'query':'up'})
+        kind=data.get('kind',dict(old).get('kind','prometheus') if old else 'prometheus')
+        if not isinstance(kind,str) or kind not in SOURCE_KINDS:raise AccountError('Unsupported source kind.')
+        source={'kind':kind,'id':ident,'name':name.strip(),'url':url,'auth_type':auth,'username':username,'secret':secret}
+    result=query(source,'query',{'query':'up'}) if source_signal(source)=='metric' else test_remote(source)
     count=len(result.get('data',{}).get('result',[])) if result.get('available') else 0
-    detail=f'Connected. Prometheus returned {count} scrape-status series.' if result.get('available') else result.get('error','Connection failed.')
+    detail=f'Connected. {SOURCE_KINDS.get(source.get("kind","prometheus"), ("Backend",))[0]} API test passed ({count} results).' if result.get('available') else result.get('error','Connection failed.')
     status='connected' if result.get('available') else 'error';now=time.time()
     if action=='test-saved':
         if ident!='builtin':
@@ -127,15 +139,93 @@ def route(method,data,user,environ):
     if action!='save':raise AccountError('Unknown connection action.')
     if not result.get('available'):raise AccountError(detail)
     source['secret']=seal(source['secret'])
-    default=int(data.get('is_default',False) is True)
+    default=int(data.get('is_default',False) is True and source_signal(source)=='metric')
     with database() as db:
         if default:db.execute('UPDATE data_sources SET is_default=0 WHERE is_default=1')
         if ident:
-            db.execute('UPDATE data_sources SET name=?,url=?,auth_type=?,username=?,secret=?,is_default=?,last_checked=?,last_status=?,last_detail=? WHERE id=?',
-                       (source['name'],source['url'],source['auth_type'],source['username'],source['secret'],default,now,status,detail,ident))
+            db.execute('UPDATE data_sources SET name=?,url=?,auth_type=?,username=?,secret=?,is_default=?,last_checked=?,last_status=?,last_detail=?,kind=? WHERE id=?',
+                       (source['name'],source['url'],source['auth_type'],source['username'],source['secret'],default,now,status,detail,source['kind'],ident))
         else:
             if db.execute('SELECT COUNT(*) FROM data_sources').fetchone()[0]>=30:raise AccountError('Maximum of 30 saved data sources.')
             ident=secrets.token_hex(16)
-            db.execute('INSERT INTO data_sources(id,name,url,auth_type,username,secret,is_default,last_checked,last_status,last_detail,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-                       (ident,source['name'],source['url'],source['auth_type'],source['username'],source['secret'],default,now,status,detail,now))
+            db.execute('INSERT INTO data_sources(id,name,url,auth_type,username,secret,is_default,last_checked,last_status,last_detail,created_at,kind) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (ident,source['name'],source['url'],source['auth_type'],source['username'],source['secret'],default,now,status,detail,now,source['kind']))
     return {'id':ident,'ok':True,'message':detail,'series':count}
+
+
+def remote_json(source, path, params=None):
+    """Fixed-path adapters share the DNS-pinned, no-redirect secret transport."""
+    base=validate_url(source['url'])
+    headers={'Accept':'application/json'}
+    if source.get('auth_type')=='basic':
+        raw=(source.get('username','')+':'+reveal(source.get('secret',''))).encode()
+        headers['Authorization']='Basic '+base64.b64encode(raw).decode()
+    elif source.get('auth_type')=='bearer':headers['Authorization']='Bearer '+reveal(source.get('secret',''))
+    if source.get('auth_type','none')!='none' and not base.startswith('https://'):
+        raise AccountError('Credentials require HTTPS.')
+    url=base+path+('?' + urllib.parse.urlencode(params) if params else '')
+    with open_request(urllib.request.Request(url,headers=headers),timeout=8,private_origins=builtin_origins(source['url'])) as response:
+        raw=response.read(MAX_BODY+1)
+        if len(raw)>MAX_BODY:raise ValueError('Response too large')
+        result=json.loads(raw,parse_float=finite_json_number,parse_constant=finite_json_number)
+        if not isinstance(result,dict):raise ValueError('Invalid backend response')
+        return result
+
+
+def test_remote(source):
+    try:
+        kind=source.get('kind')
+        if kind=='loki':
+            result=remote_json(source,'/loki/api/v1/labels',{'start':int((time.time()-900)*1e9)})
+            if result.get('status')!='success' or not isinstance(result.get('data'),list):raise ValueError()
+        elif kind=='tempo':
+            result=remote_json(source,'/api/search',{'start':int(time.time()-900),'end':int(time.time()),'limit':1})
+            if not isinstance(result.get('traces'),list):raise ValueError()
+        else:raise ValueError()
+        return {'available':True,'data':{'result':[]}}
+    except urllib.error.HTTPError as error:
+        error.close()
+        return {'available':False,'error':'Backend API test failed. Check endpoint, credentials, TLS and network policy.'}
+    except (AccountError,OSError,ValueError):
+        return {'available':False,'error':'Backend API test failed. Check endpoint, credentials, TLS and network policy.'}
+
+
+def remote_records(source, signal, params):
+    from .validation import pattern
+    if source_signal(source)!=('logs' if signal=='patterns' else signal):raise AccountError('Data source does not support this signal.')
+    minutes=max(1,min(1440,int(params.get('minutes',60))))
+    now=time.time();service=params.get('service','');environment=params.get('environment','');text=params.get('q','');severity=params.get('severity','')
+    if any(not isinstance(v,str) or len(v)>200 for v in (service,environment,text,severity)):raise AccountError('Invalid source filter.')
+    try:
+        if source.get('kind')=='loki':
+            labels=[f'{key}={json.dumps(value)}' for key,value in (('service_name',service),('environment',environment)) if value]
+            selector='{'+','.join(labels or ['service_name=~".+"'])+'}'
+            if text:selector+=' |= '+json.dumps(text)
+            result=remote_json(source,'/loki/api/v1/query_range',{'query':selector,'start':int((now-minutes*60)*1e9),'end':int(now*1e9),'limit':100,'direction':'backward'})
+            if result.get('status')!='success' or result.get('data',{}).get('resultType')!='streams':raise ValueError()
+            items=[]
+            for stream in result['data'].get('result',[]):
+                labels=stream['stream']
+                for stamp,line,*_ in stream['values']:
+                    level=str(labels.get('severity',labels.get('level','INFO'))).upper()
+                    if severity and level!=severity:continue
+                    items.append({'time':int(stamp)/1e9,'message':str(line)[:16000],'severity':level,'service':labels.get('service_name',''),'environment':labels.get('environment','')})
+            items=sorted(items,key=lambda item:item['time'],reverse=True)[:100]
+            if signal=='patterns':
+                groups={}
+                for item in items:
+                    key=(item['service'],item['environment'],pattern(item['message']))
+                    group=groups.setdefault(key,{'service':key[0],'environment':key[1],'pattern':key[2],'occurrences':0,'errors':0})
+                    group['occurrences']+=1;group['errors']+=int(item['severity'] in ('ERROR','FATAL'))
+                items=sorted(groups.values(),key=lambda item:item['occurrences'],reverse=True)
+            return {'items':items,'sampled':True,'limit':100}
+        clauses=[f'resource.{key} = {json.dumps(value)}' for key,value in (('service.name',service),('deployment.environment.name',environment)) if value]
+        result=remote_json(source,'/api/search',{'q':'{ '+ ' && '.join(clauses)+' }','start':int(now-minutes*60),'end':int(now),'limit':100})
+        if not isinstance(result.get('traces'),list):raise ValueError()
+        for trace in result['traces'][:100]:
+            if not isinstance(trace,dict) or not isinstance(trace.get('traceID'),str) or not math.isfinite(float(trace.get('durationMs',0))):raise ValueError()
+        return {'items':[{'time':int(t.get('startTimeUnixNano',0))/1e9,'trace_id':t['traceID'],'services':t.get('rootServiceName',''),'name':t.get('rootTraceName',''),'spans':0,'duration_s':float(t.get('durationMs',0))/1000,'remote':True} for t in result['traces'][:100]],'limit':100}
+    except urllib.error.HTTPError as error:
+        error.close();raise AccountError('Source query failed. Check endpoint, access and query compatibility.',502) from None
+    except (OSError,ValueError,KeyError,TypeError):
+        raise AccountError('Source query failed. Check endpoint, access and query compatibility.',502) from None

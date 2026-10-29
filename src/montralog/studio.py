@@ -4,9 +4,10 @@ import json
 import math
 import secrets
 import time
+import urllib.parse
 from .accounts import AccountError, require_csrf
 from .storage import database
-from .metrics import PANELS
+from .metrics import PANELS, build_query
 
 def admin(user):
     if not user or user.get('role') != 'admin':
@@ -25,13 +26,34 @@ def clean_definition(definition):
             clean.append(p);continue
         if not isinstance(p,dict):raise AccountError('Invalid panel.')
         source=p.get('source','metric');visual=p.get('visual','line')
-        allowed={'metric':('line','bar','stat','table'),'logs':('table','timeline'),
+        allowed={'metric':('line','bar','stat','table','gauge'),'logs':('table','timeline'),
                  'patterns':('table','bar'),'events':('table','timeline'),'traces':('table','timeline')}
         if source not in allowed or visual not in allowed[source]:raise AccountError('Unsupported panel view for this signal.')
         metric=p.get('metric','cpu')
         if source=='metric' and metric not in PANELS:raise AccountError('Unknown metric panel.')
         item={'source':source,'visual':visual,'metric':metric if source=='metric' else '',
-              'title':str(p.get('title','')).strip()[:100], 'width':'full' if p.get('width')=='full' else 'half'}
+              'title':str(p.get('title','')).strip()[:100], 'width':p.get('width') if p.get('width') in ('third','half','full') else 'half'}
+        for key,limit in (('description',600),('reference',1000)):
+            value=p.get(key,'')
+            if not isinstance(value,str) or len(value)>limit:raise AccountError('Invalid panel '+key+'.')
+            item[key]=value.strip()
+        if item['reference']:
+            try:
+                link=urllib.parse.urlsplit(item['reference'])
+                if link.scheme!='https' or not link.hostname or link.username or link.password or any(ord(c)<=32 for c in item['reference']):raise ValueError()
+                link.port
+            except ValueError:raise AccountError('Panel references require an HTTPS URL without embedded credentials.') from None
+        icon=p.get('icon','activity')
+        if icon not in ('activity','server','container','cloud','application','logs','shield'):raise AccountError('Invalid panel icon.')
+        height=p.get('height','standard')
+        if height not in ('compact','standard','tall'):raise AccountError('Invalid panel height.')
+        item.update(icon=icon,height=height)
+        if visual=='gauge':
+            try:
+                gauge={key:float(p.get(key,default)) for key,default in (('min',0),('max',100),('warning',70),('critical',90))}
+                if not all(math.isfinite(v) and abs(v)<=1e12 for v in gauge.values()) or not gauge['min']<gauge['warning']<gauge['critical']<=gauge['max']:raise ValueError()
+            except (TypeError,ValueError):raise AccountError('Gauge needs finite min < warning < critical <= max values.') from None
+            item.update(gauge)
         for key in ('service','environment','q'):
             value=p.get(key,'')
             if not isinstance(value,str) or len(value)>200:raise AccountError('Panel filter is too long.')
@@ -43,7 +65,14 @@ def clean_definition(definition):
         if not isinstance(datasource,str) or len(datasource)>64:raise AccountError('Invalid data source.')
         if datasource:
             from .connections import resolve
-            resolve(datasource)
+            connection=resolve(datasource)
+            from .connections import source_signal
+            if source_signal(connection)!=('logs' if source=='patterns' else source):raise AccountError('Data source does not support this panel signal.')
+        if source == 'metric':
+            aggregation=p.get('aggregation','none');group_by=p.get('group_by','')
+            try:build_query(metric,aggregation,group_by)
+            except ValueError as exc:raise AccountError(str(exc)) from exc
+            item.update(aggregation=aggregation,group_by=group_by)
         item['datasource']=datasource
         clean.append(item)
     return {'minutes':minutes,'panels':clean}
