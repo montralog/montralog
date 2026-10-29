@@ -28,7 +28,7 @@ These are actual application screenshots. The AI example uses synthetic telemetr
 
 ### Dashboards and timelines
 
-Combine resource graphs, log activity and deployment events in a saved dashboard. The development dashboard builder adds guided metric aggregation with generated queries, dashboard search/duplication/switching, and Dark, Light, Midnight or System appearance. See the [dashboard guide](docs/STUDIO.md) for configuration.
+Combine resource graphs, log activity and deployment events in a saved dashboard. The development dashboard builder adds guided metric aggregation with generated queries, dashboard search/duplication/switching, Dark, Light, Midnight or System appearance, gauge thresholds, contextual references, and flexible panel sizes. The development connector catalogue adds Loki logs/patterns, Tempo trace summaries, and Prometheus-compatible backend types. See the [dashboard guide](docs/STUDIO.md) for configuration.
 
 ![Montralog dashboard with CPU, memory and log/deployment timeline panels](docs/assets/screenshots/dashboards.jpg)
 

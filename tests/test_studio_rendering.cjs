@@ -7,7 +7,7 @@ const vm = require('node:vm');
 function studio(response) {
   const requests = [];
   const context = vm.createContext({
-    URLSearchParams, showLogin() {}, titles: {}, workspaceView: async () => '',
+    URL, URLSearchParams, showLogin() {}, titles: {}, workspaceView: async () => '',
     document: {addEventListener() {}},
     esc: value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;'),
     date: value => String(value), fmt: value => String(value),
@@ -58,4 +58,13 @@ test('identical metric panels share a request and distinct sources remain isolat
   assert.equal(requests[0].params.get('group_by'),'instance');
   await context.studioPanel({...p,datasource:'b'},60);
   assert.equal(requests.length,2);
+});
+
+
+test('gauge clamps geometry, labels critical values and escapes descriptions and references',async()=>{
+ const {context}=studio({available:true,panel:{unit:'%'},data:{result:[{metric:{host_name:'api'},values:[[1,'150']]}]}});
+ const html=await context.studioPanel({source:'metric',metric:'cpu',visual:'gauge',min:0,max:100,warning:70,critical:90,width:'third',height:'tall',description:'<script>bad</script>',reference:'javascript:bad'},60);
+ assert.match(html,/gauge critical/);assert.match(html,/width="300" height="16" rx="8" class="gauge-fill"/);
+ assert.match(html,/panel-third panel-height-tall/);assert.match(html,/&lt;script>/);assert.doesNotMatch(html,/href="javascript:/);
+ assert.match(context.referenceHTML({reference:'https://example.com/docs'}),/rel="noopener noreferrer"/);
 });

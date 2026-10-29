@@ -256,3 +256,33 @@ test('themes persist and guided queries survive dashboard duplication and switch
   await page.emulateMedia({colorScheme:'dark'});
   await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
 });
+
+
+test('advanced gauge panels persist layout, context and safe references; catalog has real adapters',async({page})=>{
+ await signIn(page);
+ await page.locator('nav [data-view="dashboards"]').click();await page.locator('#studio-new').click();
+ await page.getByLabel('Dashboard name',{exact:true}).fill('Advanced browser dashboard');
+ const editor=page.getByRole('region',{name:'Panel editor',exact:true});
+ await editor.getByLabel('Panel title',{exact:true}).fill('Host utilization');
+ await editor.getByRole('button',{name:'Gauge',exact:true}).click();
+ await editor.getByRole('combobox',{name:'Width',exact:true}).selectOption('third');
+ await editor.getByRole('combobox',{name:'Height',exact:true}).selectOption('tall');
+ await editor.getByRole('combobox',{name:'Panel icon',exact:true}).selectOption('server');
+ await editor.getByRole('textbox',{name:'Description',exact:true}).fill('CPU context for operators');
+ await editor.getByLabel('Reference URL',{exact:true}).fill('https://example.com/runbook');
+ await editor.getByLabel('Warning threshold',{exact:true}).fill('65');
+ await editor.getByRole('button',{name:'Add panel',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .panel-third')).toHaveCount(1);
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await expect(page.getByRole('link',{name:'↗ Reference',exact:true})).toHaveAttribute('href','https://example.com/runbook');
+ await page.reload();await page.locator('nav [data-view="dashboards"]').click();
+ const card=page.locator('.dashboard-card').filter({has:page.getByRole('heading',{name:'Advanced browser dashboard',exact:true})});
+ await card.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Edit panel',exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'View',exact:true})).toHaveValue('gauge');
+ await expect(page.getByLabel('Warning threshold',{exact:true})).toHaveValue('65');
+ await expect(page.getByRole('textbox',{name:'Description',exact:true})).toHaveValue('CPU context for operators');
+ await page.locator('nav [data-view="connect"]').click();
+ for(const name of ['Prometheus','VictoriaMetrics','Mimir','Thanos','Loki','Tempo'])await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Configure Loki →',exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'Backend type',exact:true})).toHaveValue('loki');
+});

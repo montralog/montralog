@@ -92,7 +92,10 @@ def application(environ, start_response):
                 params = {k:v[-1] for k,v in urllib.parse.parse_qs(environ.get('QUERY_STRING','')).items()}
                 view = path.removeprefix('/api/')
                 if view in ('overview','logs','patterns','traces','samples','events'):
-                    body = query_view(view, params)
+                    if params.get('datasource') and view in ('logs','patterns','traces'):
+                        from .connections import resolve, remote_records
+                        body = remote_records(resolve(params['datasource']),view,params)
+                    else:body = query_view(view, params)
                 elif view == 'metrics':
                     panel = params.get('panel','targets')
                     if panel not in PANELS:

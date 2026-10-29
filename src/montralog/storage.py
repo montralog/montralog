@@ -11,7 +11,7 @@ from pathlib import Path
 from .config import database_url, ROOT
 
 DB = Path(os.getenv('MONTRALOG_DB',str(Path.cwd()/'data'/'montralog.db')))
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 class StorageError(Exception):
     """A storage failure safe to expose as a generic HTTP 503."""
@@ -108,11 +108,11 @@ def initialize():
         if version>SCHEMA_VERSION:
             raise StorageError('Database schema is newer than this application')
         for migration in range(version+1, SCHEMA_VERSION+1):
-            filename = {1:'001_initial.sql',2:'002_accounts.sql',3:'003_studio.sql',4:'004_connections.sql',5:'005_access.sql',6:'006_tenancy.sql',7:'007_assurance.sql'}[migration]
+            filename = {1:'001_initial.sql',2:'002_accounts.sql',3:'003_studio.sql',4:'004_connections.sql',5:'005_access.sql',6:'006_tenancy.sql',7:'007_assurance.sql',8:'008_source_kinds.sql'}[migration]
             sql=(ROOT/'migrations'/dialect/filename).read_text(encoding='utf-8')
             for statement in sql.split(';'):
                 if statement.strip():
-                    if migration==7 and statement.strip().startswith('ALTER TABLE'):
+                    if migration in (7,8) and statement.strip().startswith('ALTER TABLE'):
                         parts=statement.split();table,column=parts[2],parts[5]
                         if postgres_enabled():
                             exists=db.execute('SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?',(table,column)).fetchone()
