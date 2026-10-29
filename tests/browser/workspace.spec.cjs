@@ -247,6 +247,7 @@ test('themes persist and guided queries survive dashboard duplication and switch
   await card.getByRole('button',{name:'Duplicate',exact:true}).click();
   await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue(name+' copy');
   await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'Switch dashboard',exact:true})).toHaveValue(await page.getByRole('combobox',{name:'Switch dashboard',exact:true}).locator('option').filter({hasText:name+' copy'}).getAttribute('value'));
   await page.getByRole('combobox',{name:'Switch dashboard',exact:true}).selectOption({label:name});
   await expect(page.locator('#content h2').first()).toHaveText(name);
   await page.getByLabel('Theme',{exact:true}).selectOption('system');
