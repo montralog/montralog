@@ -171,3 +171,21 @@ saved connections. Existing sources migrate as Prometheus. Back up the database
 and encryption key before upgrading. Older schema-7 binaries cannot open a
 migrated database; rollback requires the pre-upgrade database backup and matching
 key. Adapter tests use fixtures unless a report explicitly names a live backend.
+
+
+## Faster creation and expanded inspection
+
+From the dashboard library, use **Infrastructure health**, **Application operations**,
+or **Incident investigation** to create a complete editable draft. Review its
+sources and save it explicitly. Starters reference supported metrics and local
+Montralog records; they do not install exporters or create data sources.
+
+The panel editor offers CPU health, memory trend, request traffic, error logs,
+recurring patterns and deployment presets. Pick one, choose the appropriate
+source, preview, and add it. Add or discard current edits before switching to
+another preset. Appearance, descriptions and reference links live under
+**Appearance and context (optional)**. Gauge thresholds stay visible when relevant.
+
+Use the expand icon on a panel to inspect it in a larger dialog. It fetches the
+same panel and time window without changing the dashboard definition. Close it
+with the close button or Escape to return to the saved view.

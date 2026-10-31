@@ -266,6 +266,7 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  await editor.getByLabel('Panel title',{exact:true}).fill('Host utilization');
  await editor.getByRole('button',{name:'Gauge',exact:true}).click();
  await editor.getByRole('combobox',{name:'Width',exact:true}).selectOption('third');
+ await editor.getByText('Appearance and context (optional)',{exact:true}).click();
  await editor.getByRole('combobox',{name:'Height',exact:true}).selectOption('tall');
  await editor.getByRole('combobox',{name:'Panel icon',exact:true}).selectOption('server');
  await editor.getByRole('textbox',{name:'Description',exact:true}).fill('CPU context for operators');
@@ -280,9 +281,34 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  await card.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Edit panel',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'View',exact:true})).toHaveValue('gauge');
  await expect(page.getByLabel('Warning threshold',{exact:true})).toHaveValue('65');
+ await page.getByText('Appearance and context (optional)',{exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Description',exact:true})).toHaveValue('CPU context for operators');
  await page.locator('nav [data-view="connect"]').click();
  for(const name of ['Prometheus','VictoriaMetrics','Mimir','Thanos','Loki','Tempo'])await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Configure Loki →',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Backend type',exact:true})).toHaveValue('loki');
+});
+
+
+test('dashboard starters, panel presets and expanded inspection support easy creation',async({page})=>{
+ await signIn(page);await page.locator('nav [data-view="dashboards"]').click();
+ await page.getByRole('button',{name:'Use Infrastructure health',exact:true}).click();
+ await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('Infrastructure health');
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
+ await page.getByLabel('Dashboard name',{exact:true}).fill('Easy creation browser dashboard');
+ await page.getByRole('button',{name:'＋ Add visualization',exact:true}).click();
+ await page.getByRole('button',{name:'Error logs Timeline · ERROR records',exact:true}).click();
+ const editor=page.getByRole('region',{name:'Panel editor',exact:true});
+ await expect(editor.getByRole('combobox',{name:'Signal',exact:true})).toHaveValue('logs');
+ await expect(editor.getByRole('combobox',{name:'View',exact:true})).toHaveValue('timeline');
+ await expect(editor.getByRole('combobox',{name:'Log severity',exact:true})).toHaveValue('ERROR');
+ await editor.getByRole('button',{name:'Add panel',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(5);
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await page.getByRole('button',{name:'Expand Host CPU utilization',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Expanded panel',exact:true});await expect(dialog).toBeVisible();
+ await expect(dialog.getByRole('heading',{name:'Host CPU utilization',exact:true})).toBeVisible();
+ await dialog.press('Escape');await expect(dialog).toHaveCount(0);
+ await page.getByRole('button',{name:'Edit dashboard',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(5);
 });
