@@ -1,5 +1,6 @@
 const {test, expect} = require('@playwright/test');
 const password = 'Browser-fixture-password-1';
+async function setTheme(page,value){await page.locator('nav [data-view="settings"]').click();await page.getByRole('combobox',{name:'Theme',exact:true}).selectOption(value);}
 async function signIn(page, username = 'admin') {
   await page.goto('/');
   await page.getByLabel('Username', {exact: true}).fill(username);
@@ -221,11 +222,11 @@ test('dashboard canvas stays visible and visual choices update live panel previe
 
 test('themes persist and guided queries survive dashboard duplication and switching', async ({page}) => {
   await signIn(page);
-  await page.getByLabel('Theme', {exact:true}).selectOption('light');
+  await setTheme(page,'light');
   await expect(page.locator('html')).toHaveAttribute('data-theme','light');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme','light');
-  await page.getByLabel('Theme', {exact:true}).selectOption('midnight');
+  await setTheme(page,'midnight');
   await expect(page.locator('html')).toHaveAttribute('data-theme','midnight');
   await page.locator('nav [data-view="dashboards"]').click();
   await page.locator('#studio-new').click();
@@ -250,7 +251,7 @@ test('themes persist and guided queries survive dashboard duplication and switch
   await expect(page.getByRole('combobox',{name:'Switch dashboard',exact:true})).toHaveValue(await page.getByRole('combobox',{name:'Switch dashboard',exact:true}).locator('option').filter({hasText:name+' copy'}).getAttribute('value'));
   await page.getByRole('combobox',{name:'Switch dashboard',exact:true}).selectOption({label:name});
   await expect(page.locator('#content h2').first()).toHaveText(name);
-  await page.getByLabel('Theme',{exact:true}).selectOption('system');
+  await setTheme(page,'system');
   await page.emulateMedia({colorScheme:'light'});
   await expect(page.locator('html')).toHaveAttribute('data-theme','light');
   await page.emulateMedia({colorScheme:'dark'});
@@ -266,6 +267,7 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  await editor.getByLabel('Panel title',{exact:true}).fill('Host utilization');
  await editor.getByRole('button',{name:'Gauge',exact:true}).click();
  await editor.getByRole('combobox',{name:'Width',exact:true}).selectOption('third');
+ await editor.getByText('Appearance and context (optional)',{exact:true}).click();
  await editor.getByRole('combobox',{name:'Height',exact:true}).selectOption('tall');
  await editor.getByRole('combobox',{name:'Panel icon',exact:true}).selectOption('server');
  await editor.getByRole('textbox',{name:'Description',exact:true}).fill('CPU context for operators');
@@ -280,9 +282,74 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  await card.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Edit panel',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'View',exact:true})).toHaveValue('gauge');
  await expect(page.getByLabel('Warning threshold',{exact:true})).toHaveValue('65');
+ await page.getByText('Appearance and context (optional)',{exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Description',exact:true})).toHaveValue('CPU context for operators');
  await page.locator('nav [data-view="connect"]').click();
  for(const name of ['Prometheus','VictoriaMetrics','Mimir','Thanos','Loki','Tempo'])await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Configure Loki →',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Backend type',exact:true})).toHaveValue('loki');
+});
+
+
+test('dashboard starters, panel presets and expanded inspection support easy creation',async({page})=>{
+ await signIn(page);await page.locator('nav [data-view="dashboards"]').click();
+ await page.getByRole('button',{name:'Use Infrastructure health',exact:true}).click();
+ await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('Infrastructure health');
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
+ await page.getByLabel('Dashboard name',{exact:true}).fill('Easy creation browser dashboard');
+ await page.getByRole('button',{name:'＋ Add visualization',exact:true}).click();
+ await page.getByRole('button',{name:'Error logs Timeline · ERROR records',exact:true}).click();
+ const editor=page.getByRole('region',{name:'Panel editor',exact:true});
+ await expect(editor.getByRole('combobox',{name:'Signal',exact:true})).toHaveValue('logs');
+ await expect(editor.getByRole('combobox',{name:'View',exact:true})).toHaveValue('timeline');
+ await expect(editor.getByRole('combobox',{name:'Log severity',exact:true})).toHaveValue('ERROR');
+ await editor.getByRole('button',{name:'Add panel',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(5);
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await page.getByRole('button',{name:'Expand Host CPU utilization',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Expanded panel',exact:true});await expect(dialog).toBeVisible();
+ await expect(dialog.getByRole('heading',{name:'Host CPU utilization',exact:true})).toBeVisible();
+ await dialog.press('Escape');await expect(dialog).toHaveCount(0);
+ await page.getByRole('button',{name:'Edit dashboard',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(5);
+});
+
+
+test('multi-panel picker and direct saved-panel editing; AI result remains an unsaved draft',async({page})=>{
+ await signIn(page,'paneladmin');await page.locator('nav [data-view="dashboards"]').click();await page.locator('#studio-new').click();
+ await page.getByLabel('Dashboard name',{exact:true}).fill('Multiple panels demo');
+ await page.getByRole('button',{name:'Select multiple presets',exact:true}).click();
+ const picker=page.getByRole('dialog',{name:'Add multiple panels',exact:true});
+ await picker.getByRole('checkbox',{name:'CPU health Gauge · host utilization',exact:true}).check();
+ await picker.getByRole('checkbox',{name:'Memory trend Line · usage over time',exact:true}).check();
+ await picker.getByRole('button',{name:'Add selected panels',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(2);
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await page.getByRole('button',{name:'Edit Host CPU utilization',exact:true}).click();
+ const editor=page.getByRole('region',{name:'Panel editor',exact:true});await expect(editor.getByLabel('Panel title',{exact:true})).toHaveValue('Host CPU utilization');
+ await editor.getByLabel('Panel title',{exact:true}).fill('Edited CPU panel');await editor.getByRole('button',{name:'Update panel',exact:true}).click();
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();await page.locator('#dashboard-back').click();
+ await page.route('**/api/control/panel-drafts',async route=>{
+  if(route.request().method()==='GET')return route.fulfill({json:{enabled:true,profiles:[{id:'',provider:'ollama',model:'fixture'}],items:[]}});
+  const action=route.request().postDataJSON().action;
+  return route.fulfill({json:action==='generate'?{id:'fixture',status:'queued'}:{id:'fixture',status:'complete',message:'Draft ready for review.',draft:{name:'AI proposed dashboard',definition:{minutes:60,panels:[{source:'metric',metric:'memory',visual:'line',title:'Memory proposal',width:'half'}]}}}});
+ });
+ await page.getByRole('button',{name:'◇ Create with AI',exact:true}).click();
+ const ai=page.getByRole('dialog',{name:'Create dashboard with AI',exact:true});await ai.getByLabel('Dashboard description',{exact:true}).fill('Create a memory monitoring dashboard');
+ await ai.getByRole('button',{name:'Generate dashboard draft',exact:true}).click();
+ await ai.getByRole('button',{name:'Review on dashboard canvas',exact:true}).click();
+ await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('AI proposed dashboard');
+ const saved=await (await page.request.get('/api/saved-dashboards')).json();expect(saved.items.some(d=>d.name==='AI proposed dashboard')).toBe(false);
+});
+
+
+test('themes live only in Settings and Windows/Linux dashboards support more than four panels',async({page})=>{
+ await signIn(page,'paneladmin');await expect(page.locator('header').getByRole('combobox',{name:'Theme',exact:true})).toHaveCount(0);
+ await setTheme(page,'light');await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+ await page.locator('nav [data-view="dashboards"]').click();await page.getByRole('button',{name:'Use Windows systems',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(8);await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await page.getByRole('combobox',{name:'Select panel to edit',exact:true}).selectOption('7');
+ await expect(page.getByRole('region',{name:'Panel editor',exact:true}).getByLabel('Panel title',{exact:true})).toHaveValue('Application traces');
+ await page.locator('#studio-hide-editor').click();await page.locator('#studio-cancel').click();
+ await page.getByRole('button',{name:'Use Linux systems',exact:true}).click();await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(10);
 });

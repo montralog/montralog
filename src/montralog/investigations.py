@@ -166,7 +166,10 @@ def process_one():
             if not cfg['local'] and (os.getenv('MONTRALOG_AI_EGRESS','').lower()!='true' or not report.get('_egress_approved')):raise ValueError('Egress not approved')
             return cfg
         cfg=authorize()
-        if report.get('_agent'):
+        if report.get('kind')=='panel-draft':
+            from .panel_drafts import run as draft_panels
+            report['draft'],report['usage']=draft_panels(report)
+        elif report.get('_agent'):
             from .observability_agent import run
             analysis,usage,trace=run(report,report.get('profile_id',''),authorize=authorize)
             report['analysis']=analysis;report['usage']=usage;report['tool_trace']=trace
@@ -187,7 +190,7 @@ def route(method,data,user,environ):
     admin(user)
     if method=='GET':
         with database() as db:
-            runs=[dict(row) for row in db.execute('SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? ORDER BY created_at DESC LIMIT 50',(user['id'],))]
+            runs=[dict(row) for row in db.execute("SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? AND fingerprint NOT LIKE 'panel-draft:%' ORDER BY created_at DESC LIMIT 50",(user['id'],))]
         return {'items':runs,'providers':model_providers.PROVIDERS,'enabled':os.getenv('MONTRALOG_AI_ENABLED','').lower()=='true',
             'provider':os.getenv('MONTRALOG_AI_PROVIDER','ollama'),'model':os.getenv('MONTRALOG_AI_MODEL','qwen3:4b'),
             'profiles':model_providers.public_profiles(),'agentic_tools':['metric_snapshot','metric_trend'],'external_egress':os.getenv('MONTRALOG_AI_EGRESS','').lower()=='true','automatic_remediation':False}
