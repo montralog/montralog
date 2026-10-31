@@ -112,7 +112,7 @@ Name and save multiple personal dashboards. Use **Find dashboard** in the librar
 view to compare dashboards. Copies retain the data-source references; they do not
 copy credentials or change access permissions. Existing owner checks still apply.
 
-The header's **Theme** menu offers Dark, Light, Midnight, and System. The choice
+**Settings → Appearance → Theme** offers Dark, Light, Midnight, and System. The choice
 is stored in this browser and synchronizes across its tabs. System follows the
 operating-system preference. This is a device preference, not an account setting.
 
@@ -189,3 +189,48 @@ another preset. Appearance, descriptions and reference links live under
 Use the expand icon on a panel to inspect it in a larger dialog. It fetches the
 same panel and time window without changing the dashboard definition. Close it
 with the close button or Escape to return to the saved view.
+
+
+## Dashboard library and panel ownership
+
+Create separate dashboards for Windows systems, Linux systems and applications.
+Each dashboard owns its panel list and supports **0–24 panels**, independently of
+other dashboards. The number shown on a starter is its initial panel count, not a
+limit. Windows and Linux starters contain eight and ten panels respectively.
+Windows host metrics use the Montralog host collector; this does not add a
+native windows_exporter query adapter. Missing exporters produce empty panels,
+not invented values.
+
+Use **Add multiple panels** or **Select multiple presets** to add several at once.
+Repeat as needed up to the 24-panel limit. Saved dashboards expose an Edit action
+on each panel plus **Select panel to edit** for navigating a long dashboard.
+Changes become a dashboard draft; save explicitly to persist them.
+
+Theme selection has moved to **Settings → Appearance** and is saved in the browser.
+It is no longer displayed in the dashboard header.
+
+## AI-assisted dashboard drafts
+
+Administrators can choose **Create with AI** in the dashboard library. Configure
+an approved Ollama or other provider using [the AI setup guide](AI-PREVIEW.md), and
+run the existing investigation worker. Jobs are queued and processed outside
+browser requests. Use Recent drafts to reopen a job after closing the dialog.
+
+The model receives only your description and the supported metric catalogue.
+Do not include secrets in the description. Remote providers require both operator
+`MONTRALOG_AI_EGRESS=true` and explicit approval in the form. The existing daily
+request/token budget and private provider profiles apply. The worker rechecks
+administrator authorization and provider policy before calling the model.
+
+AI proposes **1–6 panels per request**, not a limit on saved dashboards. It can
+choose supported metrics, signal types and visualizations; it cannot return raw
+queries, datasource IDs, URLs, executable code or arbitrary panel settings.
+The response is validated before being offered for review. Click **Review on
+dashboard canvas**, inspect sources and panels, then save. Generation alone never
+writes a saved dashboard, executes a telemetry query, or changes infrastructure.
+AI output is a suggestion and may be inaccurate. External providers require
+private operator credentials; model weights and usage retain their own terms.
+
+For an existing dashboard, open its editor and choose **Add panels with AI**. The
+validated proposed panels are appended to that dashboard draft without changing
+its name or saving automatically. The combined total must remain at most 24.
