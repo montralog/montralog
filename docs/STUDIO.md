@@ -234,3 +234,8 @@ private operator credentials; model weights and usage retain their own terms.
 For an existing dashboard, open its editor and choose **Add panels with AI**. The
 validated proposed panels are appended to that dashboard draft without changing
 its name or saving automatically. The combined total must remain at most 24.
+
+For separate worker pools, set `MONTRALOG_AI_WORKER_KIND=panel-draft` on a
+dashboard-draft worker and `MONTRALOG_AI_WORKER_KIND=investigation` on an
+investigation worker. Leaving it unset processes both types in queue order.
+Each worker retains the same authorization, budget and provider restrictions.

@@ -52,6 +52,18 @@ class PanelDraftTests(test_accounts.AccountTests):
         self.cookie=auth['headers']['Set-Cookie'].split(';')[0];self.csrf=auth['body']['csrf']
         self.assertEqual(self.request('/api/control/panel-drafts','POST',{'action':'open','id':ident})['status'],404)
 
+    def test_panel_worker_leaves_older_investigations_queued(self):
+        with patch.dict(os.environ,ENV):
+            ident=self.request('/api/control/panel-drafts','POST',{'action':'generate','prompt':'Create CPU and log panels'})['body']['id']
+            with storage.database() as db:
+                owner=db.execute('SELECT user_id FROM investigation_runs WHERE id=?',(ident,)).fetchone()[0]
+                db.execute('INSERT INTO investigation_runs(id,user_id,fingerprint,status,report,provider,model,created_at) VALUES (?,?,?,?,?,?,?,?)',('older-investigation',owner,'older-investigation','queued','{}','ollama','qwen3:4b',0))
+            with patch.object(model_providers,'generate',return_value=(VALID,{})):
+                self.assertTrue(investigations.process_one('panel-draft'))
+            with storage.database() as db:
+                self.assertEqual(db.execute('SELECT status FROM investigation_runs WHERE id=?',(ident,)).fetchone()[0],'complete')
+                self.assertEqual(db.execute("SELECT status FROM investigation_runs WHERE id='older-investigation'").fetchone()[0],'queued')
+
 class PanelDraftValidationTests(unittest.TestCase):
     def test_unknown_queries_urls_and_oversized_drafts_rejected(self):
         for result in [{'name':'Bad','panels':[{**VALID['panels'][0],'query':'up'}]}, {'name':'Bad','panels':[{**VALID['panels'][0],'datasource':'other'}]}, {'name':'Bad','panels':[{**VALID['panels'][0],'metric':'invented'}]}, {'name':'Bad','panels':VALID['panels']*4}]:

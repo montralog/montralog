@@ -340,6 +340,13 @@ test('multi-panel picker and direct saved-panel editing; AI result remains an un
  await ai.getByRole('button',{name:'Review on dashboard canvas',exact:true}).click();
  await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('AI proposed dashboard');
  const saved=await (await page.request.get('/api/saved-dashboards')).json();expect(saved.items.some(d=>d.name==='AI proposed dashboard')).toBe(false);
+ await page.getByRole('button',{name:'◇ Add panels with AI',exact:true}).click();
+ const append=page.getByRole('dialog',{name:'Add panels with AI',exact:true});
+ await append.getByLabel('Dashboard description',{exact:true}).fill('Add another supported memory panel');
+ await append.getByRole('button',{name:'Generate dashboard draft',exact:true}).click();
+ await append.getByRole('button',{name:'Add proposed panels to canvas',exact:true}).click();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(2);
+ await expect(page.getByLabel('Dashboard name',{exact:true})).toHaveValue('AI proposed dashboard');
 });
 
 

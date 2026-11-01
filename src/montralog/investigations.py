@@ -142,14 +142,16 @@ def public_report(report):
     return {key:value for key,value in report.items() if not key.startswith('_')}
 
 
-def process_one():
+def process_one(kind=''):
+    if kind not in ('','panel-draft','investigation'):
+        raise ValueError('Unsupported AI worker kind')
     now=time.time();owner=secrets.token_hex(16)
     with database() as db:
         if not postgres_enabled():db.execute('BEGIN IMMEDIATE')
         # Interrupted/ambiguous provider requests are never retried silently.
         db.execute("UPDATE investigation_runs SET status='failed',lease_owner='' WHERE status='running' AND lease_until<?",(now,))
         lock=' FOR UPDATE SKIP LOCKED' if postgres_enabled() else ''
-        row=db.execute("SELECT * FROM investigation_runs WHERE status='queued' ORDER BY created_at LIMIT 1"+lock).fetchone()
+        row=db.execute("SELECT * FROM investigation_runs WHERE status='queued' AND (?='' OR (?='panel-draft' AND fingerprint LIKE 'panel-draft:%') OR (?='investigation' AND fingerprint NOT LIKE 'panel-draft:%')) ORDER BY created_at LIMIT 1"+lock,(kind,kind,kind)).fetchone()
         if not row:return False
         row=dict(row)
         db.execute("UPDATE investigation_runs SET status='running',lease_owner=?,lease_until=? WHERE id=?",(owner,now+1200,row['id']))
@@ -263,9 +265,12 @@ def main():
     from .storage import initialize
     from .secret_store import cipher
     cipher(required=True);initialize()
+    kind=os.getenv('MONTRALOG_AI_WORKER_KIND','')
+    if kind not in ('','panel-draft','investigation'):
+        raise ValueError('Unsupported AI worker kind')
     while True:
         try:
-            if not process_one():time.sleep(2)
+            if not process_one(kind):time.sleep(2)
         except Exception:
             import logging
             logging.error('AI worker cycle failed; no provider request is retried automatically.')
