@@ -135,3 +135,11 @@ class PostgresAgentTests(test_observability_agent.AgentTests):
         with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
             super().setUp()
     tearDown=PostgresGatewayTests.tearDown
+
+import test_panel_drafts
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'),'No isolated PostgreSQL test database supplied')
+class PostgresPanelDraftTests(test_panel_drafts.PanelDraftTests):
+    def setUp(self):
+        with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
+            super().setUp()
+    tearDown=PostgresGatewayTests.tearDown

@@ -20,6 +20,7 @@ class PanelDraftTests(test_accounts.AccountTests):
             before=self.request('/api/saved-dashboards')['body']['items']
             created=self.request('/api/control/panel-drafts','POST',{'action':'generate','prompt':'Create a CPU and error log dashboard'})
             self.assertEqual(created['status'],200);ident=created['body']['id']
+            self.assertEqual(self.request('/api/control/panel-drafts')['body']['items'][0]['id'],ident)
             self.assertEqual(self.request('/api/control/investigations')['body']['items'],[])
             with patch.object(model_providers,'generate',return_value=(VALID,{})) as generate:
                 self.assertTrue(investigations.process_one())

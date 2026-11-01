@@ -34,12 +34,12 @@ def run(report):
 def route(method,data,user,environ):
     admin(user)
     if method=='GET':
-        with database() as db:rows=[dict(row) for row in db.execute("SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? AND fingerprint LIKE 'panel-draft:%' ORDER BY created_at DESC LIMIT 10",(user['id'],))]
+        with database() as db:rows=[dict(row) for row in db.execute("SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? AND fingerprint LIKE ? ORDER BY created_at DESC LIMIT 10",(user['id'],'panel-draft:%'))]
         return {'enabled':os.getenv('MONTRALOG_AI_ENABLED','').lower()=='true','profiles':model_providers.public_profiles(),'items':rows}
     if method!='POST':raise AccountError('Not found',404)
     require_csrf(environ,user)
     if data.get('action')=='open':
-        with database() as db:row=db.execute("SELECT * FROM investigation_runs WHERE id=? AND user_id=? AND fingerprint LIKE 'panel-draft:%'",(str(data.get('id','')),user['id'])).fetchone()
+        with database() as db:row=db.execute("SELECT * FROM investigation_runs WHERE id=? AND user_id=? AND fingerprint LIKE ?",(str(data.get('id','')),user['id'],'panel-draft:%')).fetchone()
         if not row:raise AccountError('Panel draft not found.',404)
         report=json.loads(row['report'])
         return {'id':row['id'],'status':row['status'],'draft':report.get('draft') if row['status']=='complete' else None,'message':'Draft ready for review.' if row['status']=='complete' else 'Generation failed; check the model configuration or request.' if row['status']=='failed' else 'Waiting for the AI worker.'}

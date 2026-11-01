@@ -26,6 +26,16 @@ Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timeli
 
 These are actual application screenshots. The AI example uses synthetic telemetry and a real local Qwen3 4B model; it is not a production incident or a root-cause accuracy benchmark.
 
+### Dashboard library and AI-assisted creation
+
+Create separate Windows, Linux and Application dashboards, each with up to 24
+independently editable panels. Add several presets at once, or review panel drafts
+from local Ollama and operator-approved model profiles. Themes are under Settings
+→ Appearance. These are development-branch features; review sources and filters
+before saving. [Setup and limits](docs/STUDIO.md) · [Verification evidence](docs/reports/dashboard-creation/README.md).
+
+![Separate dashboard cards with 8, 10 and 12 panels](docs/assets/screenshots/dashboard-library.png)
+
 ### Advanced dashboard development preview
 
 Gauge thresholds, panel icons and references, flexible widths, Loki log patterns

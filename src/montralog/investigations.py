@@ -151,7 +151,7 @@ def process_one(kind=''):
         # Interrupted/ambiguous provider requests are never retried silently.
         db.execute("UPDATE investigation_runs SET status='failed',lease_owner='' WHERE status='running' AND lease_until<?",(now,))
         lock=' FOR UPDATE SKIP LOCKED' if postgres_enabled() else ''
-        row=db.execute("SELECT * FROM investigation_runs WHERE status='queued' AND (?='' OR (?='panel-draft' AND fingerprint LIKE 'panel-draft:%') OR (?='investigation' AND fingerprint NOT LIKE 'panel-draft:%')) ORDER BY created_at LIMIT 1"+lock,(kind,kind,kind)).fetchone()
+        row=db.execute("SELECT * FROM investigation_runs WHERE status='queued' AND (?='' OR (?='panel-draft' AND fingerprint LIKE ?) OR (?='investigation' AND fingerprint NOT LIKE ?)) ORDER BY created_at LIMIT 1"+lock,(kind,kind,'panel-draft:%',kind,'panel-draft:%')).fetchone()
         if not row:return False
         row=dict(row)
         db.execute("UPDATE investigation_runs SET status='running',lease_owner=?,lease_until=? WHERE id=?",(owner,now+1200,row['id']))
@@ -192,7 +192,7 @@ def route(method,data,user,environ):
     admin(user)
     if method=='GET':
         with database() as db:
-            runs=[dict(row) for row in db.execute("SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? AND fingerprint NOT LIKE 'panel-draft:%' ORDER BY created_at DESC LIMIT 50",(user['id'],))]
+            runs=[dict(row) for row in db.execute("SELECT id,status,provider,model,created_at FROM investigation_runs WHERE user_id=? AND fingerprint NOT LIKE ? ORDER BY created_at DESC LIMIT 50",(user['id'],'panel-draft:%'))]
         return {'items':runs,'providers':model_providers.PROVIDERS,'enabled':os.getenv('MONTRALOG_AI_ENABLED','').lower()=='true',
             'provider':os.getenv('MONTRALOG_AI_PROVIDER','ollama'),'model':os.getenv('MONTRALOG_AI_MODEL','qwen3:4b'),
             'profiles':model_providers.public_profiles(),'agentic_tools':['metric_snapshot','metric_trend'],'external_egress':os.getenv('MONTRALOG_AI_EGRESS','').lower()=='true','automatic_remediation':False}
