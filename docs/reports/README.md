@@ -49,3 +49,9 @@ See the [independent-agent review and validation scope](0.7.0/README.md). Releas
 ## Version 0.8.0
 
 See [published 0.8.0 evidence](0.8.0/README.md) for exact-image scans, test counts, load/recovery measurements, four real local-model evaluation cases and the supplementary live synthetic agent demo. The new-agent review was partial; its scope is explicit.
+
+## Version 0.8.1
+
+[Release notes](../RELEASE-0.8.1.md) describe dashboard cards, schema-8 backend adapters, AI panel drafts and upgrade/rollback requirements. [Dashboard development verification](dashboard-creation/README.md) retains the synthetic local-model results and limitations.
+
+Exact-image security, SBOM, browser, local-AI and acceptance archives are attached to the [0.8.1 release](https://github.com/montralog/montralog/releases/tag/v0.8.1) after its gated publication succeeds. Development checks do not substitute for those release artifacts or an independent penetration test. Historical reports above remain unchanged.

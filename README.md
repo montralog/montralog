@@ -122,7 +122,7 @@ flowchart TB
   Worker --> Prometheus
   Worker -->|Optional contact point| Slack["Slack"]
   Prometheus --> Alertmanager["Alertmanager: separate metric-rule pipeline"]
-  AI["Optional AI worker: investigations and preview panel drafts"] --> DB
+  AI["Optional AI worker: investigations and panel drafts"] --> DB
   AI -->|Bounded investigation tools| Prometheus
   AI --> Local["Local Ollama"]
   AI -. Explicit hosted consent .-> Hosted["Approved company / hosted model"]
