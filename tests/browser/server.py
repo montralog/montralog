@@ -19,6 +19,9 @@ with tempfile.TemporaryDirectory(prefix='montralog-browser-') as temporary:
     storage.DB = Path(temporary) / 'browser.db'
     storage.initialize()
     create_account('admin', 'Browser owner', 'Browser-fixture-password-1')
+    create_account('paneladmin', 'Browser panel administrator', 'Browser-fixture-password-1')
+    with storage.database() as db:
+        db.execute("INSERT INTO user_roles(user_id,role) SELECT id,'admin' FROM users WHERE username='paneladmin'")
     create_account('viewer', 'Browser viewer', 'Browser-fixture-password-1')
     ingest('logs', [{'service': 'checkout', 'environment': 'browser-test', 'severity': 'ERROR', 'message': 'Browser fixture error'},
                     {'service': 'checkout', 'environment': 'browser-test', 'message': '<img src=x onerror="window.__montralogXss=1">'}])

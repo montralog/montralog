@@ -1,50 +1,47 @@
 # Montralog documentation
 
-Start with the [repository quickstart](../README.md#quickstart), then follow the evaluation walkthrough.
+Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.1 release notes](RELEASE-0.8.1.md) for dashboard features and schema-8 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
 
-## Install and deploy
+## Install and operate
 
-- [Public container installation](CONTAINERS.md)
-- [Organization rollout and acceptance](ORGANIZATION_ROLLOUT.md)
-- [Release and support policy](SUPPORT.md)
-
-- [Evaluation walkthrough](EVALUATION.md)
-- [Docker / operations / recovery](OPERATIONS.md)
-- [Customer isolation with Docker](TENANCY.md)
-- [SQLite, PostgreSQL and migration](STORAGE.md)
+| Goal | Guide |
+|---|---|
+| Install, upgrade and restore | [Docker installation](CONTAINERS.md) |
+| Walk through a first evaluation | [Evaluation](EVALUATION.md) |
+| Run day-to-day operations | [Operations](OPERATIONS.md) |
+| Separate customer installations | [Customer isolation](TENANCY.md) |
+| Understand storage and migrations | [Storage](STORAGE.md) |
+| Protect secrets and recover backups | [Assurance](ASSURANCE.md) |
+| Plan an organization rollout | [Rollout and acceptance](ORGANIZATION_ROLLOUT.md) |
+| Check supported deployment scope | [Support policy](SUPPORT.md) |
 
 ## Use the workspace
 
-- [Prometheus connections](CONNECTIONS.md)
-- [Dashboards, API tokens, alerts and notifications](STUDIO.md)
-- [People, teams and company sign-in](IDENTITY.md)
+- [Dashboard cards, panels, queries, themes, alerts and notifications](STUDIO.md)
+- [Configure an approved AI model](../README.md#configure-your-ai-model)
+- [Investigation evidence, runbooks and provider limits](AI-INVESTIGATIONS.md)
+- [Data connections](CONNECTIONS.md)
 - [Local accounts and sessions](ACCOUNTS.md)
-- [Telemetry ingestion API](API.md)
-- [Agents](../agents/README.md)
+- [People, teams and company sign-in](IDENTITY.md)
+- [Telemetry ingestion API](API.md) and [agents](../agents/README.md)
+- [Screenshot provenance and feature status](assets/screenshots/README.md)
 
 ## Develop and assess
 
-- [Published scan and acceptance reports](reports/README.md)
-- [Test cases and execution](TESTING.md)
+- [Architecture](ARCHITECTURE.md) and [project structure](PROJECT_STRUCTURE.md)
+- [Testing](TESTING.md) and [contributing](../CONTRIBUTING.md)
+- [Public scan and verification reports](reports/README.md)
+- [Dashboard creation verification](reports/dashboard-creation/README.md)
+- [Published 0.8.0 evidence](reports/0.8.0/README.md), [release notes](RELEASE-0.8.0.md) and [agent review scope](reports/0.8.0/review.md)
+- [Production acceptance matrix](PRODUCTION.md)
+- [Release status](RELEASE.md), [changelog](CHANGELOG.md) and [security policy](../SECURITY.md)
 
-- [Current security changes and upgrade](SECURITY-0.6.0.md)
-- [Current release notes](RELEASE-0.6.0.md)
-- [Historical 0.5.1 verification](SECURITY_VERIFICATION-0.5.1.md)
+## Historical reference
 
-- [Executed functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
+These guides remain useful for their named versions; they are not current release certifications.
 
-- [Project structure](PROJECT_STRUCTURE.md)
-- [Architecture](ARCHITECTURE.md)
-- [Contributing](../CONTRIBUTING.md)
-- [Current verification evidence](VERIFICATION.md)
-- [Production-readiness checklist](PRODUCTION.md)
-- [Release status](RELEASE.md)
-- [Security policy](../SECURITY.md)
-- [Changelog](CHANGELOG.md)
+- [0.6.0 security changes](SECURITY-0.6.0.md) and [release notes](RELEASE-0.6.0.md)
+- [0.5.1 verification](SECURITY_VERIFICATION-0.5.1.md)
+- [Functional review — 23 October 2026](FUNCTIONAL_REVIEW-2026-10-23.md)
 
-Historical versioned verification reports describe their stated versions only. They do not certify the current application or a different deployment.
-
-Historical Helm/Kubernetes guides remain for existing installations; use the Docker guide for new installations.
-
-- [Isolation, backup and reliability assurance](ASSURANCE.md)
-- [Optional AI investigations](AI-INVESTIGATIONS.md)
+Docker Compose is the supported installation path for new deployments. Historical Helm/Kubernetes guides and versioned artifacts remain for compatibility.

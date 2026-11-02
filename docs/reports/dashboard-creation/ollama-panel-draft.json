@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "saved_dashboards_unchanged": true,
+  "provider": "ollama",
+  "model": "qwen3:4b",
+  "synthetic_only": true,
+  "panel_count": 4,
+  "draft_name": "Dashboard for System and Application Monitoring",
+  "source_revision": "df2f41c",
+  "run_date": "2026-11-01",
+  "scope": "Local Ollama draft generation and validation; no hosted model, production telemetry or automatic save.",
+  "limitations": [
+    "Model proposes supported signals and visualizations only. Filters and data sources require manual review.",
+    "The log panel title mentioned ERROR but its severity filter remained unset; this is a draft, not semantic correctness proof."
+  ]
+}

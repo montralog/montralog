@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "montralog"
-version = "0.8.0"
+version = "0.8.1"
 description = "Self-hosted monitoring, tracing, logging and tracking"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-dependencies = ["joserfc==1.6.8", "cryptography==50.0.2"]
+dependencies = ["joserfc==1.7.6", "cryptography==50.0.2"]
 
 [project.optional-dependencies]
 server = ["gunicorn==26.2.0; sys_platform != 'win32'", "psycopg[binary]==3.3.6"]

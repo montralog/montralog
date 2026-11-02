@@ -68,3 +68,15 @@ test('gauge clamps geometry, labels critical values and escapes descriptions and
  assert.match(html,/panel-third panel-height-tall/);assert.match(html,/&lt;script>/);assert.doesNotMatch(html,/href="javascript:/);
  assert.match(context.referenceHTML({reference:'https://example.com/docs'}),/rel="noopener noreferrer"/);
 });
+
+
+test('starter dashboards create independent editable panels and reject unknown starters',()=>{
+ const {context}=studio({});
+ const first=context.starterDefinition('infrastructure');
+ const second=context.starterDefinition('infrastructure');
+ assert.equal(first.definition.panels.length,4);
+ assert.equal(first.definition.panels[0].visual,'gauge');
+ first.definition.panels[0].title='Changed';
+ assert.equal(second.definition.panels[0].title,'Host CPU utilization');
+ assert.throws(()=>context.starterDefinition('unknown'),/Unknown dashboard starter/);
+});

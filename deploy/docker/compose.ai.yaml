@@ -14,7 +14,7 @@ services:
       MONTRALOG_AI_DAILY_REQUESTS: ${MONTRALOG_AI_DAILY_REQUESTS:-20}
       MONTRALOG_AI_DAILY_TOKEN_BUDGET: ${MONTRALOG_AI_DAILY_TOKEN_BUDGET:-300000}
   investigations:
-    image: ghcr.io/montralog/montralog:0.8.0
+    image: ghcr.io/montralog/montralog:0.8.1
     environment:
       <<: *ai
       MONTRALOG_SILO_STRICT: "true"

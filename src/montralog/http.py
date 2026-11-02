@@ -28,8 +28,8 @@ def application(environ, start_response):
             content_type='application/javascript';body=(ROOT/'static'/'investigations.js').read_bytes()
         elif path in ('/license.txt','/notice.txt','/branding.txt','/third-party.txt') and method=='GET':
             content_type='text/plain; charset=utf-8';body=(ROOT/'static'/path[1:]).read_bytes()
-        elif path in ('/','/app.js','/appearance.js','/workspace.js','/studio.js','/connections.js','/access.js','/style.css') and method == 'GET':
-            filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/appearance.js':('appearance.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
+        elif path in ('/','/app.js','/appearance.js','/workspace.js','/studio.js','/ai-panels.js','/connections.js','/access.js','/style.css') and method == 'GET':
+            filename, content_type = {'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','application/javascript'),'/appearance.js':('appearance.js','application/javascript'),'/workspace.js':('workspace.js','application/javascript'),'/studio.js':('studio.js','application/javascript'),'/ai-panels.js':('ai-panels.js','application/javascript'),'/connections.js':('connections.js','application/javascript'),'/access.js':('access.js','application/javascript'),'/style.css':('style.css','text/css')}[path]
             body = (ROOT/'static'/filename).read_bytes()
         elif path in ('/healthz','/livez') and method == 'GET':
             body = {'status':'alive','version':VERSION}
@@ -57,7 +57,10 @@ def application(environ, start_response):
             from . import studio, notifications
             user=accounts.session(environ)
             data=read_json(environ) if method=='POST' else {}
-            if path=='/api/control/investigations':
+            if path=='/api/control/panel-drafts':
+                from .panel_drafts import route as panel_drafts
+                body=panel_drafts(method,data,user,environ)
+            elif path=='/api/control/investigations':
                 from .investigations import route
                 body=route(method,data,user,environ)
             elif path=='/api/control/runbooks':

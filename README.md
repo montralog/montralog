@@ -1,62 +1,82 @@
 <p align="center"><img src="docs/assets/montralog-mark.svg" width="96" alt="Montralog"></p>
 <h1 align="center">Montralog</h1>
-<p align="center"><strong>Monitoring · Tracing · Logging · Tracking</strong><br>Self-hosted observability with evidence-first AI investigations.</p>
-<p align="center"><a href="#see-it-in-action">Screenshots</a> · <a href="#quickstart-docker">Install</a> · <a href="#architecture">Architecture</a> · <a href="#configure-your-ai-model">AI setup</a> · <a href="docs/README.md">Documentation</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+<p align="center"><strong>Monitoring · Tracing · Logging · Tracking</strong><br>Your telemetry, dashboards and evidence in one self-hosted workspace.</p>
+<p align="center"><a href="#quickstart-docker">Install with Docker</a> · <a href="#dashboards-in-action">Screenshots</a> · <a href="#architecture">Architecture</a> · <a href="#configure-your-ai-model">Configure AI</a> · <a href="docs/README.md">Documentation</a></p>
 
-Montralog brings logs, traces, Prometheus metrics, dashboards, deployment timelines and alerts into one workspace. Start without AI, or connect an operator-approved model to investigate captured evidence and recommend checks. Run it on your own infrastructure with Docker Compose. First-party code is Apache-2.0; no hosted Montralog account is required.
+Montralog combines Prometheus metrics, logs, trace summaries, deployment events and alerts. Build dashboards for your systems and applications, investigate incidents with linked evidence, and optionally connect your own approved AI model. Run the stack on your infrastructure; no hosted Montralog account is required. First-party code is **Apache-2.0**.
 
-**Version 0.8.0** introduces a bounded, read-only investigation agent, dashboard assistance, alert runbooks and selectable model profiles. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) · [Release verification](https://github.com/montralog/montralog/actions/runs/40376265345) · [Public evidence](docs/reports/0.8.0/README.md).
+## Release status
 
-## What you can do
+**Version 0.8.1** brings dashboard cards, multi-panel editing, guided queries, AI panel drafts and external backend adapters. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.1) · [Release notes and upgrade steps](docs/RELEASE-0.8.1.md).
 
-| Capability | Available in Montralog |
+This source targets 0.8.1. The versioned image and downloads become available only after the gated release workflow succeeds; source changes alone do not establish publication. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
+
+## What you can build
+
+| Workflow | What Montralog provides |
 |---|---|
-| Explore telemetry | Search logs, group recurring patterns, inspect spans and connect logs to traces |
-| Build dashboards | Saved line, bar, statistic, table, pattern and timeline panels |
-| Connect metrics | Bundled Prometheus or saved Prometheus connections with optional authentication |
-| Investigate incidents | Compare logs, failed spans, deployment changes and bounded metric reads with an optional model |
-| Guide the agent | Save alert context, up to eight runbook checks and recovery criteria; choose an approved model |
-| Alert and notify | Log/metric rules, pending/firing state, in-app notifications and optional Slack webhooks with persisted retries |
-| Manage access | Local accounts, revocable sessions, admin/viewer roles, teams/groups and expiring read/ingest tokens |
-| Use company login | Entra ID, Google Workspace and Okta OIDC configuration; requires your registration and live validation |
-| Monitor infrastructure | Instrument applications and connect exporters for servers, Docker and Kubernetes; optional host/Docker agent |
-| Operate customer stacks | Separate database, credentials, encryption key, network and volumes per customer |
+| Observe services | Search logs, group repeated messages, inspect traces and correlate deployment events |
+| Create personal dashboards | Saved panels and timelines; includes dashboard cards, guided queries, gauges, presets and up to 24 panels per dashboard |
+| Connect telemetry | Bundled Prometheus and local records; includes Loki, Tempo and Prometheus-compatible backend choices |
+| Investigate incidents | Optional bounded, read-only AI analysis with observed evidence, uncertainty and runbook checks |
+| Create panels with AI | Ask an approved model for 1–6 validated panel proposals, review them and save explicitly |
+| Alert and notify | Metric/log rules, pending/firing states, in-app notifications and optional Slack contact points with persisted retries |
+| Manage access | Local login, admin/viewer roles, teams/groups, revocable sessions and expiring read/ingest tokens |
+| Use company sign-in | Entra ID, Google Workspace and Okta OIDC configuration; your registration and live validation are required |
+| Separate customers | A dedicated Docker stack, database, volumes, credentials and encryption key for each customer |
 
-## See it in action
+<a id="see-it-in-action"></a>
+<a id="see-montralog-in-action"></a>
 
-These are actual application screenshots. The AI example uses synthetic telemetry and a real local Qwen3 4B model; it is not a production incident or a root-cause accuracy benchmark.
+## Dashboards in action
 
-### Advanced dashboard development preview
+Actual application captures from the 0.8.1 dashboard implementation, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
 
-Gauge thresholds, panel icons and references, flexible widths, Loki log patterns
-and Tempo trace summaries are available on the dashboard development branch.
-[Capabilities and setup](docs/STUDIO.md) · [Test evidence and limits](docs/reports/dashboard-connectors/README.md).
+### One dashboard for each area of work
 
-![Advanced Montralog dashboard with synthetic Prometheus, Loki and Tempo data](docs/assets/screenshots/advanced-dashboard.png)
+Create Windows, Linux and Application dashboards with their own panel lists. Search, open, edit or duplicate a saved dashboard. Starter counts are starting points: each dashboard supports **0–24 panels**.
 
-### Dashboards and timelines
+![Dashboard library with Applications, Linux and Windows cards](docs/assets/screenshots/dashboard-library.png)
 
-Combine resource graphs, log activity and deployment events in a saved dashboard. The development dashboard builder adds guided metric aggregation with generated queries, dashboard search/duplication/switching, Dark, Light, Midnight or System appearance, gauge thresholds, contextual references, and flexible panel sizes. The development connector catalogue adds Loki logs/patterns, Tempo trace summaries, and Prometheus-compatible backend types. See the [dashboard guide](docs/STUDIO.md) for configuration.
+### Edit panels on a visual canvas
 
-![Montralog dashboard with CPU, memory and log/deployment timeline panels](docs/assets/screenshots/dashboards.jpg)
+Open a dashboard and choose **Edit**, or use an individual panel's edit action. Add visualizations, choose supported metrics and aggregations, inspect the generated query, and preview real data. Resize, reorder, duplicate or expand panels, then choose **Save dashboard**.
 
-![Montralog log and deployment timelines with labelled synthetic events and trace links](docs/assets/screenshots/timelines.jpg)
+![Application dashboard canvas with live synthetic request-rate panels and editing controls](docs/assets/screenshots/dashboard-canvas.png)
 
-### Connected data sources
+### Add several panels together
 
-Save a Prometheus connection, configure authentication when needed and test connectivity before using its metrics.
+Choose **Add multiple panels**, select presets and review the combined count. Use it repeatedly to grow a dashboard beyond its starter panels. Themes are configured separately under **Settings → Appearance**.
 
-![Montralog connection setup and successful Prometheus test](docs/assets/screenshots/connections.jpg)
+![Multi-panel preset selection with the current dashboard panel count](docs/assets/screenshots/panel-presets.png)
 
-### AI investigation with evidence
+### Review AI-generated panels before saving
 
-From a panel choose **Ask AI**, or from an alert choose **Investigate**. The agent captures the selected window, considers the saved runbook and inspects approved metrics. Results link to observed records and state uncertainty and verification steps.
+Administrators can choose **Create with AI** or **Add panels with AI**. The model receives the description and supported metric catalogue, not telemetry or credentials. Validated proposals open as an editable draft. Check data sources, titles, thresholds and filters yourself: a title mentioning ERROR does not establish an ERROR severity filter.
 
-![Completed synthetic AI investigation with evidence references, uncertainty and recommended checks](docs/assets/screenshots/agent-investigation.png)
+![Completed local Ollama four-panel draft ready for human review](docs/assets/screenshots/ai-panel-draft.png)
 
-In this demo, timeout logs reported **100/100 connections**, a deployment changed the pool from **20 to 100**, and resource samples showed **96.5% CPU / 92% memory**. The agent inspected CPU, then requested memory and container CPU. It identified missing database limits and load measurements; the application retained the result as an **unverified hypothesis**.
+[Dashboard walkthrough and limits](docs/STUDIO.md) · [AI setup](#configure-your-ai-model) · [Real Ollama verification](docs/reports/dashboard-creation/ollama-panel-draft.json).
 
-![Literal evidence, missing database measurements and the agent's read-only metric tool trace](docs/assets/screenshots/agent-evidence.png)
+### Investigate with evidence
+
+Choose **Ask AI** on a supported local panel, or **Investigate** on an alert. The investigation captures a bounded time window, follows the saved runbook and can request approved metric reads. Results retain evidence references, missing measurements and recommended checks. Hypotheses remain unverified until you validate them.
+
+![Synthetic incident investigation with evidence references and uncertainty](docs/assets/screenshots/agent-investigation.png)
+
+## Supported data sources
+
+| Source | Supported use | Availability |
+|---|---|---|
+| Prometheus | Guided metric queries and connection testing | Released |
+| Montralog storage | Logs, patterns, traces and deployment events | Released |
+| VictoriaMetrics, Mimir, Thanos | Supported metrics through their Prometheus-compatible query API | 0.8.1 |
+| Loki | Sampled log tables, timelines and recurring patterns | 0.8.1 |
+| Tempo | Trace search summaries and timelines | 0.8.1 |
+
+Use **Connect data** to select a backend, configure its query URL and optional authentication, test, then save. Private endpoints need operator destination allowlisting; credentials require HTTPS. The adapters do not implement arbitrary SQL, Elasticsearch, Splunk, Datadog, cloud OAuth or custom tenant headers. [Connection setup](docs/CONNECTIONS.md) · [Adapter behavior and limits](docs/STUDIO.md#external-backend-adapters).
+
+<a id="quickstart"></a>
 
 ## Quickstart: Docker
 
@@ -65,10 +85,10 @@ Requires Docker Engine/Desktop with **Linux containers**, Docker Compose v2 and 
 From PowerShell or a POSIX shell:
 
 ```sh
-git clone --branch v0.8.0 --depth 1 https://github.com/montralog/montralog.git
+git clone --branch v0.8.1 --depth 1 https://github.com/montralog/montralog.git
 cd montralog
 
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.1 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -90,27 +110,29 @@ Use `docker compose ps` to check services. `docker compose stop` retains named v
 
 ```mermaid
 flowchart TB
-  Browser["Browser: dashboards, logs, alerts, investigations"] --> Gateway["Montralog gateway: login, authorization and APIs"]
+  UI["Browser: dashboards, logs, alerts and AI review"] --> Gateway["Gateway: login, authorization and APIs"]
   Apps["Instrumented applications"] --> Collector["OpenTelemetry Collector: durable queue"]
   Collector -->|Logs and traces| Gateway
-  Collector -->|Metrics endpoint| Prometheus["Prometheus"]
+  Collector -->|Scraped metrics| Prometheus["Prometheus time-series storage"]
   Exporters["Server, Docker and Kubernetes exporters"] -->|Scraped by| Prometheus
-  Gateway --> DB[("Application database: SQLite default / optional PostgreSQL")]
-  Gateway -->|Saved connection / fixed queries| Prometheus
-  Prometheus -->|Rules| Alertmanager["Alertmanager"]
-  Alerts["Montralog notification worker"] --> DB
-  Alerts --> Prometheus
-  Alerts -->|Optional contact point| Slack["Slack"]
-  Retention["Retention worker"] --> DB
-  Agent["Optional investigation worker"] --> DB
-  Agent -->|Bounded read-only tools| Prometheus
-  Agent --> Local["Local Ollama model"]
-  Agent -. Explicit hosted consent .-> Hosted["Approved hosted/company model"]
+  Gateway --> DB[("Application database: SQLite / optional PostgreSQL")]
+  Gateway -->|Guided metric reads| Prometheus
+  Gateway -. External adapters .-> Backends["Loki / Tempo / compatible metric APIs"]
+  Worker["Notification and retention workers"] --> DB
+  Worker --> Prometheus
+  Worker -->|Optional contact point| Slack["Slack"]
+  Prometheus --> Alertmanager["Alertmanager: separate metric-rule pipeline"]
+  AI["Optional AI worker: investigations and panel drafts"] --> DB
+  AI -->|Bounded investigation tools| Prometheus
+  AI --> Local["Local Ollama"]
+  AI -. Explicit hosted consent .-> Hosted["Approved company / hosted model"]
 ```
 
-The gateway serves the UI and authenticated APIs. The application database holds telemetry records, accounts, dashboards, alert state and investigations. Prometheus stores metric time series. The notification worker evaluates Montralog rules and persists delivery retries; Prometheus/Alertmanager have their own metric-rule pipeline. The optional investigation worker processes queued analyses independently of browser requests.
+The gateway serves the UI and authenticated APIs. The application database stores accounts, dashboard definitions, local telemetry, alert state and AI jobs. **Prometheus stores metric time series**; dashboard settings do not require PostgreSQL. External Loki/Tempo reads are not imported into the local database.
 
-Each customer runs a separate stack. Within that stack, gateway and workers share its application database. Customers must not share database volumes, tokens or encryption keys. SQLite is a single-node option; optional PostgreSQL does not make the entire stack highly available. See the [architecture guide](docs/ARCHITECTURE.md) and [storage guide](docs/STORAGE.md).
+AI jobs run outside browser requests. Panel generation proposes configuration; investigations collect and analyze evidence. Neither automatically remediates infrastructure. Notification workers evaluate Montralog rules and persist delivery attempts; Alertmanager has a separate rule/delivery configuration.
+
+Each customer runs a separate stack. Within that stack, gateway and workers share its database. Customers must not share database volumes, tokens or encryption keys. SQLite supports a single-node deployment; switching to PostgreSQL alone does not provide end-to-end high availability. [Architecture](docs/ARCHITECTURE.md) · [Storage](docs/STORAGE.md) · [Customer isolation](docs/TENANCY.md).
 
 ## Configure your AI model
 
@@ -167,6 +189,14 @@ MONTRALOG_AI_EGRESS=true
 
 The AI Compose file passes these values to both services. After applying the configuration, **Approved model** lists the profile IDs. Keys stay server-side and never appear in browser configuration. For a completely local deployment, leave hosted egress disabled. Hosted analysis requires both operator-enabled egress and explicit per-investigation sharing approval; review the selected redacted telemetry before consenting.
 
+### Create dashboards with AI
+
+After configuring the provider and running the AI worker on version 0.8.1, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
+
+A request proposes **1–6 panels**, while a dashboard holds **up to 24**. Only supported signals and views are accepted; arbitrary queries, URLs and executable settings are rejected. Hosted requests require explicit sharing approval in addition to operator-enabled egress. [Full dashboard guide](docs/STUDIO.md#ai-assisted-dashboard-drafts).
+
+Use version 0.8.1 for both the gateway and AI worker. Do not mix application versions. This release uses schema 8; rollback requires the pre-upgrade database backup and matching encryption key.
+
 ### How an investigation works
 
 1. Select the model, saved metric source, time window and question, optionally linked to an alert/runbook.
@@ -178,43 +208,53 @@ The agent cannot choose arbitrary URLs, PromQL, credentials or shell commands. I
 
 The optional AI Compose configuration defaults to **20 submissions/day** and **300,000 reserved units/day** per customer. One maximum agent investigation reserves **94,500 units** for its three-call bound. Reservations count prompt bytes plus output allowances, are retained on failure and are not monetary prices. Set `MONTRALOG_AI_DAILY_REQUESTS` and `MONTRALOG_AI_DAILY_TOKEN_BUDGET` to your approved limits. See [complete AI configuration and limits](docs/AI-INVESTIGATIONS.md).
 
-## Security, reliability and release evidence
+## Operate and verify
 
-The release pipeline verifies application tests on Python 3.11/3.13, Chromium workflows, container setup, Helm deployment, resilience and real local-model inference. It scans the image and dependencies, retains static findings, repeats bootstrap/load/recovery checks on the exact scanned image, then publishes that image with its digest, provenance and checksums.
+Before allowing remote access, configure HTTPS and secure cookies, restrict ingress, test backup/restore with the encryption key, and validate capacity for your workload. Preserve the `.env`, database and matching key during upgrades. Use separate backups and credentials per customer.
 
-[0.8.0 reports](docs/reports/0.8.0/README.md) include the measured workload and limitations. Clean automated scans are not proof that an application is secure. The new agent's [separate review was partial](docs/reports/0.8.0/review.md); no external professional penetration-test certification is claimed. Follow the [production acceptance matrix](docs/PRODUCTION.md), [backup and secret recovery guide](docs/ASSURANCE.md), and [rollout guide](docs/ORGANIZATION_ROLLOUT.md) for your environment.
+The verification pipeline covers Python 3.11/3.13, browser workflows, containers, security scanning, resilience, Helm compatibility and local-model inference. Reports describe a specific revision and workload; clean scans and short synthetic tests do not certify production security or sustained capacity.
+
+- [Dashboard creation checks and dependency audit](docs/reports/dashboard-creation/README.md)
+- [Published 0.8.0 evidence and review limits](docs/reports/0.8.0/README.md)
+- [Production acceptance matrix](docs/PRODUCTION.md)
+- [Backup, encrypted secrets and recovery](docs/ASSURANCE.md)
+- [Organization rollout](docs/ORGANIZATION_ROLLOUT.md)
 
 ## Documentation
 
-| Goal | Guide |
+| Start here | Guide |
 |---|---|
-| Install, upgrade and restore | [Docker](docs/CONTAINERS.md), [operations](docs/OPERATIONS.md) |
-| Configure AI and read its results | [AI investigations](docs/AI-INVESTIGATIONS.md) |
-| Connect services and metrics | [Connections](docs/CONNECTIONS.md), [API](docs/API.md), [agents](agents/README.md) |
-| Create dashboards and alert runbooks | [Studio](docs/STUDIO.md) |
-| Manage accounts and company login | [Accounts](docs/ACCOUNTS.md), [identity](docs/IDENTITY.md) |
-| Separate customer deployments | [Tenant isolation](docs/TENANCY.md), [assurance](docs/ASSURANCE.md) |
-| Inspect scans, tests and measurements | [Public reports](docs/reports/README.md), [production acceptance](docs/PRODUCTION.md) |
+| Install and upgrade | [Docker setup, backup and restore](docs/CONTAINERS.md) |
+| Build dashboards | [Cards, panels, queries, themes and AI drafts](docs/STUDIO.md) |
+| Configure models | [AI investigations and provider settings](docs/AI-INVESTIGATIONS.md) |
+| Connect and ingest | [Connections](docs/CONNECTIONS.md), [API](docs/API.md), [agents](agents/README.md) |
+| Manage users | [Accounts](docs/ACCOUNTS.md), [teams and OIDC](docs/IDENTITY.md) |
+| Host separate customers | [Isolation](docs/TENANCY.md), [assurance](docs/ASSURANCE.md) |
+| Assess the project | [Public reports](docs/reports/README.md), [testing](docs/TESTING.md), [support scope](docs/SUPPORT.md) |
 | Understand the code | [Architecture](docs/ARCHITECTURE.md), [project structure](docs/PROJECT_STRUCTURE.md) |
-| Find all guides | [Documentation index](docs/README.md) |
+| Browse all guides | [Documentation index](docs/README.md) |
 
 ## Current boundaries
 
-Teams/groups organize membership; they do not provide telemetry isolation, custom RBAC, SCIM or automatic deprovisioning. Company login does not collect Microsoft 365, Google Workspace or Okta audit events; audit-event polling is not implemented. Other tools can send supported telemetry through your collector or adapter.
+Teams/groups organize membership; they do not isolate telemetry or implement custom RBAC, SCIM or automatic deprovisioning. OIDC sign-in does not collect Microsoft 365, Google Workspace or Okta audit events. Connect exporters and instrument services explicitly; Montralog does not discover every system automatically.
 
-AI citations establish provenance, not causal truth. Redaction is heuristic; source-wide host metrics do not establish service attribution. Short synthetic load/restart tests are not sustained capacity guarantees. Slack receipt, live SSO, hosted models, restore procedures and capacity must be validated in your own deployment. Docker Compose is the supported installation path; versioned Helm artifacts remain available for compatibility. See [support scope](docs/SUPPORT.md).
+AI provides evidence-linked hypotheses and advice. Citations establish provenance, not causal truth; redaction is heuristic. Arbitrary MCP servers, automatic infrastructure remediation and AI analysis of external Loki/Tempo records are not implemented. Validate live SSO, hosted model compatibility, Slack receipt, restore and load in your environment.
+
+Docker Compose is the supported installation path. Versioned Helm artifacts remain available for compatibility. [Support scope](docs/SUPPORT.md).
 
 ## Contribute
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), include reproducible steps and sanitize telemetry and credentials.
+Issues and pull requests are welcome. Include reproducible steps and sanitize telemetry and credentials. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```sh
 python -m pip install -e ".[server]" -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
-PostgreSQL tests require a separate disposable database named `montralog_test` and clear its test records. Never use production credentials. CI covers JavaScript, containers, browser workflows and Helm as well.
+PostgreSQL tests require a **disposable** database named `montralog_test`; they clear test records. Use the [testing guide](docs/TESTING.md) for browser, container and optional database checks.
 
 ## License and security reporting
 
-First-party code is [Apache-2.0](LICENSE), with the original license unchanged. [Branding and attribution](BRANDING.md) explain project identity without restricting the code license; the application includes **About & license** with bundled notices. Dependencies retain their licenses; see [NOTICE](NOTICE) and [third-party components](docs/THIRD_PARTY.md). Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new). See [SECURITY.md](SECURITY.md) for scope.
+First-party code is [Apache-2.0](LICENSE). [Branding and attribution](BRANDING.md) describe project identity without adding restrictions to that license. The application includes **About & license**; dependencies and model weights retain their own terms. See [NOTICE](NOTICE) and [third-party components](docs/THIRD_PARTY.md).
+
+Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/montralog/montralog/security/advisories/new). [Security policy](SECURITY.md).
