@@ -25,6 +25,9 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 | Use company sign-in | Entra ID, Google Workspace and Okta OIDC configuration; your registration and live validation are required |
 | Separate customers | A dedicated Docker stack, database, volumes, credentials and encryption key for each customer |
 
+<a id="see-it-in-action"></a>
+<a id="see-montralog-in-action"></a>
+
 ## Dashboards in action
 
 Actual application captures from the dashboard development preview, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
@@ -72,6 +75,8 @@ Choose **Ask AI** on a supported local panel, or **Investigate** on an alert. Th
 | Tempo | Trace search summaries and timelines | Preview |
 
 Use **Connect data** to select a backend, configure its query URL and optional authentication, test, then save. Private endpoints need operator destination allowlisting; credentials require HTTPS. The preview does not implement arbitrary SQL, Elasticsearch, Splunk, Datadog, cloud OAuth or custom tenant headers. [Connection setup](docs/CONNECTIONS.md) · [Adapter behavior and limits](docs/STUDIO.md#external-backend-adapters).
+
+<a id="quickstart"></a>
 
 ## Quickstart: Docker
 

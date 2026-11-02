@@ -32,7 +32,7 @@ Start with the [Docker quickstart](../README.md#quickstart-docker). The [release
 - [Testing](TESTING.md) and [contributing](../CONTRIBUTING.md)
 - [Public scan and verification reports](reports/README.md)
 - [Dashboard preview verification](reports/dashboard-creation/README.md)
-- [Published 0.8.0 evidence](reports/0.8.0/README.md)
+- [Published 0.8.0 evidence](reports/0.8.0/README.md), [release notes](RELEASE-0.8.0.md) and [agent review scope](reports/0.8.0/review.md)
 - [Production acceptance matrix](PRODUCTION.md)
 - [Release status](RELEASE.md), [changelog](CHANGELOG.md) and [security policy](../SECURITY.md)
 
