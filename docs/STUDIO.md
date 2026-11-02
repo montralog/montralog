@@ -1,6 +1,6 @@
 # Dashboards, panels, alerts and notifications
 
-This guide describes the dashboard development preview in [PR #10](https://github.com/montralog/montralog/pull/10). The published 0.8.0 Docker image does not contain all preview features. See [release status](../README.md#release-status) before following preview-only steps.
+This guide covers **Montralog 0.8.1**. Older 0.8.0 images do not include all features described here. Upgrade gateway and workers together, back up the database and preserve the encryption key. See [release notes](RELEASE-0.8.1.md).
 
 Browser access uses a username/password session. Fresh installations have no shared default password; create an account through the operator CLI. Dashboards belong to their account owner. Telemetry remains shared within one customer stack; use separate stacks for separate customers.
 
@@ -112,7 +112,7 @@ them as supported simply because they expose HTTP endpoints.
 
 ### Upgrade and backup
 
-This development change adds schema migration **8**, recording backend type on
+Version 0.8.1 includes schema migration **8**, recording backend type on
 saved connections. Existing sources migrate as Prometheus. Back up the database
 and encryption key before upgrading. Older schema-7 binaries cannot open a
 migrated database; rollback requires the pre-upgrade database backup and matching

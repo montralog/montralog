@@ -1,6 +1,6 @@
 # Montralog documentation
 
-Start with the [Docker quickstart](../README.md#quickstart-docker). The [release status](../README.md#release-status) distinguishes published 0.8.0 from dashboard preview features. Versioned reports only describe their stated revision and workload.
+Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.1 release notes](RELEASE-0.8.1.md) for dashboard features and schema-8 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
 
 ## Install and operate
 
@@ -31,7 +31,7 @@ Start with the [Docker quickstart](../README.md#quickstart-docker). The [release
 - [Architecture](ARCHITECTURE.md) and [project structure](PROJECT_STRUCTURE.md)
 - [Testing](TESTING.md) and [contributing](../CONTRIBUTING.md)
 - [Public scan and verification reports](reports/README.md)
-- [Dashboard preview verification](reports/dashboard-creation/README.md)
+- [Dashboard creation verification](reports/dashboard-creation/README.md)
 - [Published 0.8.0 evidence](reports/0.8.0/README.md), [release notes](RELEASE-0.8.0.md) and [agent review scope](reports/0.8.0/review.md)
 - [Production acceptance matrix](PRODUCTION.md)
 - [Release status](RELEASE.md), [changelog](CHANGELOG.md) and [security policy](../SECURITY.md)

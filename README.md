@@ -7,19 +7,19 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 
 ## Release status
 
-**Published release: [0.8.0](https://github.com/montralog/montralog/releases/tag/v0.8.0).** The Docker quickstart below installs that version. [Release evidence](docs/reports/0.8.0/README.md).
+**Version 0.8.1** brings dashboard cards, multi-panel editing, guided queries, AI panel drafts and external backend adapters. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.1) · [Release notes and upgrade steps](docs/RELEASE-0.8.1.md).
 
-**Dashboard development preview:** this branch adds the card library, Windows/Linux starters, multi-panel selection, AI panel drafts, Settings appearance and external backend adapters shown below. These updates are tracked in [PR #10](https://github.com/montralog/montralog/pull/10); the published `0.8.0` image does not include all preview features. [Preview verification](docs/reports/dashboard-creation/README.md).
+This source targets 0.8.1. The versioned image and downloads become available only after the gated release workflow succeeds; source changes alone do not establish publication. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
 
 ## What you can build
 
 | Workflow | What Montralog provides |
 |---|---|
 | Observe services | Search logs, group repeated messages, inspect traces and correlate deployment events |
-| Create personal dashboards | Saved panels and timelines; preview adds dashboard cards, guided queries, gauges, presets and up to 24 panels per dashboard |
-| Connect telemetry | Bundled Prometheus and local records; preview adds Loki, Tempo and Prometheus-compatible backend choices |
+| Create personal dashboards | Saved panels and timelines; includes dashboard cards, guided queries, gauges, presets and up to 24 panels per dashboard |
+| Connect telemetry | Bundled Prometheus and local records; includes Loki, Tempo and Prometheus-compatible backend choices |
 | Investigate incidents | Optional bounded, read-only AI analysis with observed evidence, uncertainty and runbook checks |
-| Create panels with AI — preview | Ask an approved model for 1–6 validated panel proposals, review them and save explicitly |
+| Create panels with AI | Ask an approved model for 1–6 validated panel proposals, review them and save explicitly |
 | Alert and notify | Metric/log rules, pending/firing states, in-app notifications and optional Slack contact points with persisted retries |
 | Manage access | Local login, admin/viewer roles, teams/groups, revocable sessions and expiring read/ingest tokens |
 | Use company sign-in | Entra ID, Google Workspace and Okta OIDC configuration; your registration and live validation are required |
@@ -30,7 +30,7 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 
 ## Dashboards in action
 
-Actual application captures from the dashboard development preview, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
+Actual application captures from the 0.8.1 dashboard implementation, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
 
 ### One dashboard for each area of work
 
@@ -70,11 +70,11 @@ Choose **Ask AI** on a supported local panel, or **Investigate** on an alert. Th
 |---|---|---|
 | Prometheus | Guided metric queries and connection testing | Released |
 | Montralog storage | Logs, patterns, traces and deployment events | Released |
-| VictoriaMetrics, Mimir, Thanos | Supported metrics through their Prometheus-compatible query API | Preview |
-| Loki | Sampled log tables, timelines and recurring patterns | Preview |
-| Tempo | Trace search summaries and timelines | Preview |
+| VictoriaMetrics, Mimir, Thanos | Supported metrics through their Prometheus-compatible query API | 0.8.1 |
+| Loki | Sampled log tables, timelines and recurring patterns | 0.8.1 |
+| Tempo | Trace search summaries and timelines | 0.8.1 |
 
-Use **Connect data** to select a backend, configure its query URL and optional authentication, test, then save. Private endpoints need operator destination allowlisting; credentials require HTTPS. The preview does not implement arbitrary SQL, Elasticsearch, Splunk, Datadog, cloud OAuth or custom tenant headers. [Connection setup](docs/CONNECTIONS.md) · [Adapter behavior and limits](docs/STUDIO.md#external-backend-adapters).
+Use **Connect data** to select a backend, configure its query URL and optional authentication, test, then save. Private endpoints need operator destination allowlisting; credentials require HTTPS. The adapters do not implement arbitrary SQL, Elasticsearch, Splunk, Datadog, cloud OAuth or custom tenant headers. [Connection setup](docs/CONNECTIONS.md) · [Adapter behavior and limits](docs/STUDIO.md#external-backend-adapters).
 
 <a id="quickstart"></a>
 
@@ -85,10 +85,10 @@ Requires Docker Engine/Desktop with **Linux containers**, Docker Compose v2 and 
 From PowerShell or a POSIX shell:
 
 ```sh
-git clone --branch v0.8.0 --depth 1 https://github.com/montralog/montralog.git
+git clone --branch v0.8.1 --depth 1 https://github.com/montralog/montralog.git
 cd montralog
 
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.1 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -117,7 +117,7 @@ flowchart TB
   Exporters["Server, Docker and Kubernetes exporters"] -->|Scraped by| Prometheus
   Gateway --> DB[("Application database: SQLite / optional PostgreSQL")]
   Gateway -->|Guided metric reads| Prometheus
-  Gateway -. Preview adapters .-> Backends["Loki / Tempo / compatible metric APIs"]
+  Gateway -. External adapters .-> Backends["Loki / Tempo / compatible metric APIs"]
   Worker["Notification and retention workers"] --> DB
   Worker --> Prometheus
   Worker -->|Optional contact point| Slack["Slack"]
@@ -189,13 +189,13 @@ MONTRALOG_AI_EGRESS=true
 
 The AI Compose file passes these values to both services. After applying the configuration, **Approved model** lists the profile IDs. Keys stay server-side and never appear in browser configuration. For a completely local deployment, leave hosted egress disabled. Hosted analysis requires both operator-enabled egress and explicit per-investigation sharing approval; review the selected redacted telemetry before consenting.
 
-### Create dashboards with AI — development preview
+### Create dashboards with AI
 
-After configuring the provider and running the AI worker on a preview build, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
+After configuring the provider and running the AI worker on version 0.8.1, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
 
 A request proposes **1–6 panels**, while a dashboard holds **up to 24**. Only supported signals and views are accepted; arbitrary queries, URLs and executable settings are rejected. Hosted requests require explicit sharing approval in addition to operator-enabled egress. [Full dashboard guide](docs/STUDIO.md#ai-assisted-dashboard-drafts).
 
-The published 0.8.0 AI Compose file configures investigations. It does not upgrade the image to the dashboard preview. Do not mix a preview gateway with older workers; schema-8 rollback requires the pre-upgrade database backup and matching encryption key.
+Use version 0.8.1 for both the gateway and AI worker. Do not mix application versions. This release uses schema 8; rollback requires the pre-upgrade database backup and matching encryption key.
 
 ### How an investigation works
 
@@ -214,7 +214,7 @@ Before allowing remote access, configure HTTPS and secure cookies, restrict ingr
 
 The verification pipeline covers Python 3.11/3.13, browser workflows, containers, security scanning, resilience, Helm compatibility and local-model inference. Reports describe a specific revision and workload; clean scans and short synthetic tests do not certify production security or sustained capacity.
 
-- [Dashboard preview checks and dependency audit](docs/reports/dashboard-creation/README.md)
+- [Dashboard creation checks and dependency audit](docs/reports/dashboard-creation/README.md)
 - [Published 0.8.0 evidence and review limits](docs/reports/0.8.0/README.md)
 - [Production acceptance matrix](docs/PRODUCTION.md)
 - [Backup, encrypted secrets and recovery](docs/ASSURANCE.md)

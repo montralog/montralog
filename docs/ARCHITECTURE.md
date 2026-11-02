@@ -1,4 +1,4 @@
-# Montralog 0.8 architecture
+# Montralog 0.8.1 architecture
 
 Montralog is a self-hosted observability workspace. Docker Compose is the supported installation path. Each customer has a separate stack with its own database, tokens, encryption key, network and volumes. Teams and groups within one stack do not create separate telemetry tenants.
 
@@ -18,9 +18,10 @@ flowchart LR
   Notifications --> Metrics
   Notifications --> Slack[Optional Slack contact point]
   Retention[Retention worker] --> DB
-  Agent[Optional investigation worker] --> DB
+  Agent[Optional AI job worker] --> DB
   Agent --> Metrics
   Agent --> Model[Approved local or hosted model]
+  Gateway --> Backends[Loki / Tempo / compatible metric APIs]
 ```
 
 | Component | Responsibility | Persistence |
@@ -32,7 +33,7 @@ flowchart LR
 | Alertmanager | Handle Prometheus alert routing | Separate Alertmanager state |
 | Notification worker | Evaluate Montralog log/metric rules and persist notification retries | Same customer's application database |
 | Retention worker | Apply configured application-record retention | Same customer's application database |
-| Investigation worker | Run optional, queued, bounded model analyses with read-only metric tools | Same customer's application database |
+| AI job worker | Run bounded investigations and validated panel drafts; optional job-specific pools | Same customer's application database |
 | Ollama | Optional local model inference; no exposed host port | Separate customer model-weights volume |
 
 The browser uses login sessions; machine read/ingest tokens have separate scopes. Saved integration credentials are encrypted with the operator-held customer key. TLS, endpoint validation, private-origin approval and DNS/IP pinning protect outbound requests. See [assurance](ASSURANCE.md), [connections](CONNECTIONS.md) and [accounts](ACCOUNTS.md).
@@ -91,3 +92,11 @@ Deployment acceptance must validate TLS, restore procedures, retention/disk sizi
 - [Storage](STORAGE.md) and [customer isolation](TENANCY.md)
 - [AI model profiles and evidence rules](AI-INVESTIGATIONS.md)
 - [Project structure](PROJECT_STRUCTURE.md)
+
+## Dashboard creation and external sources
+
+Saved dashboards belong to individual accounts and hold up to 24 validated panels. The gateway builds supported metric expressions; arbitrary PromQL, URLs and free-position layouts are not accepted in panel definitions. Loki/Tempo records are queried in place rather than imported. Connection secrets use the installation secret store and outbound request protections.
+
+AI panel drafts share the queued job infrastructure but are distinct from investigations. The worker sends a description and public supported-metric catalogue, validates 1–6 returned panels and stores a reviewable result. It does not fetch telemetry or save dashboards during generation. Users select sources/filters and save explicitly. `MONTRALOG_AI_WORKER_KIND` can separate `panel-draft` and `investigation` queues; leaving it unset handles both.
+
+Schema 8 stores connection backend types. Upgrade gateway and workers together; rollback requires the original pre-upgrade database and its matching encryption key. See [dashboard guide](STUDIO.md) and [0.8.1 upgrade notes](RELEASE-0.8.1.md).

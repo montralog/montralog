@@ -1,11 +1,11 @@
 # Try the 0.8 assistant in an isolated Docker stack
 
-Version 0.8.0 is [published](https://github.com/montralog/montralog/releases/tag/v0.8.0). Use a fresh checkout and private credentials for an isolated evaluation. Preserve production configuration and volumes separately.
+Version 0.8.1 is [published](https://github.com/montralog/montralog/releases/tag/v0.8.1). Use a fresh checkout and private credentials for an isolated evaluation. Preserve production configuration and volumes separately.
 
 ```sh
-git clone --branch v0.8.0 --depth 1 https://github.com/montralog/montralog.git montralog-ai-preview
+git clone --branch v0.8.1 --depth 1 https://github.com/montralog/montralog.git montralog-ai-preview
 cd montralog-ai-preview
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.0 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.1 /install/scripts/setup.py
 docker compose -p montralog-ai-preview -f compose.yaml -f deploy/docker/compose.ai.yaml pull
 docker compose -p montralog-ai-preview -f compose.yaml -f deploy/docker/compose.ai.yaml up -d --wait --wait-timeout 180
 docker compose -p montralog-ai-preview -f compose.yaml -f deploy/docker/compose.ai.yaml exec ollama ollama pull qwen3:4b

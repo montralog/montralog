@@ -2,7 +2,7 @@ FROM python:3.13-alpine@sha256:bf12ecc0bea3f171d55145dd02c78b5eeb09f30ee2ac9cc2b
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/montralog/montralog" \
       org.opencontainers.image.url="https://github.com/montralog/montralog" \
-      org.opencontainers.image.version="0.8.0" \
+      org.opencontainers.image.version="0.8.1" \
       org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="Montralog monitoring, tracing, logging and tracking"
