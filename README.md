@@ -9,7 +9,7 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 
 **Version 0.8.2** updates the bundled monitoring images and runtime, and scans every bundled backend for vulnerabilities. Four known upstream HIGH occurrences remain explicitly accepted and reported; see the release notes. Dashboard cards, multi-panel editing, AI drafts and external backend adapters remain available. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.2) · [Release notes and upgrade steps](docs/RELEASE-0.8.2.md).
 
-This source targets 0.8.2. The versioned image and downloads become available only after the gated release workflow succeeds; source changes alone do not establish publication. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
+The published stable release is 0.8.2. This branch also contains an unreleased [workspace and dashboard preview](docs/WORKSPACE-PREVIEW.md), including schema 9; these changes are not in the 0.8.2 image. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
 
 ## What you can build
 

@@ -151,3 +151,15 @@ import test_log_pagination
 class PostgresLogPaginationTests(test_log_pagination.LogPaginationTests):
     setUp = PostgresGatewayTests.setUp
     tearDown = PostgresGatewayTests.tearDown
+
+
+import test_workspace_settings
+
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'), 'PostgreSQL test database not supplied')
+class PostgresWorkspaceSettingsTests(test_workspace_settings.WorkspaceSettingsTests):
+    def setUp(self):
+        PostgresAccountTests.setUp(self)
+        with storage.database() as db:
+            db.execute("INSERT INTO user_roles(user_id,role) SELECT id,'admin' FROM users WHERE username='alice' ON CONFLICT(user_id) DO UPDATE SET role='admin'")
+            db.execute("UPDATE workspace_settings SET name='Your organization',description='Your observability workspace',updated_at=0 WHERE id=1")
+    tearDown=PostgresGatewayTests.tearDown

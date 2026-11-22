@@ -28,13 +28,13 @@ document.addEventListener('submit',async event=>{
   if(id==='runbook-propose'){if(!investigationResult)throw Error('Open an investigation first.');runbookPlan=await accountAPI('control/runbooks',{action:'propose',run_id:investigationResult.id,source_id:values.get('source_id')});}
   if(id==='runbook-approve'){const approved=await accountAPI('control/runbooks',{action:'approve',id:runbookPlan.id,confirmation:values.get('confirmation')});runbookPlan.state=approved.state;}
   await render();formMessage('Investigation or runbook state saved. AI work is processed separately; refresh to inspect the result.');
- }catch(error){formMessage(error.message);}finally{if(button)button.disabled=false;}
+ }catch(error){formMessage(error.message,'error');}finally{if(button)button.disabled=false;}
 });
 document.addEventListener('click',async event=>{
  const b=event.target.closest('[data-investigation-open],#runbook-execute');if(!b)return;
  try{b.disabled=true;if(b.dataset.investigationOpen){investigationResult=await accountAPI('control/investigations',{action:'open',id:b.dataset.investigationOpen});runbookPlan=null;await render();}
  if(b.id==='runbook-execute'){const result=await accountAPI('control/runbooks',{action:'execute',id:runbookPlan.id});runbookPlan=null;await render();formMessage(result.result.message);}
- }catch(error){formMessage(error.message);}finally{b.disabled=false;}
+ }catch(error){formMessage(error.message,'error');}finally{b.disabled=false;}
 });
 
 function assistantFields(cfg,sources,rules,metrics,context){
@@ -75,5 +75,5 @@ document.addEventListener('click',async event=>{
   if(button.id==='panel-ai-close')document.querySelector('#ai-panel-dialog').close();
   if(button.id==='panel-ai-open'&&panelAssistantRun){investigationResult=panelAssistantRun;document.querySelector('#ai-panel-dialog').close();navigate('investigations');}
   if(button.id==='panel-ai-refresh'&&panelAssistantRun){panelAssistantRun=await accountAPI('control/investigations',{action:'open',id:panelAssistantRun.id});document.querySelector('#panel-ai-result').innerHTML=panelAssistantHTML();}
- }catch(error){const notice=document.querySelector('#panel-ai-notice');if(notice)notice.textContent=error.message;else formMessage(error.message);}
+ }catch(error){const notice=document.querySelector('#panel-ai-notice');if(notice)notice.textContent=error.message;else formMessage(error.message,'error');}
 });

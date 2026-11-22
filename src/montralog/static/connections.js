@@ -32,8 +32,8 @@ async function testOrSaveConnection(action){
  try{
   const d=await accountAPI('control/data-sources',connectionValues(action));connectionNotice=d.message;connectionNoticeOK=d.ok;
   if(action==='save'&&d.ok){connectionMode='list';connectionEdit=null;epoch++;await render();}
-  else{formMessage(d.message);$('#notice').classList.toggle('connection-success',d.ok);}
- }catch(err){formMessage(err.message);$('#notice').classList.remove('connection-success');}
+  else{formMessage(d.message,d.ok?'success':'error');$('#notice').classList.toggle('connection-success',d.ok);}
+ }catch(err){formMessage(err.message,'error');$('#notice').classList.remove('connection-success');}
  finally{connectionBusy=false;buttons.forEach(b=>b.disabled=false);}
 }
 document.addEventListener('change',e=>{
@@ -59,5 +59,5 @@ document.addEventListener('click',async e=>{
   else if(b.id==='connection-local-dashboard'){const d=await accountAPI('saved-dashboards');activeDashboard=d.items.find(x=>x.name.includes('Local Docker'))||{name:'Local Docker',definition:{minutes:15,panels:['docker_containers','container_cpu','docker_memory','agent_age']}};dashboardDraft=null;navigate('dashboards');return;}
   else return;
   epoch++;await render();
- }catch(err){formMessage(err.message);}finally{b.disabled=false;}
+ }catch(err){formMessage(err.message,'error');}finally{b.disabled=false;}
 });

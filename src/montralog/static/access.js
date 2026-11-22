@@ -23,9 +23,9 @@ document.addEventListener('click',async e=>{
 
 document.addEventListener('submit',async e=>{
  if(!e.target.dataset.identity)return;e.preventDefault();const button=e.submitter;if(button)button.disabled=true;
- try{const r=await accountAPI('control/identity',{...Object.fromEntries(new FormData(e.target)),provider:e.target.dataset.identity,action:button?.value||'test'});if(button?.value!=='test')await render();formMessage(r.message||'Provider configured. Verify with a real company sign-in before relying on it.');}catch(err){formMessage(err.message);}finally{if(button)button.disabled=false;}
+ try{const r=await accountAPI('control/identity',{...Object.fromEntries(new FormData(e.target)),provider:e.target.dataset.identity,action:button?.value||'test'});if(button?.value!=='test')await render();formMessage(r.message||'Provider configured. Verify with a real company sign-in before relying on it.');}catch(err){formMessage(err.message,'error');}finally{if(button)button.disabled=false;}
 });
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-identity-disable]');if(!b)return;try{await accountAPI('control/identity',{provider:b.dataset.identityDisable,action:'disable'});await render();}catch(err){formMessage(err.message);}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-identity-disable]');if(!b)return;try{await accountAPI('control/identity',{provider:b.dataset.identityDisable,action:'disable'});await render();}catch(err){formMessage(err.message,'error');}});
 async function refreshCompanyLogin(){try{const d=await fetch('/api/auth/providers').then(r=>r.json());$('#company-login')?.remove();const box=document.createElement('div');box.id='company-login';box.className='form-stack';for(const p of d.items||[]){const link=document.createElement('a');link.href='/auth/oidc/start/'+encodeURIComponent(p.id);link.textContent='Sign in with '+p.name;link.className='primary';box.append(link);}$('#login-form').after(box);}catch{/* Local sign-in remains available. */}}
 const showLoginBeforeIdentity=showLogin;showLogin=function(message=''){showLoginBeforeIdentity(message);refreshCompanyLogin();};
 refreshCompanyLogin();
