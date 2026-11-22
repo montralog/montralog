@@ -7,9 +7,9 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 
 ## Release status
 
-**Version 0.8.2** updates the bundled monitoring images and runtime, and scans every bundled backend for vulnerabilities. Four known upstream HIGH occurrences remain explicitly accepted and reported; see the release notes. Dashboard cards, multi-panel editing, AI drafts and external backend adapters remain available. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.2) · [Release notes and upgrade steps](docs/RELEASE-0.8.2.md).
+**Version 0.9.0 release candidate:** this source adds organization display settings, clearer dashboard cards, direct panel creation, drag reordering, progressive panel queries and cursor-based log paging. See [release notes and migration steps](docs/RELEASE-0.9.0.md). Publication is complete only when the [0.9.0 release](https://github.com/montralog/montralog/releases/tag/v0.9.0) and its verified artifacts exist. The previously published stable version is [0.8.2](https://github.com/montralog/montralog/releases/tag/v0.8.2).
 
-The published stable release is 0.8.2. This branch also contains an unreleased [workspace and dashboard preview](docs/WORKSPACE-PREVIEW.md), including schema 9; these changes are not in the 0.8.2 image. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
+Database schema is **9**. Back up the database and matching encryption key before upgrading; upgrade all workers with the gateway. Rollback requires the pre-upgrade backup. Existing upstream security exceptions remain documented; release scans retain all findings.
 
 ## What you can build
 
@@ -30,19 +30,19 @@ The published stable release is 0.8.2. This branch also contains an unreleased [
 
 ## Dashboards in action
 
-Actual application captures from the 0.8.2 dashboard implementation, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
+Actual application captures, including the 0.9.0 workspace update captured on **22 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
 
 ### One dashboard for each area of work
 
 Create Windows, Linux and Application dashboards with their own panel lists. Search, open, edit or duplicate a saved dashboard. Starter counts are starting points: each dashboard supports **0–24 panels**.
 
-![Dashboard library with Applications, Linux and Windows cards](docs/assets/screenshots/dashboard-library.png)
+![Dashboard library with Applications, Linux and Windows cards](docs/assets/screenshots/workspace-preview-library.png)
 
 ### Edit panels on a visual canvas
 
 Open a dashboard and choose **Edit**, or use an individual panel's edit action. Add visualizations, choose supported metrics and aggregations, inspect the generated query, and preview real data. Resize, reorder, duplicate or expand panels, then choose **Save dashboard**.
 
-![Application dashboard canvas with live synthetic request-rate panels and editing controls](docs/assets/screenshots/dashboard-canvas.png)
+![Application dashboard canvas with live synthetic request-rate panels and editing controls](docs/assets/screenshots/workspace-preview-canvas.png)
 
 ### Add several panels together
 
@@ -85,10 +85,10 @@ Requires Docker Engine/Desktop with **Linux containers**, Docker Compose v2 and 
 From PowerShell or a POSIX shell:
 
 ```sh
-git clone --branch v0.8.2 --depth 1 https://github.com/montralog/montralog.git
+git clone --branch v0.9.0 --depth 1 https://github.com/montralog/montralog.git
 cd montralog
 
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.2 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.9.0 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -191,11 +191,11 @@ The AI Compose file passes these values to both services. After applying the con
 
 ### Create dashboards with AI
 
-After configuring the provider and running the AI worker on version 0.8.2, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
+After configuring the provider and running the AI worker on version 0.9.0, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
 
 A request proposes **1–6 panels**, while a dashboard holds **up to 24**. Only supported signals and views are accepted; arbitrary queries, URLs and executable settings are rejected. Hosted requests require explicit sharing approval in addition to operator-enabled egress. [Full dashboard guide](docs/STUDIO.md#ai-assisted-dashboard-drafts).
 
-Use version 0.8.2 for both the gateway and AI worker. Do not mix application versions. This release uses schema 8; rollback requires the pre-upgrade database backup and matching encryption key.
+Use version 0.9.0 for both the gateway and AI worker. Do not mix application versions. This release uses schema 9; rollback requires the pre-upgrade database backup and matching encryption key.
 
 ### How an investigation works
 

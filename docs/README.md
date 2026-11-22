@@ -1,6 +1,6 @@
 # Montralog documentation
 
-Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.2 security release notes](RELEASE-0.8.2.md) for bundled image updates and schema-8 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
+Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.9.0 release notes](RELEASE-0.9.0.md) for workspace updates and schema-9 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
 
 ## Install and operate
 
@@ -17,7 +17,7 @@ Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.2 s
 
 ## Use the workspace
 
-- [Unreleased workspace improvements and migration notes](WORKSPACE-PREVIEW.md)
+- [Workspace workflows and migration notes](WORKSPACE-PREVIEW.md)
 
 - [Dashboard cards, panels, queries, themes, alerts and notifications](STUDIO.md)
 - [Configure an approved AI model](../README.md#configure-your-ai-model)

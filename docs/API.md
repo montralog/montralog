@@ -147,4 +147,8 @@ For company-login configuration and access boundaries, see [Identity](IDENTITY.m
 
 ## Log cursor pagination — development branch
 
-The development query update returns `next_cursor` when more than 100 matches remain, plus `snapshot_end`. Pass the cursor as the `cursor` query parameter with the **same** minutes, service, environment, text, severity and trace filters. Treat it as opaque. Cursor pages use stable `(time,id)` ordering and avoid full counts/deep offsets. Cursors expire after one hour; refresh the search after expiry or filter changes. Authentication is still required; cursors grant no access. Legacy `offset` remains supported. This change is not included in the published 0.8.2 image.
+Version 0.9.0 returns `next_cursor` when more than 100 matches remain, plus `snapshot_end`. Pass the cursor as the `cursor` query parameter with the **same** minutes, service, environment, text, severity and trace filters. Treat it as opaque. Cursor pages use stable `(time,id)` ordering and avoid full counts/deep offsets. Cursors expire after one hour; refresh the search after expiry or filter changes. Authentication is still required; cursors grant no access. Legacy `offset` remains supported. This requires 0.9.0; it is not in the historical 0.8.2 image.
+
+## Organization display settings (0.9.0)
+
+Authenticated `GET /api/control/workspace` returns `name`, `description` and `updated_at`. Administrator-only `POST` accepts `name` (1-80 characters) and `description` (up to 160), requires session CSRF protection and records an audit entry. Unknown fields and control characters are rejected. This endpoint does not change tenant identity, tokens or encryption keys.

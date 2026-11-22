@@ -1,6 +1,6 @@
 # Dashboards, panels, alerts and notifications
 
-This guide covers **Montralog 0.8.1**. Older 0.8.0 images do not include all features described here. Upgrade gateway and workers together, back up the database and preserve the encryption key. See [release notes](RELEASE-0.8.1.md).
+This guide targets **Montralog 0.9.0**. Older images do not include all features described here. Upgrade gateway and workers together, back up the database and preserve the encryption key. See [release notes](RELEASE-0.9.0.md) and the [workspace workflow](WORKSPACE-PREVIEW.md).
 
 Browser access uses a username/password session. Fresh installations have no shared default password; create an account through the operator CLI. Dashboards belong to their account owner. Telemetry remains shared within one customer stack; use separate stacks for separate customers.
 
@@ -229,4 +229,4 @@ deployment configuration, not through the managed token table.
 
 ## Dashboard query performance — development branch
 
-The next dashboard change loads panels independently with at most four queries in flight, shares identical queries during a render, cancels obsolete reads after navigation and stops a telemetry request after 15 seconds. A slow panel does not block the canvas or completed panels. Auto-refresh waits until pending dashboard queries finish. These changes are not in the 0.8.2 image; see [measurements and limits](reports/dashboard-scale/README.md).
+Version 0.9.0 loads panels independently with at most four queries in flight, shares identical queries during a render, cancels obsolete reads after navigation and stops a telemetry request after 15 seconds. A slow panel does not block the canvas or completed panels. Auto-refresh waits until pending dashboard queries finish. These changes require 0.9.0; see [measurements and limits](reports/dashboard-scale/README.md).

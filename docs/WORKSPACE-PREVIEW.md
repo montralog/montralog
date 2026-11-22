@@ -1,6 +1,6 @@
-# Workspace and dashboard preview
+# Workspace and dashboard workflows
 
-These changes are under review in PR #13 and are not included in the published 0.8.2 Docker image. Evaluate them in a separate stack until review and release checks complete.
+These workflows target 0.9.0, currently prepared in PR #13. They are not in the published 0.8.2 image. Use the versioned release artifacts only after publication.
 
 ## Organization settings
 
@@ -22,7 +22,7 @@ Drag a panel by its handle to reorder it, or use Move up and Move down with the 
 
 ## Upgrade and rollback
 
-This development branch introduces schema **9** for organization display settings. Back up the database and preserve its matching encryption key before upgrading. Follow the [backup and restore guide](ASSURANCE.md), test restoration in an isolated stack, and upgrade gateway and workers together.
+Version 0.9.0 introduces schema **9** for organization display settings. Back up the database and preserve its matching encryption key before upgrading. Follow the [backup and restore guide](ASSURANCE.md), test restoration in an isolated stack, and upgrade gateway and workers together.
 
 An older schema-8 application cannot open a schema-9 database. Rollback requires the pre-upgrade database backup and matching key. Never point an older image at the upgraded volume. Use separate preview volumes, credentials and encryption keys.
 

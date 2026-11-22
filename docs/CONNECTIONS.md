@@ -1,6 +1,6 @@
 # Data sources
 
-Montralog includes server-side adapters for the sources below. These query existing backends; adding a connection does not install a backend, configure exporters or copy historical data. The adapter baseline shipped in 0.8.2. Additional setup guidance and HTTP regression coverage on this branch are unreleased.
+Montralog includes server-side adapters for the sources below. These query existing backends; adding a connection does not install a backend, configure exporters or copy historical data. The adapter baseline shipped in 0.8.2. Version 0.9.0 adds source-specific setup guidance, HTTP regression coverage and safer backend error responses.
 
 | Source | Supported queries and panels | Base URL guidance |
 |---|---|---|

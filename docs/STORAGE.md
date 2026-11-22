@@ -64,3 +64,7 @@ own backup policy.
 Two gateway replicas improve process availability; they do not make an external
 database, Collector, Prometheus, storage class or single cluster node highly
 available. Publish recovery objectives only after failure and restore drills.
+
+## 0.9.0 schema update
+
+Schema 9 adds singleton organization display settings. Back up the database and matching encryption key before upgrading gateway and workers together. An older schema-8 image cannot open a schema-9 database. Restore the pre-upgrade database backup with its matching key to roll back. Display-name changes do not change the immutable customer deployment identity.
