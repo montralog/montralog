@@ -226,3 +226,7 @@ Use gateway port 8080 for JSON ingestion or OTLP HTTP `/v1/logs`, `/v1/traces` a
 collector ports 4317/4318 still use the separate deployment-level ingest token
 from the operator's Secret/.env. Those bootstrap credentials are managed through
 deployment configuration, not through the managed token table.
+
+## Dashboard query performance — development branch
+
+The next dashboard change loads panels independently with at most four queries in flight, shares identical queries during a render, cancels obsolete reads after navigation and stops a telemetry request after 15 seconds. A slow panel does not block the canvas or completed panels. Auto-refresh waits until pending dashboard queries finish. These changes are not in the 0.8.2 image; see [measurements and limits](reports/dashboard-scale/README.md).

@@ -1,5 +1,10 @@
 # Storage, migrations and recovery
 
+**No separate SQL server is required for the default Docker installation.**
+Montralog creates an embedded SQLite database automatically in its persistent
+volume. Users do not create tables or supply database connection credentials.
+It stores application settings and local telemetry.
+
 SQLite remains the default for local Docker upgrades to preserve existing named
 volumes. PostgreSQL is an optional adapter for replicated gateways and the Helm
 production profile. Storage choice must be explicit; changing a connection string

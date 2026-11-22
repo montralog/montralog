@@ -1,5 +1,7 @@
 # Docker installation and operation
 
+The default installation creates its embedded SQLite database automatically. You do not need to install PostgreSQL/MySQL, create tables or configure a SQL connection. PostgreSQL is an optional operator-managed deployment choice.
+
 Requirements: Docker Engine/Desktop with Linux containers and Compose v2. Published images support Linux/amd64. Host Python, Helm and Kubernetes are not required.
 
 ## Install

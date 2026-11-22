@@ -143,3 +143,11 @@ class PostgresPanelDraftTests(test_panel_drafts.PanelDraftTests):
         with patch.object(test_gateway.GatewayTests,'setUp',PostgresGatewayTests.setUp):
             super().setUp()
     tearDown=PostgresGatewayTests.tearDown
+
+
+import test_log_pagination
+
+@unittest.skipUnless(os.getenv('MONTRALOG_TEST_DATABASE_URL'), 'PostgreSQL test database not supplied')
+class PostgresLogPaginationTests(test_log_pagination.LogPaginationTests):
+    setUp = PostgresGatewayTests.setUp
+    tearDown = PostgresGatewayTests.tearDown

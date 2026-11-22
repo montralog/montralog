@@ -1,9 +1,6 @@
-# API reference — 0.2.1-rc1
+# API reference
 
-API reads require Authorization: Bearer <MONTRALOG_READ_TOKEN>.
-Ingestion requires Authorization: Bearer <MONTRALOG_INGEST_TOKEN>.
-Credentials must differ and each contain at least 32 characters. Read-token
-holders can read all telemetry. No tenant isolation. Never put tokens in URLs.
+Browser reads use a signed-in session; machine reads use `Authorization: Bearer <MONTRALOG_READ_TOKEN>`. Ingestion requires the separate ingest credential. Setup generates customer-bound machine credentials privately; never put tokens in URLs. Read credentials can read telemetry throughout their customer stack. Separate customers require separate stacks/databases/keys; groups within a stack do not isolate telemetry.
 
 ## Read routes
 
@@ -14,7 +11,7 @@ holders can read all telemetry. No tenant isolation. Never put tokens in URLs.
 | GET /health/ready | Public database readiness, no telemetry payload |
 | GET /readyz | Authenticated SQLite read check |
 | GET /api/overview | Totals, observed services, log counts per minute |
-| GET /api/logs | 100 newest logs, offset and has_more |
+| GET /api/logs | 100 newest logs, offset and has_more; development cursor support described below |
 | GET /api/patterns | Up to 100 service/environment message groups |
 | GET /api/traces | Up to 100 traces, or 1000 spans with trace_id |
 | GET /api/samples | Up to 2000 newest host samples |
@@ -147,3 +144,7 @@ collector listeners retain deployment-level bearer credentials.
 
 
 For company-login configuration and access boundaries, see [Identity](IDENTITY.md). The browser control APIs require a session and CSRF verification; machine read/ingest tokens do not administer organization access.
+
+## Log cursor pagination — development branch
+
+The development query update returns `next_cursor` when more than 100 matches remain, plus `snapshot_end`. Pass the cursor as the `cursor` query parameter with the **same** minutes, service, environment, text, severity and trace filters. Treat it as opaque. Cursor pages use stable `(time,id)` ordering and avoid full counts/deep offsets. Cursors expire after one hour; refresh the search after expiry or filter changes. Authentication is still required; cursors grant no access. Legacy `offset` remains supported. This change is not included in the published 0.8.2 image.

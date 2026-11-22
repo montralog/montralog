@@ -360,3 +360,20 @@ test('themes live only in Settings and Windows/Linux dashboards support more tha
  await page.locator('#studio-hide-editor').click();await page.locator('#studio-cancel').click();
  await page.getByRole('button',{name:'Use Linux systems',exact:true}).click();await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(10);
 });
+
+test('a slow metric does not block the dashboard canvas or other panels',async({page})=>{
+ await signIn(page,'paneladmin');
+ await page.route('**/api/metrics?**',async route=>{
+  if(new URL(route.request().url()).searchParams.get('panel')==='memory'){
+   await new Promise(resolve=>setTimeout(resolve,3000));
+  }
+  await route.continue();
+ });
+ await page.locator('nav [data-view="dashboards"]').click();
+ await page.getByRole('button',{name:'Use Infrastructure health',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Save dashboard',exact:true})).toBeVisible();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(3);
+ await expect(page.locator('.dashboard-canvas > .panel-query-slot')).toHaveCount(1);
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
+ await expect(page.locator('.dashboard-canvas > .panel-query-slot')).toHaveCount(0);
+});

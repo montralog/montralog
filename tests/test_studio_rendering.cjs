@@ -80,3 +80,29 @@ test('starter dashboards create independent editable panels and reject unknown s
  assert.equal(second.definition.panels[0].title,'Host CPU utilization');
  assert.throws(()=>context.starterDefinition('unknown'),/Unknown dashboard starter/);
 });
+
+test('dashboard queries run at most four at a time and share identical requests',async()=>{
+ const {context}=studio({});
+ let active=0,peak=0,calls=0;
+ const release=[];
+ context.api=()=>new Promise(resolve=>{calls++;active++;peak=Math.max(peak,active);release.push(()=>{active--;resolve({ok:true});});});
+ const pending=Array.from({length:12},(_,i)=>context.panelRequest('logs',new URLSearchParams({service:String(i)})));
+ const duplicate=context.panelRequest('logs',new URLSearchParams({service:'0'}));
+ await new Promise(setImmediate);
+ assert.equal(calls,4);
+ while(release.length){release.splice(0).forEach(done=>done());await new Promise(setImmediate);}
+ await Promise.all([...pending,duplicate]);
+ assert.equal(calls,12);assert.equal(peak,4);
+});
+
+test('queued queries from a previous dashboard are cancelled before network access',async()=>{
+ const {context}=studio({});context.epoch=1;
+ let calls=0;const release=[];
+ context.api=()=>new Promise(resolve=>{calls++;release.push(()=>resolve({ok:true}));});
+ const pending=Array.from({length:8},(_,i)=>context.panelRequest('logs',new URLSearchParams({service:String(i)})));
+ const settled=Promise.allSettled(pending);
+ await new Promise(setImmediate);context.epoch=2;
+ release.forEach(done=>done());
+ const result=await settled;
+ assert.equal(calls,4);assert.equal(result.filter(r=>r.status==='rejected').length,4);
+});

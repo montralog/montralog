@@ -12,7 +12,7 @@ async function accountAPI(path,body){
  const data=await res.json();if(res.status===401)showLogin('Sign in to continue.');if(!res.ok)throw Error(data.error||'Request failed');return data;
 }
 function showLogin(message=''){
- token='';currentUser=null;csrf='';epoch++;content.innerHTML='';document.body.classList.add('signed-out');$('#login').hidden=false;$('#controls').hidden=true;$('#password').value='';$('#login-notice').textContent=message;$('#login-notice').hidden=!message;
+ cancelTelemetryQueries();token='';currentUser=null;csrf='';epoch++;content.innerHTML='';document.body.classList.add('signed-out');$('#login').hidden=false;$('#controls').hidden=true;$('#password').value='';$('#login-notice').textContent=message;$('#login-notice').hidden=!message;
 }
 function enterWorkspace(data){
  currentUser=data.user;csrf=data.csrf;token='session';$('#password').value='';document.body.classList.remove('signed-out');$('#login').hidden=true;$('#controls').hidden=false;$('#profile-button').textContent=currentUser.name+' · Profile';navigate('overview');

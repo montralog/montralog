@@ -1,7 +1,40 @@
 'use strict';
 let connectionSources=[];
 const metricRequests=new Map();
-function panelMetrics(params){const key=params.toString();if(!metricRequests.has(key))metricRequests.set(key,api('metrics',params));return metricRequests.get(key);}
+let panelQueriesActive=0;
+const panelQueryQueue=[];
+function dashboardQueriesPending(){return panelQueriesActive>0||panelQueryQueue.length>0;}
+function drainPanelQueries(){
+ while(panelQueriesActive<4&&panelQueryQueue.length){
+  const job=panelQueryQueue.shift();
+  if(job.generation!==(typeof epoch==='undefined'?0:epoch)){job.reject(Error('Panel query cancelled'));continue;}
+  panelQueriesActive++;
+  Promise.resolve().then(job.run).then(job.resolve,job.reject).finally(()=>{panelQueriesActive--;drainPanelQueries();});
+ }
+}
+function panelRequest(path,params){
+ const key=path+'?'+params.toString();
+ if(!metricRequests.has(key)){
+  const generation=typeof epoch==='undefined'?0:epoch;
+  metricRequests.set(key,new Promise((resolve,reject)=>{panelQueryQueue.push({generation,run:()=>api(path,params),resolve,reject});drainPanelQueries();}));
+ }
+ return metricRequests.get(key);
+}
+function panelMetrics(params){return panelRequest('metrics',params);}
+function panelPlaceholder(p,index,minutes,editable=false){
+ const panel=normalPanel(p);
+ return `<div class="panel-query-slot ${panelClass(panel)}" data-panel-slot="${index}" data-panel-minutes="${minutes}" data-panel-editable="${editable}"><article class="card studio-panel" aria-busy="true"><h2>${esc(panel.title||panel.metric||panel.source)}</h2><p role="status">Loading panel…</p></article></div>`;
+}
+function activateDashboardPanels(){
+ const current=typeof epoch==='undefined'?0:epoch;
+ const definition=dashboardDraft?.definition||activeDashboard?.definition;
+ if(!definition)return;
+ document.querySelectorAll('[data-panel-slot]').forEach(slot=>{
+  const index=Number(slot.dataset.panelSlot),p=definition.panels[index],minutes=Number(slot.dataset.panelMinutes);
+  const operation=slot.dataset.panelEditable==='true'?editableCanvas(p,index,minutes):studioPanel(p,minutes,index);
+  operation.then(html=>{if(current===epoch&&slot.isConnected)slot.outerHTML=html;});
+ });
+}
 let panelDraft=null,panelDirty=false,panelPreview=false,dashboardSaving=false,panelEditorOpen=true,previewRequest=0;
 let dashboardDraft=null,editingPanel=-1,studioDefs=[],tokenReveal='',channelRows=[],ruleRows=[],editingChannel='',editingRule='';
 const originalWorkspaceView=workspaceView;
@@ -61,7 +94,7 @@ async function studioPanel(input,minutes,editIndex=-1){
   else html=series.slice(0,4).map(s=>`<div class="pattern"><div class="section-head"><small>${esc(compactLabel(s.metric))}</small><b class="mono green">${metricValue(s.values.at(-1)[1],unit)}</b></div>${graph(s.values.filter(([,v])=>Number.isFinite(+v)).map(([time,value])=>({time,value:+value})),['value'])}</div>`).join('');
   html+=`<small class="panel-caption">${esc(unit)} · Prometheus resources · service and environment filters do not apply${series.length>4&&p.visual==='line'?' · first 4 series shown':''}</small>`;
  }else{
-  const d=await api(p.source,params),items=d.items||[];
+  const d=await panelRequest(p.source,params),items=d.items||[];
   if(p.source==='patterns')html=items.length?(p.visual==='bar'?barsHTML(items.map(i=>({label:i.service+' · '+i.pattern,value:i.occurrences}))):table(['Pattern','Service','Records','Error logs'],items.map(i=>`<tr><td class="message mono">${esc(i.pattern)}</td><td>${esc(i.service)}<small>${esc(i.environment)}</small></td><td>${fmt(i.occurrences)}</td><td>${fmt(i.errors)}</td></tr>`))):empty('No log patterns','Patterns group observed messages; they are not inferred root causes.');
   else if(p.visual==='timeline')html=timelineHTML(items.map(i=>({time:i.time,kind:p.source==='events'?i.kind:p.source==='logs'?i.severity:'TRACE',service:i.service||i.services,title:i.message||i.name||i.trace_id,detail:i.environment,trace:i.remote?'':i.trace_id})));
   else if(p.source==='logs')html=items.length?table(['Time','Severity','Service','Message'],items.map(i=>`<tr><td>${date(i.time)}</td><td>${badge(i.severity)}</td><td>${esc(i.service)}</td><td class="message mono">${esc(i.message)}</td></tr>`)):empty('No matching logs','Change filters or connect a log source.');
@@ -110,13 +143,13 @@ async function dashboardStudio(){
  studioDefs=(await api('dashboards')).items;connectionSources=(await accountAPI('control/data-sources')).items;
  if(dashboardDraft){
   const panels=dashboardDraft.definition.panels;
-  return `<div class="section-head dashboard-toolbar"><div><span class="eyebrow">DASHBOARD CANVAS</span><h2>${esc(dashboardDraft.name||'Untitled dashboard')}</h2><p>Choose a panel to edit it. Your charts stay on the canvas.</p></div><div class="inline">${currentUser?.role==='admin'?'<button id="studio-ai-add-panels">◇ Add panels with AI</button>':''}<button id="studio-add-many" ${panels.length>=24?'disabled':''}>＋ Add multiple panels</button><button id="studio-new-panel" ${panels.length>=24?'disabled':''}>＋ Add visualization</button><button id="studio-cancel">Back to library</button></div></div><div id="studio-builder-message" role="alert" class="callout warning" hidden></div><section class="card dashboard-details"><form id="studio-dashboard-form" class="form-stack"><div class="form-columns"><label>Dashboard name<input name="name" id="studio-name" value="${esc(dashboardDraft.name)}" required maxlength="80"></label><label>Time window<select name="minutes" id="studio-window">${options([['15','Last 15 minutes'],['60','Last hour'],['360','Last 6 hours'],['1440','Last 24 hours']],String(dashboardDraft.definition.minutes))}</select></label></div><div class="inline"><button class="primary" ${dashboardSaving?'disabled':''}>Save dashboard</button><small>${panels.length} / 24 panels · current panel edits are included</small></div></form></section><div class="section-head builder"><h2>Dashboard preview</h2><span class="badge">LIVE DATA · UNSAVED CHANGES</span></div><div class="metric-grid advanced-grid dashboard-canvas">${panels.length?(await Promise.all(panels.map((p,i)=>editableCanvas(p,i,dashboardDraft.definition.minutes)))).join(''):'<div class="empty-canvas"><h3>Add your first visualization</h3><p>Select a metric, log view, pattern, deployment timeline or trace view.</p><button id="studio-canvas-add">＋ Add panel</button></div>'}</div>${panelEditorOpen?panelEditor():''}`;
+  return `<div class="section-head dashboard-toolbar"><div><span class="eyebrow">DASHBOARD CANVAS</span><h2>${esc(dashboardDraft.name||'Untitled dashboard')}</h2><p>Choose a panel to edit it. Your charts stay on the canvas.</p></div><div class="inline">${currentUser?.role==='admin'?'<button id="studio-ai-add-panels">◇ Add panels with AI</button>':''}<button id="studio-add-many" ${panels.length>=24?'disabled':''}>＋ Add multiple panels</button><button id="studio-new-panel" ${panels.length>=24?'disabled':''}>＋ Add visualization</button><button id="studio-cancel">Back to library</button></div></div><div id="studio-builder-message" role="alert" class="callout warning" hidden></div><section class="card dashboard-details"><form id="studio-dashboard-form" class="form-stack"><div class="form-columns"><label>Dashboard name<input name="name" id="studio-name" value="${esc(dashboardDraft.name)}" required maxlength="80"></label><label>Time window<select name="minutes" id="studio-window">${options([['15','Last 15 minutes'],['60','Last hour'],['360','Last 6 hours'],['1440','Last 24 hours']],String(dashboardDraft.definition.minutes))}</select></label></div><div class="inline"><button class="primary" ${dashboardSaving?'disabled':''}>Save dashboard</button><small>${panels.length} / 24 panels · current panel edits are included</small></div></form></section><div class="section-head builder"><h2>Dashboard preview</h2><span class="badge">LIVE DATA · UNSAVED CHANGES</span></div><div class="metric-grid advanced-grid dashboard-canvas">${panels.length?panels.map((p,i)=>panelPlaceholder(p,i,dashboardDraft.definition.minutes,true)).join(''):'<div class="empty-canvas"><h3>Add your first visualization</h3><p>Select a metric, log view, pattern, deployment timeline or trace view.</p><button id="studio-canvas-add">＋ Add panel</button></div>'}</div>${panelEditorOpen?panelEditor():''}`;
 
  }
  if(activeDashboard){
   const d=activeDashboard;
   if(!d.definition.panels.length)return `<section class="card empty-canvas"><span class="eyebrow">SAVED DASHBOARD</span><h2>${esc(d.name)}</h2><p>Your empty dashboard is saved. Add a visualization to start monitoring.</p><div class="inline"><button class="primary" id="studio-edit-dashboard">＋ Add panel</button><button id="dashboard-back">← Dashboard library</button></div></section>`;
-  return `<div class="section-head"><div><h2>${esc(d.name)}</h2><p>Last ${d.definition.minutes} minutes · panel-specific filters</p></div><div class="inline">${dashboardSwitcher()}<label>Select panel to edit<select id="studio-panel-select"><option value="">Choose a panel</option>${d.definition.panels.map((panel,i)=>`<option value="${i}">${i+1}. ${esc(normalPanel(panel).title||normalPanel(panel).metric||normalPanel(panel).source)}</option>`).join('')}</select></label><button id="studio-edit-dashboard">Edit dashboard</button><button id="dashboard-back">← Dashboard library</button></div></div><div class="metric-grid advanced-grid">${(await Promise.all(d.definition.panels.map((p,i)=>studioPanel(p,d.definition.minutes,i)))).join('')}</div>`;
+  return `<div class="section-head"><div><h2>${esc(d.name)}</h2><p>Last ${d.definition.minutes} minutes · panel-specific filters</p></div><div class="inline">${dashboardSwitcher()}<label>Select panel to edit<select id="studio-panel-select"><option value="">Choose a panel</option>${d.definition.panels.map((panel,i)=>`<option value="${i}">${i+1}. ${esc(normalPanel(panel).title||normalPanel(panel).metric||normalPanel(panel).source)}</option>`).join('')}</select></label><button id="studio-edit-dashboard">Edit dashboard</button><button id="dashboard-back">← Dashboard library</button></div></div><div class="metric-grid advanced-grid">${d.definition.panels.map((p,i)=>panelPlaceholder(p,i,d.definition.minutes)).join('')}</div>`;
  }
  const saved=await accountAPI('saved-dashboards');savedDashboards=saved.items;
  return `<div class="section-head"><div><h2>Your dashboards</h2><p>Create multiple dashboards. Each dashboard can contain up to 24 independently editable panels.</p></div><div class="inline">${currentUser?.role==='admin'?'<button id="studio-ai-draft">◇ Create with AI</button>':''}<button class="primary" id="studio-new">＋ Create dashboard</button></div></div><label class="dashboard-search">Find dashboard<input id="studio-search" type="search" placeholder="Search dashboard names" aria-label="Find dashboard"></label><p id="studio-search-empty" hidden>No matching dashboards.</p><div class="dashboard-grid">${saved.items.map(d=>`<article class="card dashboard-card"><span class="eyebrow">SAVED DASHBOARD</span><h2>${esc(d.name)}</h2><p>${d.definition.panels.length} / 24 panels · ${d.definition.minutes} minute window</p><div class="inline"><button class="primary" data-dashboard="${d.id}">Open →</button><button data-studio-edit="${d.id}">Edit</button><button data-dashboard-copy="${d.id}">Duplicate</button><button data-delete-dashboard="${d.id}">Delete</button></div></article>`).join('')||empty('Build your first dashboard','Choose the signals that matter to you.')}</div><h2>Start with a complete dashboard</h2><p>Creates an editable draft. Review its sources and save when ready.</p><div class="dashboard-grid starter-gallery">${Object.entries(dashboardStarters).map(([key,t])=>`<article class="card"><span class="eyebrow">${t.panels.length} STARTER PANELS · EXPAND TO 24</span><h2>${t.name}</h2><p>${t.description}</p><button class="primary" data-dashboard-starter="${key}">Use ${t.name}</button></article>`).join('')}</div><h2>Quick starts</h2><div class="dashboard-grid builder">${templates.map(t=>`<article class="card"><h2>${t.name}</h2><p>${t.description}</p><button data-template="${t.id}">Preview template</button></article>`).join('')}<article class="card"><h2>Investigation timeline</h2><p>Logs, recurring patterns, deployments and traces together.</p><button id="studio-investigation">Build investigation dashboard →</button></article></div>`;
