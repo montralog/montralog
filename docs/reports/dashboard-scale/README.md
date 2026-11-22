@@ -8,24 +8,24 @@ The benchmark generated **10,000,000** synthetic rows in a separate, disposable 
 
 | Operation | Observed result |
 |---|---|
-| Previous first-page query plus full matching COUNT | Database deadline exceeded after 10,052 ms |
-| New first page, 100 records + one lookahead row | Median 2.305 ms; maximum 7.907 ms over ten runs |
-| Following 100 cursor pages | Median 2.695 ms; maximum 4.261 ms |
+| Previous first-page query plus full matching COUNT | Database deadline exceeded after 10,012 ms |
+| New first page, 100 records + one lookahead row | Median 1.344 ms; maximum 1.910 ms over ten runs |
+| Following 100 cursor pages | Median 2.813 ms; maximum 4.471 ms |
 | Page uniqueness | 10,100 returned IDs verified unique |
 
 [Raw measurements](ten-million-log-reads.json). Reads were sequential, local and cache-friendly after fixture creation; this is not a cold-cache, network, concurrent-user or arbitrary-filter benchmark. Results depend on hardware, data distribution and indexes. Grouped overview/pattern queries, text scans, ingestion, retention, failover and sustained concurrent load are not certified by these numbers. High-volume telemetry should use purpose-built metric/log backends and workload-specific validation.
 
 ## Query changes
 
-Log browsing reads at most 101 result rows per page and uses the extra row for `has_more`, eliminating the unconditional full matching count. The API also accepts an opaque cursor bound to the search filters and a one-hour snapshot lifetime. `(time,id)` ordering handles identical timestamps. New arrivals do not shift following pages. Legacy offset requests still work, with their existing 100,000 offset cap. Deep offset and unindexed text filters can remain expensive; use cursors and selective filters.
+Log browsing reads at most 101 result rows per page and uses the extra row for `has_more`, eliminating the unconditional full matching count. The API also accepts an opaque cursor bound to the search filters and a one-hour snapshot lifetime. `(time,id)` ordering handles identical timestamps. The cursor also carries the maximum record ID captured on the first page, excluding new arrivals even when their timestamps are backdated. Retention/deletion can still remove records between pages; this is not a long-lived database transaction. Legacy offset requests still work, with their existing 100,000 offset cap. Deep offset and unindexed text filters can remain expensive; use cursors and selective filters.
 
-Dashboards show a canvas immediately, then load panels independently with four concurrent requests. Identical queries share one request during a render. Navigation cancels active telemetry reads; obsolete queued panel queries are discarded. Requests have a 15-second browser deadline. Automatic refresh waits for the dashboard's pending queries so slow panels are not starved by refreshes.
+Dashboards show a canvas immediately, then load panels independently with four concurrent requests. Identical queries share one request during a render. Navigation cancels browser telemetry requests (server-side bounded queries may still finish); obsolete queued panel queries are discarded. Requests have a 15-second browser deadline. Automatic refresh waits for the dashboard's pending queries so slow panels are not starved by refreshes.
 
 ## Tests and reproduction
 
-- Four SQLite and four real isolated PostgreSQL pagination tests cover tied timestamps, new arrivals, changed/invalid cursors, exact pages and legacy offset behavior.
+- Five SQLite and five real isolated PostgreSQL pagination tests cover tied timestamps, new arrivals, changed/invalid cursors, exact pages and legacy offset behavior.
 - Eight renderer/query tests cover rendering, request sharing, concurrency and obsolete queued work.
-- Seventeen existing browser flows passed; an additional delayed-backend flow proves other panels/canvas remain usable before the slow panel finishes.
+- Seventeen existing browser flows passed; two additional browser flows cover delayed-backend progressive loading and cursor Next/Previous navigation.
 
 ```sh
 python scripts/benchmark_log_queries.py --database work/benchmark-new.db --records 10000000 --output work/benchmark-result.json

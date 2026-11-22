@@ -377,3 +377,23 @@ test('a slow metric does not block the dashboard canvas or other panels',async({
  await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
  await expect(page.locator('.dashboard-canvas > .panel-query-slot')).toHaveCount(0);
 });
+
+test('log Next uses its cursor and Previous returns to the first page',async({page})=>{
+ await signIn(page,'paneladmin');
+ const queries=[];
+ await page.route('**/api/logs?**',async route=>{
+  const params=new URL(route.request().url()).searchParams;queries.push(Object.fromEntries(params));
+  const following=params.get('cursor')==='browser-cursor-fixture';
+  const items=Array.from({length:following?1:100},(_,i)=>({id:following?100:200-i,time:Date.now()/1000-i,service:'cursor-test',environment:'test',severity:'INFO',message:following?'Following cursor page':'First cursor page '+i,trace_id:'',attributes:'{}'}));
+  await route.fulfill({json:{items,has_more:!following,next_cursor:following?null:'browser-cursor-fixture'}});
+ });
+ await page.locator('nav [data-view="logs"]').click();
+ await expect(page.getByText('First cursor page 0',{exact:true})).toBeVisible();
+ await page.locator('#next').click();
+ await expect(page.getByText('Following cursor page',{exact:true})).toBeVisible();
+ expect(queries.at(-1).cursor).toBe('browser-cursor-fixture');
+ expect(queries.at(-1).offset).toBe('100');
+ await page.locator('#prev').click();
+ await expect(page.getByText('First cursor page 0',{exact:true})).toBeVisible();
+ expect(queries.at(-1).cursor).toBeUndefined();
+});

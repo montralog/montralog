@@ -30,29 +30,30 @@ def log_filter_key(params):
 def log_cursor(params):
     value = params.get('cursor', '')
     if not value:
-        return time.time(), None
+        return time.time(), None, None
     try:
         if not isinstance(value, str) or len(value) > 512:
             raise ValueError()
-        version, end, stamp, ident, scope = json.loads(base64.urlsafe_b64decode(value + '=' * (-len(value) % 4)))
+        version, end, stamp, ident, maximum, scope = json.loads(base64.urlsafe_b64decode(value + '=' * (-len(value) % 4)))
         if (type(version) is not int or version != 1 or type(end) not in (int, float) or type(stamp) not in (int, float)
                 or not math.isfinite(end) or not math.isfinite(stamp)
                 or not time.time() - 3600 <= end <= time.time() + 5
                 or not end - int(params.get('minutes', '60')) * 60 <= stamp <= end
-                or type(ident) is not int or not 0 < ident <= 2**63 - 1
+                or type(maximum) is not int or not 0 < maximum <= 2**63 - 1
+                or type(ident) is not int or not 0 < ident <= maximum
                 or scope != log_filter_key(params)):
             raise ValueError()
-        return end, (stamp, ident)
+        return end, (stamp, ident), maximum
     except (ValueError, TypeError, OverflowError, UnicodeError):
         raise ValueError('Invalid or expired log cursor; refresh the search.') from None
 
 
-def next_log_cursor(params, end, row):
-    data = [1, end, row['time'], row['id'], log_filter_key(params)]
+def next_log_cursor(params, end, maximum, row):
+    data = [1, end, row['time'], row['id'], maximum, log_filter_key(params)]
     return base64.urlsafe_b64encode(json.dumps(data, separators=(',', ':')).encode()).decode().rstrip('=')
 
 def query_view(view, params):
-    end, position = log_cursor(params) if view == 'logs' else (None, None)
+    end, position, maximum = log_cursor(params) if view == 'logs' else (None, None, None)
     clause, args = where(params, end=end)
     with database() as db:
         if view == 'overview':
@@ -80,8 +81,10 @@ def query_view(view, params):
                 if params.get(field):
                     clause += ' AND ' + field + ' = ?'
                     args.append(text(params[field]))
-            clause += ' AND time <= ?'
-            args.append(end)
+            if maximum is None:
+                maximum = db.execute('SELECT COALESCE(MAX(id),0) FROM logs').fetchone()[0]
+            clause += ' AND time <= ? AND id <= ?'
+            args.extend([end, maximum])
             offset = max(0, min(100000, int(params.get('offset', 0)))) if position is None else 0
             if position is not None:
                 clause += ' AND (time,id) < (?,?)'
@@ -91,7 +94,7 @@ def query_view(view, params):
             more = len(rows) > 100
             rows = rows[:100]
             return {'items': rows, 'offset': offset, 'has_more': more,
-                    'next_cursor': next_log_cursor(params, end, rows[-1]) if more else None,
+                    'next_cursor': next_log_cursor(params, end, maximum, rows[-1]) if more else None,
                     'snapshot_end': end}
         if view == 'patterns':
             return {'items': [dict(r) for r in db.execute(f'''SELECT service,environment,pattern,COUNT(*) occurrences,

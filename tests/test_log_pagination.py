@@ -55,3 +55,16 @@ class LogPaginationTests(unittest.TestCase):
         self.assertTrue(first['has_more'])
         self.assertEqual(len(last['items']),100)
         self.assertFalse(last['has_more'])
+
+    def test_backdated_new_logs_are_excluded_by_snapshot_maximum_id(self):
+        self.seed()
+        first=query_view('logs',{'minutes':'60'})
+        stamp=first['items'][-1]['time']-1
+        with storage.database() as db:
+            db.execute("INSERT INTO logs(time,received,service,environment,severity,message,pattern,trace_id,attributes) VALUES (?,?,?,?,?,?,?,?,?)",(stamp,time.time(),'api','test','INFO','late arrival','fixture','','{}'))
+        cursor=first['next_cursor'];remaining=[]
+        while cursor:
+            page=query_view('logs',{'minutes':'60','cursor':cursor})
+            remaining.extend(page['items']);cursor=page['next_cursor']
+        self.assertEqual(len(remaining),101)
+        self.assertTrue(all(row['message']!='late arrival' for row in remaining))
