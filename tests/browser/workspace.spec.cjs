@@ -288,6 +288,14 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  for(const name of ['Prometheus','VictoriaMetrics','Mimir','Thanos','Loki','Tempo'])await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Configure Loki →',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Backend type',exact:true})).toHaveValue('loki');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('service_name');
+ await expect(page.locator('#connection-bundled')).toBeHidden();
+ await page.getByRole('combobox',{name:'Backend type',exact:true}).selectOption('victoriametrics');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('/select/<tenant>/prometheus');
+ await expect(page.locator('#connection-bundled')).toBeVisible();
+ await page.getByRole('combobox',{name:'Backend type',exact:true}).selectOption('tempo');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('query frontend');
+ await expect(page.locator('#connection-bundled')).toBeHidden();
 });
 
 
