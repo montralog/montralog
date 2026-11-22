@@ -57,7 +57,10 @@ def application(environ, start_response):
             from . import studio, notifications
             user=accounts.session(environ)
             data=read_json(environ) if method=='POST' else {}
-            if path=='/api/control/panel-drafts':
+            if path=='/api/control/workspace':
+                from .workspace import route as workspace_route
+                body=workspace_route(method,data,user,environ)
+            elif path=='/api/control/panel-drafts':
                 from .panel_drafts import route as panel_drafts
                 body=panel_drafts(method,data,user,environ)
             elif path=='/api/control/investigations':
@@ -164,7 +167,7 @@ def application(environ, start_response):
         status,body = 500,{'error':'Internal server error'}
     if not isinstance(body, bytes):
         body = json.dumps(body,allow_nan=False).encode()
-    labels = {302:'Found',200:'OK',201:'Created',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',409:'Conflict',429:'Too Many Requests',413:'Content Too Large',415:'Unsupported Media Type',500:'Internal Server Error',503:'Service Unavailable'}
+    labels = {302:'Found',200:'OK',201:'Created',400:'Bad Request',401:'Unauthorized',403:'Forbidden',404:'Not Found',409:'Conflict',429:'Too Many Requests',413:'Content Too Large',415:'Unsupported Media Type',500:'Internal Server Error',502:'Bad Gateway',503:'Service Unavailable'}
     start_response(f'{status} {labels[status]}',headers+[('Content-Type',content_type),('Content-Length',str(len(body)))])
     return [body]
 

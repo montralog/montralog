@@ -1,66 +1,47 @@
-# Guided data connections — 0.4
+# Data sources
 
-Connect data is now a source catalog and working server-side connection manager.
-Browser login uses your account session; configuring a local Prometheus server
-does not require a Montralog API token.
+Montralog includes server-side adapters for the sources below. These query existing backends; adding a connection does not install a backend, configure exporters or copy historical data. The adapter baseline shipped in 0.8.2. Version 0.9.0 adds source-specific setup guidance, HTTP regression coverage and safer backend error responses.
 
-## Connect Prometheus
+| Source | Supported queries and panels | Base URL guidance |
+|---|---|---|
+| Prometheus | Guided metric queries; line, bar, stat, table and gauge | Base URL without `/api/v1` |
+| VictoriaMetrics | The same guided metrics through its Prometheus-compatible API | Single node: base URL, usually port 8428. Cluster: include `/select/<tenant>/prometheus` |
+| Mimir | Guided metrics through its Prometheus-compatible query endpoint | Query base URL, commonly with `/prometheus` prefix |
+| Thanos | Guided metrics through Thanos Query | Query endpoint, not a Store or Sidecar address |
+| Loki | Sampled logs, timelines and recurring patterns | Query gateway base URL without `/loki/api/v1` |
+| Tempo | Trace search summaries and timelines | Query frontend base URL without `/api/search` |
+| Montralog storage | Local logs, patterns, trace summaries and deployment events | Built in; no saved connection required |
 
-1. Open **Connect data → Prometheus → Add connection**.
-2. Enter a connection name and Prometheus server URL. For this Docker stack,
-   **Use local Docker Prometheus** fills `http://prometheus:9090`.
-3. Choose **No authentication** unless the Prometheus backend requires Basic
-   authentication or a bearer credential.
-4. Use **Test connection**, then **Save & test**. Saving requires a successful
-   Prometheus API response. The test reports the number of returned `up` series;
-   zero series can still be a valid connection with no configured exporters.
-5. Optionally select **Use as workspace default**. Infrastructure views, older
-   dashboard panels and metric alert rules use that default.
+## Connect and build panels
 
-Requests originate from the Montralog server, not from the browser. Inside Docker,
-`localhost` refers to the gateway container. Use `host.docker.internal` for a
-Prometheus server running directly on the Windows host, or a reachable Docker
-service/network name. HTTPS uses normal certificate verification; there is no
-skip-verification switch. A reverse-proxy path prefix is supported.
+1. Open **Connect data**, choose the backend and enter its name and base URL.
+2. Select no authentication, Basic authentication or a bearer credential. Saved credentials require HTTPS.
+3. Choose **Test connection**, then **Save & test**. Saving requires a successful response. Zero results can mean a healthy backend with no matching data.
+4. Open a dashboard, add or edit a panel, select the matching signal and choose the saved **Data source**. Metric sources appear for metric panels, Loki for logs/patterns and Tempo for traces.
+5. Select the visualization, time window and supported filters, preview results, apply the panel and save the dashboard.
 
-## Manage and use connections
+Only metrics connections can be the workspace default. An explicit panel source remains pinned; deleting that connection reports a missing source rather than silently switching servers. Changing the default does not move collectors or their historical data. Local Montralog records remain available independently of external sources.
 
-**Data sources** lists saved sources, their authentication mode, default status,
-last test result and current scrape targets from the default backend. Administrators
-can test, edit and delete saved connections. Other signed-in users can see source
-metadata and select a source in their personal dashboard panels.
+## Query scope and limitations
 
-In **Dashboards → Edit dashboard → Edit/Add panel**, select a **Data source** for a
-metric panel. Workspace default follows future default changes; an explicit source
-remains pinned to that source. If an explicitly selected source is deleted, its
-panels report the missing source instead of silently querying another server.
+- Metric adapters use the guided metric catalog; arbitrary PromQL is not exposed. A backend must contain the metric names and labels used by the selected catalog panel. Connection success does not prove that host, Docker or Kubernetes collectors are installed. Scrape targets and alert-management APIs vary between compatible products; query compatibility does not establish support for every Prometheus administrative API.
+- Loki reads up to 100 recent records. The current selector expects a nonempty `service_name` label; service filtering matches that label and environment filtering matches `environment`. Severity is read from `severity` or `level` and filtered within the returned sample. Pattern counts describe the sample, not the full dataset. Free-form LogQL and full-text historical aggregation are not implemented.
+- Tempo reads up to 100 search summaries, with service and environment resource filters. This is not a full span waterfall or complete trace retrieval. Text and severity filters do not apply to trace search.
+- Multi-tenant backends requiring `X-Scope-OrgID` need an operator-managed trusted gateway that injects the fixed tenant header. Arbitrary custom headers and direct tenant-header configuration are not implemented. Keep separate customer stacks and credentials; do not expose an unrestricted shared gateway.
+- These sources do not imply integrations for Elasticsearch, arbitrary SQL databases or every vendor-specific API.
 
-The bundled deployment source is always available as a fallback and cannot be
-deleted in the UI. Customize creates a saved connection rather than rewriting
-environment or Helm settings. Existing logs/traces remain in Montralog's built-in
-storage. The local Docker/host collector continues feeding the bundled Prometheus
-instance; changing the workspace default does not move its data.
+## Docker networking and credentials
 
-## Credentials and network access
+Requests originate from the Montralog server. Container `localhost` is the gateway itself. Use reachable service names or `host.docker.internal` for a Windows-host service. Reverse-proxy path prefixes are preserved.
 
-Basic passwords and bearer credentials are submitted only through authenticated,
-CSRF-protected administrator routes. The API never returns the secret. Editing
-with a blank credential preserves the existing secret when authentication mode is
-unchanged. Choosing No authentication clears stored credentials for that source.
-Credentials are encrypted using the deployment's operator-held key. Saved Basic/bearer credentials require HTTPS; certificate verification cannot be disabled. Migrate old plaintext records using the [Docker upgrade guide](CONTAINERS.md).
+Private endpoints require an exact `hostname:port` entry in `MONTRALOG_ALLOWED_DESTINATIONS`, for example `loki:3100,tempo:3200,metrics.internal:9090`. Recreate gateway and relevant workers after changing their environment. The configured bundled Prometheus endpoint is already approved. Do not allow destinations you do not control.
 
-Private destinations require an operator entry in `MONTRALOG_ALLOWED_DESTINATIONS`, for example `metrics.internal:9090,host.docker.internal:9090`. Set this in the private environment file and recreate the gateway and notification worker. Match the exact hostname and port; wildcards are not supported. Approve only DNS names and services you control. The operator-configured bundled Prometheus endpoint is already approved.
+Only administrators can test, save, edit or delete connections. Signed-in viewers can see safe metadata and query configured sources within their customer stack. Passwords and bearer credentials are encrypted with the deployment key and are not returned to the browser. A blank credential preserves an existing secret only for the same authentication type and endpoint; endpoint changes require re-entry.
 
-All resolved addresses are validated on each request. Connections use those numeric addresses directly, preserving TLS hostname verification; redirects and environment proxies are not followed. Link-local/metadata, multicast and unspecified destinations are always denied, even if allowlisted. Private DNS addresses may change between requests for approved internal services; use Docker networking and egress controls to restrict those services further.
+TLS verification remains enabled. Credentials require HTTPS. DNS addresses are validated and pinned per request; redirects and environment proxies are not followed. Metadata/link-local destinations remain blocked even when allowlisted. Back up the database and matching encryption key together; see [Docker operations](CONTAINERS.md) and [recovery](ASSURANCE.md).
 
-Only the operator-configured collector may use HTTP with credentials, through the explicit `MONTRALOG_ALLOW_INSECURE_COLLECTOR=true` setting in the isolated Docker network. It is not a general exception for saved data sources. Do not expose that network or reuse its credentials across customers.
+## Verification
 
-## Supported sources
+`tests/test_source_http.py` exercises all six saved adapters against a disposable HTTP contract fixture: saving connections, path prefixes, query parameters, Loki/Tempo records, dashboard source references and malformed-response errors. It uses the real outbound transport without mocking adapter responses. This verifies the client contract, not a live deployment of each vendor or a vendor certification. Existing tests separately cover encryption, credential transport, DNS/redirect policy and signal validation. Validate your actual endpoint, authentication and metric schema before production adoption.
 
-Prometheus-compatible APIs support saved URL/authentication connections in this
-release. Logs and traces are built-in Montralog stores. Docker/host metrics use the
-existing local collector. External Loki, Tempo, Elasticsearch and SQL query-source
-plugins are not implemented; they are not shown as working connectors.
-
-The interaction follows Grafana's documented URL/authentication and Save & test
-pattern: [Grafana Prometheus configuration](https://grafana.com/docs/grafana/latest/datasources/prometheus/configure/).
+Official API references: [Prometheus](https://prometheus.io/docs/prometheus/latest/querying/api/), [VictoriaMetrics](https://docs.victoriametrics.com/url-examples/), [Loki](https://grafana.com/docs/loki/latest/reference/loki-http-api/), [Tempo](https://grafana.com/docs/tempo/latest/api_docs/).

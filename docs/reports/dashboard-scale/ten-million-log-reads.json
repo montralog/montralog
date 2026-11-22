@@ -1,0 +1,33 @@
+{
+  "scope": "Synthetic local SQLite query path only. Direct SQL seeding is not ingestion throughput. No sustained capacity or multi-user guarantee.",
+  "records": 10000000,
+  "seed_seconds": null,
+  "database_bytes": 1857511424,
+  "platform": "Windows",
+  "python": "3.14.6",
+  "query_runs": 10,
+  "legacy_count_query": {
+    "status": "database_deadline_exceeded",
+    "ms": 10012.43480015546
+  },
+  "first_page_ms": [
+    1.894600223749876,
+    1.909899991005659,
+    1.4985003508627415,
+    1.2848000042140484,
+    1.2411000207066536,
+    1.3083000667393208,
+    1.3254000805318356,
+    1.2411000207066536,
+    1.3625998981297016,
+    1.4003999531269073
+  ],
+  "median_ms": 1.3439999893307686,
+  "max_ms": 1.909899991005659,
+  "following_pages": {
+    "count": 100,
+    "records_verified_unique": 10100,
+    "median_ms": 2.812849823385477,
+    "max_ms": 4.470400046557188
+  }
+}

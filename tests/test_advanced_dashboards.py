@@ -55,6 +55,10 @@ class AdapterPersistenceTests(test_connections.ConnectionTests):
         with storage.database() as db:
             db.execute("INSERT INTO data_sources(id,name,url,auth_type,username,secret,is_default,last_checked,last_status,last_detail,created_at) VALUES ('legacy','Legacy','https://example.com','none','','',0,0,'connected','',0)")
             db.execute('ALTER TABLE data_sources DROP COLUMN kind')
-            db.execute('DELETE FROM schema_migrations WHERE version=8')
+            db.execute('DROP TABLE workspace_settings')
+            db.execute('DELETE FROM schema_migrations WHERE version>=8')
         storage.initialize()
         self.assertEqual(connections.resolve('legacy')['kind'],'prometheus')
+        with storage.database() as db:
+            self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],storage.SCHEMA_VERSION)
+            self.assertEqual(db.execute('SELECT name FROM workspace_settings WHERE id=1').fetchone()[0],'Your organization')

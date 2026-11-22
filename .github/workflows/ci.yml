@@ -80,13 +80,13 @@ jobs:
           chmod +x /tmp/kind-linux-amd64
           mv /tmp/kind-linux-amd64 /tmp/kind
       - run: /tmp/kind create cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig" --wait 120s
-      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.8.2 .
+      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.9.0 .
       - run: |
           docker pull prom/prometheus:v3.16.0
           docker pull prom/alertmanager:v0.35.0
           docker pull otel/opentelemetry-collector-contrib:0.165.0
           docker pull postgres:17.6-alpine
-          for image in ghcr.io/montralog/montralog:0.8.2 prom/prometheus:v3.16.0 prom/alertmanager:v0.35.0 otel/opentelemetry-collector-contrib:0.165.0 postgres:17.6-alpine; do
+          for image in ghcr.io/montralog/montralog:0.9.0 prom/prometheus:v3.16.0 prom/alertmanager:v0.35.0 otel/opentelemetry-collector-contrib:0.165.0 postgres:17.6-alpine; do
             python scripts/load_kind_gateway.py --image "$image"
           done
       - run: python scripts/cluster_smoke.py --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"

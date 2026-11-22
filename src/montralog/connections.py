@@ -193,7 +193,8 @@ def test_remote(source):
 def remote_records(source, signal, params):
     from .validation import pattern
     if source_signal(source)!=('logs' if signal=='patterns' else signal):raise AccountError('Data source does not support this signal.')
-    minutes=max(1,min(1440,int(params.get('minutes',60))))
+    try:minutes=max(1,min(1440,int(params.get('minutes',60))))
+    except (ValueError,TypeError,OverflowError):raise AccountError('Invalid query time window.') from None
     now=time.time();service=params.get('service','');environment=params.get('environment','');text=params.get('q','');severity=params.get('severity','')
     if any(not isinstance(v,str) or len(v)>200 for v in (service,environment,text,severity)):raise AccountError('Invalid source filter.')
     try:
@@ -202,14 +203,20 @@ def remote_records(source, signal, params):
             selector='{'+','.join(labels or ['service_name=~".+"'])+'}'
             if text:selector+=' |= '+json.dumps(text)
             result=remote_json(source,'/loki/api/v1/query_range',{'query':selector,'start':int((now-minutes*60)*1e9),'end':int(now*1e9),'limit':100,'direction':'backward'})
-            if result.get('status')!='success' or result.get('data',{}).get('resultType')!='streams':raise ValueError()
+            data=result.get('data')
+            if result.get('status')!='success' or not isinstance(data,dict) or data.get('resultType')!='streams' or not isinstance(data.get('result'),list):raise ValueError()
             items=[]
-            for stream in result['data'].get('result',[]):
+            for stream in data['result']:
+                if not isinstance(stream,dict) or not isinstance(stream.get('stream'),dict) or not isinstance(stream.get('values'),list):raise ValueError()
                 labels=stream['stream']
-                for stamp,line,*_ in stream['values']:
+                for sample in stream['values']:
+                    if not isinstance(sample,list) or len(sample)<2 or not isinstance(sample[1],str):raise ValueError()
+                    stamp,line=sample[:2]
+                    timestamp=int(stamp)/1e9
+                    if not math.isfinite(timestamp):raise ValueError()
                     level=str(labels.get('severity',labels.get('level','INFO'))).upper()
                     if severity and level!=severity:continue
-                    items.append({'time':int(stamp)/1e9,'message':str(line)[:16000],'severity':level,'service':labels.get('service_name',''),'environment':labels.get('environment','')})
+                    items.append({'time':timestamp,'message':str(line)[:16000],'severity':level,'service':labels.get('service_name',''),'environment':labels.get('environment','')})
             items=sorted(items,key=lambda item:item['time'],reverse=True)[:100]
             if signal=='patterns':
                 groups={}
@@ -227,5 +234,5 @@ def remote_records(source, signal, params):
         return {'items':[{'time':int(t.get('startTimeUnixNano',0))/1e9,'trace_id':t['traceID'],'services':t.get('rootServiceName',''),'name':t.get('rootTraceName',''),'spans':0,'duration_s':float(t.get('durationMs',0))/1000,'remote':True} for t in result['traces'][:100]],'limit':100}
     except urllib.error.HTTPError as error:
         error.close();raise AccountError('Source query failed. Check endpoint, access and query compatibility.',502) from None
-    except (OSError,ValueError,KeyError,TypeError):
+    except (OSError,ValueError,KeyError,TypeError,OverflowError):
         raise AccountError('Source query failed. Check endpoint, access and query compatibility.',502) from None

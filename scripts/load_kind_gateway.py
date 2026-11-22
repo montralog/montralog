@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 parser=argparse.ArgumentParser()
-parser.add_argument('--image',default='ghcr.io/montralog/montralog:0.8.2')
+parser.add_argument('--image',default='ghcr.io/montralog/montralog:0.9.0')
 args=parser.parse_args()
 node='montralog-verify-control-plane'
 root=Path(__file__).resolve().parents[1]/'work'

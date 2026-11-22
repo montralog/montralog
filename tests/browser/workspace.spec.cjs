@@ -288,6 +288,14 @@ test('advanced gauge panels persist layout, context and safe references; catalog
  for(const name of ['Prometheus','VictoriaMetrics','Mimir','Thanos','Loki','Tempo'])await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Configure Loki →',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Backend type',exact:true})).toHaveValue('loki');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('service_name');
+ await expect(page.locator('#connection-bundled')).toBeHidden();
+ await page.getByRole('combobox',{name:'Backend type',exact:true}).selectOption('victoriametrics');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('/select/<tenant>/prometheus');
+ await expect(page.locator('#connection-bundled')).toBeVisible();
+ await page.getByRole('combobox',{name:'Backend type',exact:true}).selectOption('tempo');
+ await expect(page.locator('#connection-endpoint-help')).toContainText('query frontend');
+ await expect(page.locator('#connection-bundled')).toBeHidden();
 });
 
 
@@ -298,6 +306,7 @@ test('dashboard starters, panel presets and expanded inspection support easy cre
  await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
  await page.getByLabel('Dashboard name',{exact:true}).fill('Easy creation browser dashboard');
  await page.getByRole('button',{name:'＋ Add visualization',exact:true}).click();
+ await page.getByText('Start with a panel preset',{exact:true}).click();
  await page.getByRole('button',{name:'Error logs Timeline · ERROR records',exact:true}).click();
  const editor=page.getByRole('region',{name:'Panel editor',exact:true});
  await expect(editor.getByRole('combobox',{name:'Signal',exact:true})).toHaveValue('logs');
@@ -359,4 +368,82 @@ test('themes live only in Settings and Windows/Linux dashboards support more tha
  await expect(page.getByRole('region',{name:'Panel editor',exact:true}).getByLabel('Panel title',{exact:true})).toHaveValue('Application traces');
  await page.locator('#studio-hide-editor').click();await page.locator('#studio-cancel').click();
  await page.getByRole('button',{name:'Use Linux systems',exact:true}).click();await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(10);
+});
+
+test('a slow metric does not block the dashboard canvas or other panels',async({page})=>{
+ await signIn(page,'paneladmin');
+ await page.route('**/api/metrics?**',async route=>{
+  if(new URL(route.request().url()).searchParams.get('panel')==='memory'){
+   await new Promise(resolve=>setTimeout(resolve,3000));
+  }
+  await route.continue();
+ });
+ await page.locator('nav [data-view="dashboards"]').click();
+ await page.getByRole('button',{name:'Use Infrastructure health',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Save dashboard',exact:true})).toBeVisible();
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(3);
+ await expect(page.locator('.dashboard-canvas > .panel-query-slot')).toHaveCount(1);
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
+ await expect(page.locator('.dashboard-canvas > .panel-query-slot')).toHaveCount(0);
+});
+
+test('log Next uses its cursor and Previous returns to the first page',async({page})=>{
+ await signIn(page,'paneladmin');
+ const queries=[];
+ await page.route('**/api/logs?**',async route=>{
+  const params=new URL(route.request().url()).searchParams;queries.push(Object.fromEntries(params));
+  const following=params.get('cursor')==='browser-cursor-fixture';
+  const items=Array.from({length:following?1:100},(_,i)=>({id:following?100:200-i,time:Date.now()/1000-i,service:'cursor-test',environment:'test',severity:'INFO',message:following?'Following cursor page':'First cursor page '+i,trace_id:'',attributes:'{}'}));
+  await route.fulfill({json:{items,has_more:!following,next_cursor:following?null:'browser-cursor-fixture'}});
+ });
+ await page.locator('nav [data-view="logs"]').click();
+ await expect(page.getByText('First cursor page 0',{exact:true})).toBeVisible();
+ await page.locator('#next').click();
+ await expect(page.getByText('Following cursor page',{exact:true})).toBeVisible();
+ expect(queries.at(-1).cursor).toBe('browser-cursor-fixture');
+ expect(queries.at(-1).offset).toBe('100');
+ await page.locator('#prev').click();
+ await expect(page.getByText('First cursor page 0',{exact:true})).toBeVisible();
+ expect(queries.at(-1).cursor).toBeUndefined();
+});
+
+test('organization details persist and viewers cannot rename the workspace',async({page})=>{
+ await signIn(page,'paneladmin');await setTheme(page,'light');
+ await page.getByLabel('Organization name',{exact:true}).fill('Northstar Engineering');
+ await page.getByLabel('Description',{exact:true}).fill('Production reliability & service operations');
+ await page.getByRole('button',{name:'Save organization',exact:true}).click();
+ await expect(page.locator('#workspace-name')).toHaveText('Northstar Engineering');
+ await page.reload();await page.locator('nav [data-view="settings"]').click();
+ await expect(page.getByLabel('Organization name',{exact:true})).toHaveValue('Northstar Engineering');
+ await page.screenshot({path:require('node:path').resolve(__dirname,'../../work/organization-settings-polished.png'),fullPage:true});
+ await page.locator('#logout').click();await expect(page.locator('#workspace-name')).toHaveText('Your organization');
+ await signIn(page,'viewer');await page.locator('nav [data-view="settings"]').click();
+ await expect(page.getByRole('heading',{name:'Northstar Engineering',exact:true})).toBeVisible();
+ await expect(page.getByLabel('Organization name',{exact:true})).toHaveCount(0);
+});
+
+test('drag reorder and direct Add panel persist a dashboard layout',async({page})=>{
+ await signIn(page,'paneladmin');await setTheme(page,'light');
+ await page.route('**/api/metrics?**',route=>{
+  const metric=new URL(route.request().url()).searchParams.get('panel'),now=Date.now()/1000;
+  const value=metric==='targets'?'1':metric==='memory'?'57':metric==='host_disk'?'62':'46';
+  return route.fulfill({json:{available:true,panel:{unit:metric==='targets'?'state':'%'},data:{result:[{metric:{host_name:'synthetic-host'},values:[[now-60,metric==='targets'?'1':'32'],[now,value]]}]}}});
+ });
+ await page.locator('nav [data-view="dashboards"]').click();await page.getByRole('button',{name:'Use Infrastructure health',exact:true}).click();
+ await page.getByLabel('Dashboard name',{exact:true}).fill('Operations overview');
+ await expect(page.locator('.dashboard-canvas > .editable-panel')).toHaveCount(4);
+ await page.locator('[data-panel-drag="0"]').dragTo(page.locator('[data-canvas-index="3"]'));
+ await expect(page.locator('.editable-panel h2').first()).toContainText('Host memory');
+ await page.getByRole('button',{name:'Save dashboard',exact:true}).click();
+ await expect(page.getByRole('button',{name:'＋ Add panel',exact:true})).toBeVisible();
+ await expect(page.locator('.advanced-grid > .studio-panel')).toHaveCount(4);
+ await page.screenshot({path:require('node:path').resolve(__dirname,'../../work/dashboard-polished-canvas.png'),fullPage:true});
+ const saved=await (await page.request.get('/api/saved-dashboards')).json();
+ const dashboard=saved.items.find(d=>d.name==='Operations overview');
+ expect(dashboard.definition.panels[0].metric).toBe('memory');expect(dashboard.definition.panels[3].metric).toBe('cpu');
+ await page.getByRole('button',{name:'＋ Add panel',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Panel editor',exact:true})).toBeVisible();
+ await page.locator('#studio-cancel').click();
+ await expect(page.getByRole('heading',{name:'Your dashboards',exact:true})).toBeVisible();
+ await page.screenshot({path:require('node:path').resolve(__dirname,'../../work/dashboard-polished-library.png'),fullPage:true});
 });

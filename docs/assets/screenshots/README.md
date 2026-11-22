@@ -4,6 +4,7 @@ Screenshots are actual Montralog application captures, not generated mockups. Al
 
 | Asset | View | Status and capture |
 |---|---|---|
+| `workspace-preview-library.png`, `workspace-preview-canvas.png` | Dashboard cards and editable canvas | 0.9.0 browser regression fixture, 22 November 2026 |
 | `dashboard-library.png` | Applications (12), Linux (10), Windows (8) cards | Dashboard preview, 1 November 2026 |
 | `dashboard-canvas.png` | Editable application panels, synthetic request rate | Dashboard preview, 1 November 2026 |
 | `panel-presets.png` | Multiple preset selection with 12 existing panels | Dashboard preview, 1 November 2026 |

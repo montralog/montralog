@@ -1,23 +1,35 @@
 'use strict';
 let currentUser=null,csrf='',savedDashboards=[],activeDashboard=null;
 Object.assign(titles,{
- dashboards:['Dashboards, built around your work.','Start with a template or assemble a personal view of your infrastructure.'],
+ dashboards:['Dashboards','Live views for your infrastructure, applications and incidents.'],
  profile:['Make this workspace yours.','Manage your profile, password and active sessions.'],
  sources:['Know where your signals come from.','Inspect actual Prometheus scrape targets and observed telemetry sources.'],
  about:['About Montralog.','Project identity, license and attribution included with this installation.'],
- settings:['Your installation, at a glance.','Deployment details and the controls available to your operator.']
+ settings:['Settings','Organization details, appearance and installation information.']
 });
 async function accountAPI(path,body){
  const res=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});
  const data=await res.json();if(res.status===401)showLogin('Sign in to continue.');if(!res.ok)throw Error(data.error||'Request failed');return data;
 }
 function showLogin(message=''){
- token='';currentUser=null;csrf='';epoch++;content.innerHTML='';document.body.classList.add('signed-out');$('#login').hidden=false;$('#controls').hidden=true;$('#password').value='';$('#login-notice').textContent=message;$('#login-notice').hidden=!message;
+ cancelTelemetryQueries();token='';currentUser=null;csrf='';epoch++;applyOrganization({name:'Your organization',description:'Your observability workspace'});content.innerHTML='';document.body.classList.add('signed-out');$('#login').hidden=false;$('#controls').hidden=true;$('#password').value='';$('#login-notice').textContent=message;$('#login-notice').hidden=!message;
 }
 function enterWorkspace(data){
- currentUser=data.user;csrf=data.csrf;token='session';$('#password').value='';document.body.classList.remove('signed-out');$('#login').hidden=true;$('#controls').hidden=false;$('#profile-button').textContent=currentUser.name+' · Profile';navigate('overview');
+ currentUser=data.user;csrf=data.csrf;token='session';$('#password').value='';document.body.classList.remove('signed-out');$('#login').hidden=true;$('#controls').hidden=false;$('#profile-button').textContent=currentUser.name+' · Profile';navigate('overview');loadOrganization().catch(()=>{});
 }
-function formMessage(message){$('#notice').textContent=message;$('#notice').hidden=false;}
+function applyOrganization(details){
+ const name=$('#workspace-name'),description=$('#workspace-description');
+ if(name)name.textContent=details.name;if(description)description.textContent=details.description;
+}
+async function loadOrganization(){
+ const owner=currentUser?.id,details=await accountAPI('control/workspace');
+ if(token==='session'&&currentUser?.id===owner)applyOrganization(details);
+ return details;
+}
+function organizationSettingsCard(details){
+ return `<section class="card organization-settings"><span class="eyebrow">WORKSPACE</span><h2>Organization</h2><p>Name the workspace your team sees in navigation.</p>${currentUser?.role==='admin'?`<form id="organization-form" class="form-stack"><label>Organization name<input name="name" required maxlength="80" value="${esc(details.name)}" placeholder="e.g. Acme engineering"></label><label>Description<input name="description" maxlength="160" value="${esc(details.description)}" placeholder="e.g. Production observability"></label><button class="primary">Save organization</button></form>`:`<h3>${esc(details.name)}</h3><p>${esc(details.description)}</p><small>An administrator can update organization details.</small>`}</section>`;
+}
+function formMessage(message,status='success'){$('#notice').textContent=message;$('#notice').dataset.status=status;$('#notice').hidden=false;}
 const templates=[
  {id:'hosts',name:'Host essentials',description:'CPU and memory trends across your servers.',panels:['cpu','memory','host_disk']},
  {id:'containers',name:'Container operations',description:'Live Docker CPU, memory, processes, network totals and collection freshness.',panels:['docker_containers','container_cpu','docker_memory','docker_memory_percent','docker_processes','docker_received','docker_sent','agent_age']},
@@ -66,20 +78,21 @@ async function workspaceView(next){
   const [targets,overview]=await Promise.all([api('targets'),api('overview')]);const items=targets.data?.activeTargets||[];
   return `<div class="stats"><div class="card stat"><span class="label">Scrape targets</span><strong>${items.length}</strong><small>From Prometheus discovery</small></div><div class="card stat"><span class="label">Targets up</span><strong class="green">${items.filter(t=>t.health==='up').length}</strong><small>Last scrape result</small></div><div class="card stat"><span class="label">Targets down</span><strong class="red">${items.filter(t=>t.health==='down').length}</strong><small>Needs investigation</small></div><div class="card stat"><span class="label">Observed services</span><strong>${overview.services.length}</strong><small>Within selected telemetry window</small></div></div><section class="card"><div class="section-head"><h2>Prometheus targets</h2><button data-go="connect">Connect a source →</button></div>${!targets.available?empty('Backend unavailable',targets.error):items.length?table(['Job / instance','State','Last scrape','Evidence'],items.map(t=>`<tr><td><b>${esc(t.labels?.job)}</b><small class="mono">${esc(t.labels?.instance)}</small></td><td>${badge(t.health)}</td><td>${esc(t.lastScrape)}</td><td class="message">${esc(t.lastError||'Last scrape completed without an error.')}</td></tr>`)):empty('No scrape targets','Configure exporters in your Prometheus deployment.',true)}</section><section class="card builder"><h2>Observed log sources</h2><p>Sources are discovered from received telemetry. This list reflects the selected time window.</p>${serviceTable(overview.services)}</section>`;
  }
- const [health,defs]=await Promise.all([fetch('/healthz').then(r=>r.json()),api('dashboards')]);
- return `${appearanceSettingsCard()}<div class="grid"><section class="card"><h2>Installation</h2>${table(['Setting','Value'],[['Version',health.version],['Deployment','Self-hosted'],['Account access','Operator-managed local accounts'],['Browser session','HttpOnly cookie · 12 hour expiry'],['Supported metric panels',defs.items.length],['License','Apache License 2.0']].map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`))}</section><section class="card"><h2>Operator controls</h2><p>Configuration belongs to your deployment and is applied through Docker Compose or Helm.</p><div class="pattern"><h3>Retention & backups</h3><small>Set RETENTION_DAYS for logs, spans, host samples and change events. Configure Prometheus retention separately. Follow docs/OPERATIONS.md for backups.</small></div><div class="pattern"><h3>Notifications</h3><small>Set an Alertmanager receiver in deploy/docker/alertmanager.yml before relying on alert delivery.</small></div><div class="pattern"><h3>Accounts & access</h3><small>Create local accounts using the operator CLI. Accounts own their personal dashboards. Manage roles, teams, groups and approved identity integrations under People & access.</small></div><div class="pattern"><h3>Network & HTTPS</h3><small>Local Docker ports bind to loopback. When exposing the UI, use HTTPS and set MONTRALOG_COOKIE_SECURE=true.</small></div></section></div>`;
+ const [health,defs,organization]=await Promise.all([fetch('/healthz').then(r=>r.json()),api('dashboards'),loadOrganization()]);
+ return `<div class="settings-primary-grid">${organizationSettingsCard(organization)}${appearanceSettingsCard()}</div>${currentUser?.role==='admin'?`<section class="settings-shortcuts"><button data-go="connect"><strong>Data sources</strong><small>Connect and test your telemetry backends</small></button><button data-go="access"><strong>People & access</strong><small>Manage roles, teams and company sign-in</small></button><button data-go="notifications"><strong>Notifications</strong><small>Configure contact points and delivery</small></button></section>`:''}<details class="settings-advanced"><summary>Advanced deployment information</summary><div class="grid"><section class="card"><h2>Installation</h2>${table(['Setting','Value'],[['Version',health.version],['Deployment','Self-hosted'],['Account access','Operator-managed local accounts'],['Browser session','HttpOnly cookie · 12 hour expiry'],['Supported metric panels',defs.items.length],['License','Apache License 2.0']].map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`))}</section><section class="card"><h2>Operator controls</h2><p>Configuration belongs to your deployment and is applied through Docker Compose or Helm.</p><div class="pattern"><h3>Retention & backups</h3><small>Set RETENTION_DAYS for logs, spans, host samples and change events. Configure Prometheus retention separately. Follow docs/OPERATIONS.md for backups.</small></div><div class="pattern"><h3>Notifications</h3><small>Set an Alertmanager receiver in deploy/docker/alertmanager.yml before relying on alert delivery.</small></div><div class="pattern"><h3>Accounts & access</h3><small>Create local accounts using the operator CLI. Accounts own their personal dashboards. Manage roles, teams, groups and approved identity integrations under People & access.</small></div><div class="pattern"><h3>Network & HTTPS</h3><small>Local Docker ports bind to loopback. When exposing the UI, use HTTPS and set MONTRALOG_COOKIE_SECURE=true.</small></div></section></div></details>`;
 }
 $('#login-form').addEventListener('submit',async e=>{
  e.preventDefault();const button=$('#sign-in');button.disabled=true;$('#login-notice').hidden=true;
  try{const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('#username').value,password:$('#password').value})});const d=await res.json();if(!res.ok)throw Error(d.error);enterWorkspace(d);}catch(err){$('#login-notice').textContent=err.message;$('#login-notice').hidden=false;}finally{button.disabled=false;}
 });
 document.addEventListener('submit',async e=>{
- if(!['dashboard-form','profile-form','password-form'].includes(e.target.id))return;e.preventDefault();const form=e.target,button=form.querySelector('button');button.disabled=true;
+ if(!['dashboard-form','profile-form','password-form','organization-form'].includes(e.target.id))return;e.preventDefault();const form=e.target,button=form.querySelector('button');button.disabled=true;
  try{const values=new FormData(form);
   if(form.id==='dashboard-form'){await accountAPI('saved-dashboards',{name:values.get('name'),definition:{panels:values.getAll('panel'),minutes:Number(values.get('minutes'))}});activeDashboard=null;epoch++;await render();formMessage('Dashboard saved to your account.');}
+  if(form.id==='organization-form'){const owner=currentUser?.id;const d=await accountAPI('control/workspace',{name:values.get('name'),description:values.get('description')});if(token==='session'&&currentUser?.id===owner){applyOrganization(d);formMessage('Organization updated.');}}
   if(form.id==='profile-form'){const d=await accountAPI('account/profile',{name:values.get('name'),email:values.get('email')});currentUser=d.user;$('#profile-button').textContent=d.user.name+' · Profile';formMessage('Profile saved.');}
   if(form.id==='password-form'){if(values.get('password')!==values.get('confirm'))throw Error('New passwords do not match.');await accountAPI('account/password',{current_password:values.get('current_password'),password:values.get('password')});showLogin('Password updated. Sign in with your new password.');}
- }catch(err){formMessage(err.message);}finally{button.disabled=false;}
+ }catch(err){formMessage(err.message,'error');}finally{button.disabled=false;}
 });
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b)return;
@@ -91,6 +104,6 @@ document.addEventListener('click',async e=>{
   if(b.dataset.template){const t=templates.find(t=>t.id===b.dataset.template);activeDashboard={name:t.name,definition:{panels:t.panels,minutes:60}};epoch++;render();}
   if(b.id==='dashboard-back'){activeDashboard=null;epoch++;render();}
   if(b.dataset.deleteDashboard){if(!confirm('Delete this personal dashboard?'))return;await accountAPI('saved-dashboards/delete',{id:b.dataset.deleteDashboard});epoch++;render();}
- }catch(err){formMessage(err.message);}
+ }catch(err){formMessage(err.message,'error');}
 });
 (async()=>{try{const status=await fetch('/api/auth/status').then(r=>r.json());$('#first-run').hidden=status.configured;const res=await fetch('/api/account');if(res.ok)enterWorkspace(await res.json());}catch{showLogin('Cannot reach Montralog. Check the local Docker services.');}})();

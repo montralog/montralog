@@ -2,8 +2,8 @@ apiVersion: v2
 name: montralog
 description: Montralog gateway, durable OpenTelemetry collector, and optional metrics backends
 type: application
-version: 0.8.2
-appVersion: 0.8.2
+version: 0.9.0
+appVersion: 0.9.0
 kubeVersion: ">=1.27.0-0"
 keywords: [observability, monitoring, logs, tracing, opentelemetry]
 home: https://github.com/montralog/montralog
@@ -21,7 +21,9 @@ annotations:
       url: https://github.com/montralog/montralog/blob/main/docs/README.md
   artifacthub.io/containsSecurityUpdates: "true"
   artifacthub.io/changes: |
-    - kind: security
-      description: Update pinned Prometheus, Alertmanager, Collector and Python runtime images.
-    - kind: security
-      description: Scan all bundled backend images and reject new or unapproved HIGH/CRITICAL findings before release.
+    - kind: added
+      description: Add administrator-managed organization display settings with schema 9.
+    - kind: changed
+      description: Improve dashboard cards, panel creation, reordering and progressive queries.
+    - kind: fixed
+      description: Bound log paging and handle malformed external source responses safely.
