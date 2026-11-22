@@ -51,7 +51,7 @@ jobs:
       - run: docker compose config --quiet
       - run: docker compose -f compose.yaml -f deploy/docker/compose.ai.yaml config --quiet
       - run: docker compose run --rm --no-deps --entrypoint promtool prometheus check config /etc/prometheus/prometheus.yml
-      - run: docker run --rm -v "$PWD/deploy/docker:/rules:ro" --workdir /rules --entrypoint promtool prom/prometheus:v3.13.3 test rules rule-tests.yml
+      - run: docker run --rm -v "$PWD/deploy/docker:/rules:ro" --workdir /rules --entrypoint promtool prom/prometheus:v3.16.0 test rules rule-tests.yml
       - run: docker compose run --rm --no-deps collector validate --config=/etc/otelcol/config.yml
       - run: docker compose run --rm --no-deps --entrypoint amtool alertmanager check-config /etc/alertmanager/alertmanager.yml
       - run: python scripts/check_image_secrets.py
@@ -80,13 +80,13 @@ jobs:
           chmod +x /tmp/kind-linux-amd64
           mv /tmp/kind-linux-amd64 /tmp/kind
       - run: /tmp/kind create cluster --name montralog-verify --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig" --wait 120s
-      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.8.1 .
+      - run: docker buildx build --provenance=false --sbom=false --load -t ghcr.io/montralog/montralog:0.8.2 .
       - run: |
-          docker pull prom/prometheus:v3.13.3
-          docker pull prom/alertmanager:v0.28.1
-          docker pull otel/opentelemetry-collector-contrib:0.161.0
+          docker pull prom/prometheus:v3.16.0
+          docker pull prom/alertmanager:v0.35.0
+          docker pull otel/opentelemetry-collector-contrib:0.165.0
           docker pull postgres:17.6-alpine
-          for image in ghcr.io/montralog/montralog:0.8.1 prom/prometheus:v3.13.3 prom/alertmanager:v0.28.1 otel/opentelemetry-collector-contrib:0.161.0 postgres:17.6-alpine; do
+          for image in ghcr.io/montralog/montralog:0.8.2 prom/prometheus:v3.16.0 prom/alertmanager:v0.35.0 otel/opentelemetry-collector-contrib:0.165.0 postgres:17.6-alpine; do
             python scripts/load_kind_gateway.py --image "$image"
           done
       - run: python scripts/cluster_smoke.py --kubeconfig "$RUNNER_TEMP/montralog-kubeconfig"
@@ -119,9 +119,11 @@ jobs:
           mkdir -p image-scan
           docker image save -o image-scan/image.tar montralog:security
           docker image inspect montralog:security --format '{{.Id}}' > image-scan/image-id.txt
-          TRIVY_IMAGE=aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+          TRIVY_IMAGE=aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
           docker run --rm -v "$PWD/image-scan:/scan:ro" -v "$PWD/security-reports:/reports" "$TRIVY_IMAGE" image --input /scan/image.tar --scanners vuln --list-all-pkgs --format json --output /reports/image.json
           python scripts/check_security_report.py security-reports/image.json --summary security-reports/summary.json
+      - name: Scan every bundled chart image and enforce severity gate
+        run: python scripts/check_stack_security.py --output security-reports/stack
       - uses: actions/upload-artifact@v4
         if: always()
         with:

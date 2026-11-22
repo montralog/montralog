@@ -2,7 +2,7 @@ name: montralog
 services:
   gateway:
     build: .
-    image: ghcr.io/montralog/montralog:0.8.1
+    image: ghcr.io/montralog/montralog:0.8.2
     environment:
       MONTRALOG_SILO_STRICT: ${MONTRALOG_SILO_STRICT:-true}
       MONTRALOG_TENANT_ID: ${MONTRALOG_TENANT_ID:-default}
@@ -36,7 +36,7 @@ services:
       driver: json-file
       options: {max-size: 10m, max-file: "3"}
   retention:
-    image: ghcr.io/montralog/montralog:0.8.1
+    image: ghcr.io/montralog/montralog:0.8.2
     environment:
       MONTRALOG_SILO_STRICT: ${MONTRALOG_SILO_STRICT:-true}
       MONTRALOG_TENANT_ID: ${MONTRALOG_TENANT_ID:-default}
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
     logging: *logging
   notifications:
-    image: ghcr.io/montralog/montralog:0.8.1
+    image: ghcr.io/montralog/montralog:0.8.2
     environment:
       MONTRALOG_SILO_STRICT: ${MONTRALOG_SILO_STRICT:-true}
       MONTRALOG_TENANT_ID: ${MONTRALOG_TENANT_ID:-default}
@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
     logging: *logging
   prometheus:
-    image: prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
     command: ["--config.file=/etc/prometheus/prometheus.yml","--storage.tsdb.path=/prometheus","--storage.tsdb.retention.time=7d","--storage.tsdb.retention.size=5GB"]
     volumes:
       - ./deploy/docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -92,7 +92,7 @@ services:
     restart: unless-stopped
     logging: *logging
   alertmanager:
-    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    image: prom/alertmanager:v0.35.0@sha256:e638797febd034838eca8b98cdbd46f951e9bf7f178777aa8669167406a9946c
     command: ["--config.file=/etc/alertmanager/alertmanager.yml","--storage.path=/alertmanager"]
     volumes:
       - ./deploy/docker/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
@@ -104,7 +104,7 @@ services:
     restart: unless-stopped
     logging: *logging
   collector:
-    image: otel/opentelemetry-collector-contrib:0.161.0@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
+    image: otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea
     command: ["--config=/etc/otelcol/config.yml"]
     environment:
       MONTRALOG_SILO_STRICT: ${MONTRALOG_SILO_STRICT:-true}
@@ -128,7 +128,7 @@ services:
     restart: unless-stopped
     logging: *logging
   collector-storage-init:
-    image: ghcr.io/montralog/montralog:0.8.1
+    image: ghcr.io/montralog/montralog:0.8.2
     user: "0:0"
     command: ["python","-c","import os; os.chown('/queue',10001,10001)"]
     volumes: [collector-data:/queue]

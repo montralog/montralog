@@ -7,9 +7,9 @@ Montralog combines Prometheus metrics, logs, trace summaries, deployment events 
 
 ## Release status
 
-**Version 0.8.1** brings dashboard cards, multi-panel editing, guided queries, AI panel drafts and external backend adapters. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.1) · [Release notes and upgrade steps](docs/RELEASE-0.8.1.md).
+**Version 0.8.2** updates the bundled monitoring images and runtime, and scans every bundled backend for vulnerabilities. Four known upstream HIGH occurrences remain explicitly accepted and reported; see the release notes. Dashboard cards, multi-panel editing, AI drafts and external backend adapters remain available. [Release and downloads](https://github.com/montralog/montralog/releases/tag/v0.8.2) · [Release notes and upgrade steps](docs/RELEASE-0.8.2.md).
 
-This source targets 0.8.1. The versioned image and downloads become available only after the gated release workflow succeeds; source changes alone do not establish publication. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
+This source targets 0.8.2. The versioned image and downloads become available only after the gated release workflow succeeds; source changes alone do not establish publication. Historical [0.8.0 downloads](https://github.com/montralog/montralog/releases/tag/v0.8.0) and their evidence remain unchanged.
 
 ## What you can build
 
@@ -30,7 +30,7 @@ This source targets 0.8.1. The versioned image and downloads become available on
 
 ## Dashboards in action
 
-Actual application captures from the 0.8.1 dashboard implementation, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
+Actual application captures from the 0.8.2 dashboard implementation, refreshed on **1 November 2026**. Data is synthetic; the cards do not imply discovery of physical Windows/Linux machines. Missing telemetry remains an empty state. [Screenshot details](docs/assets/screenshots/README.md).
 
 ### One dashboard for each area of work
 
@@ -70,9 +70,9 @@ Choose **Ask AI** on a supported local panel, or **Investigate** on an alert. Th
 |---|---|---|
 | Prometheus | Guided metric queries and connection testing | Released |
 | Montralog storage | Logs, patterns, traces and deployment events | Released |
-| VictoriaMetrics, Mimir, Thanos | Supported metrics through their Prometheus-compatible query API | 0.8.1 |
-| Loki | Sampled log tables, timelines and recurring patterns | 0.8.1 |
-| Tempo | Trace search summaries and timelines | 0.8.1 |
+| VictoriaMetrics, Mimir, Thanos | Supported metrics through their Prometheus-compatible query API | 0.8.2 |
+| Loki | Sampled log tables, timelines and recurring patterns | 0.8.2 |
+| Tempo | Trace search summaries and timelines | 0.8.2 |
 
 Use **Connect data** to select a backend, configure its query URL and optional authentication, test, then save. Private endpoints need operator destination allowlisting; credentials require HTTPS. The adapters do not implement arbitrary SQL, Elasticsearch, Splunk, Datadog, cloud OAuth or custom tenant headers. [Connection setup](docs/CONNECTIONS.md) · [Adapter behavior and limits](docs/STUDIO.md#external-backend-adapters).
 
@@ -85,10 +85,10 @@ Requires Docker Engine/Desktop with **Linux containers**, Docker Compose v2 and 
 From PowerShell or a POSIX shell:
 
 ```sh
-git clone --branch v0.8.1 --depth 1 https://github.com/montralog/montralog.git
+git clone --branch v0.8.2 --depth 1 https://github.com/montralog/montralog.git
 cd montralog
 
-docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.1 /install/scripts/setup.py
+docker run --rm --user 0:0 --entrypoint python -v "${PWD}:/install" ghcr.io/montralog/montralog:0.8.2 /install/scripts/setup.py
 docker compose pull
 docker compose up -d --wait --wait-timeout 180
 docker compose exec gateway python -m montralog create-user --username admin --name Administrator
@@ -191,11 +191,11 @@ The AI Compose file passes these values to both services. After applying the con
 
 ### Create dashboards with AI
 
-After configuring the provider and running the AI worker on version 0.8.1, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
+After configuring the provider and running the AI worker on version 0.8.2, sign in as an administrator. Open **Dashboards → Create with AI**, select an approved model and describe the signals you want. For example: “Create CPU health, memory trend and application request-rate panels.” Reopen queued results under **Recent drafts**. Review the proposed panels on the canvas, select sources and filters, then save. **Add panels with AI** appends to an existing draft without changing its name or saving automatically.
 
 A request proposes **1–6 panels**, while a dashboard holds **up to 24**. Only supported signals and views are accepted; arbitrary queries, URLs and executable settings are rejected. Hosted requests require explicit sharing approval in addition to operator-enabled egress. [Full dashboard guide](docs/STUDIO.md#ai-assisted-dashboard-drafts).
 
-Use version 0.8.1 for both the gateway and AI worker. Do not mix application versions. This release uses schema 8; rollback requires the pre-upgrade database backup and matching encryption key.
+Use version 0.8.2 for both the gateway and AI worker. Do not mix application versions. This release uses schema 8; rollback requires the pre-upgrade database backup and matching encryption key.
 
 ### How an investigation works
 
