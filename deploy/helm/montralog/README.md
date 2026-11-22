@@ -2,6 +2,8 @@
 
 Chart **0.8.1** deploys application **0.8.1**. This release has hosted kind-cluster checks for SQLite and the PostgreSQL topology; validate your own cluster before production use.
 
+> **Upgrading from 0.5.1-rc.1?** That chart references an unpublished RC image. Use the [migration guide](https://github.com/montralog/montralog/blob/main/docs/HELM-MIGRATION.md); upgrade the chart and application together after backing up data and the encryption key.
+
 ## Included resources
 
 - Gateway Deployment and Service, health probes and resource settings.

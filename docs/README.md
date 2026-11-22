@@ -36,6 +36,8 @@ Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.1 r
 - [Production acceptance matrix](PRODUCTION.md)
 - [Release status](RELEASE.md), [changelog](CHANGELOG.md) and [security policy](../SECURITY.md)
 
+- [Retired RC chart, image locations and Helm migration](HELM-MIGRATION.md)
+
 ## Historical reference
 
 These guides remain useful for their named versions; they are not current release certifications.
