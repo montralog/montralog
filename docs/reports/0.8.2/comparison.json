@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-22",
+  "scanner": "Trivy 0.76.2",
+  "baseline_source": "Artifact Hub report for chart 0.8.1",
+  "baseline": {
+    "ghcr.io/montralog/montralog:0.8.1": {
+      "total": 11,
+      "severity_counts": {
+        "MEDIUM": 7,
+        "LOW": 4
+      }
+    },
+    "prom/prometheus:v3.13.3@sha256:6976aa8a60fec930796ce5772b8d12da7a318a5daa8d40d69c5c7819a05eeed7": {
+      "total": 63,
+      "severity_counts": {
+        "LOW": 6,
+        "MEDIUM": 39,
+        "UNKNOWN": 2,
+        "HIGH": 16
+      }
+    },
+    "prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba": {
+      "total": 225,
+      "severity_counts": {
+        "HIGH": 97,
+        "MEDIUM": 116,
+        "UNKNOWN": 4,
+        "CRITICAL": 2,
+        "LOW": 6
+      }
+    },
+    "otel/opentelemetry-collector-contrib:0.161.0@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1": {
+      "total": 28,
+      "severity_counts": {
+        "HIGH": 7,
+        "MEDIUM": 19,
+        "UNKNOWN": 1,
+        "LOW": 1
+      }
+    }
+  },
+  "candidate": {
+    "prometheus": {
+      "image": "prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06",
+      "result": "ACCEPTED_REMAINING_HIGH",
+      "severity_counts": {
+        "UNKNOWN": 2,
+        "LOW": 0,
+        "MEDIUM": 4,
+        "HIGH": 2,
+        "CRITICAL": 0
+      },
+      "total": 8,
+      "risk_acceptance": {
+        "vulnerability_id": "CVE-2026-78661",
+        "package": "golang.org/x/net",
+        "installed_version": "v0.61.0",
+        "fixed_version": "0.62.0",
+        "max_occurrences": 2,
+        "reason": "Current stable upstream image still contains this finding; awaiting a patched upstream release. Limited to this exact image digest."
+      }
+    },
+    "alertmanager": {
+      "image": "prom/alertmanager:v0.35.0@sha256:e638797febd034838eca8b98cdbd46f951e9bf7f178777aa8669167406a9946c",
+      "result": "ACCEPTED_REMAINING_HIGH",
+      "severity_counts": {
+        "UNKNOWN": 2,
+        "LOW": 0,
+        "MEDIUM": 4,
+        "HIGH": 2,
+        "CRITICAL": 0
+      },
+      "total": 8,
+      "risk_acceptance": {
+        "vulnerability_id": "CVE-2026-78661",
+        "package": "golang.org/x/net",
+        "installed_version": "v0.61.0",
+        "fixed_version": "0.62.0",
+        "max_occurrences": 2,
+        "reason": "Current stable upstream image still contains this finding; awaiting a patched upstream release. Limited to this exact image digest."
+      }
+    },
+    "collector": {
+      "image": "otel/opentelemetry-collector-contrib:0.165.0@sha256:e40d61f10c9a617cca1ffd1be4d7e2b3a4b0f0001798ff07e58cabe82e618cea",
+      "result": "PASS",
+      "severity_counts": {
+        "UNKNOWN": 1,
+        "LOW": 0,
+        "MEDIUM": 1,
+        "HIGH": 0,
+        "CRITICAL": 0
+      },
+      "total": 2
+    },
+    "montralog": {
+      "image": "Local development build montralog:security-0.8.2 (not a published release image)",
+      "result": "PASS",
+      "severity_counts": {
+        "UNKNOWN": 0,
+        "LOW": 0,
+        "MEDIUM": 0,
+        "HIGH": 0,
+        "CRITICAL": 0
+      },
+      "total": 0
+    }
+  },
+  "baseline_total": 327,
+  "candidate_total": 18,
+  "note": "Local candidate evidence. Final release workflow rescans its exact application image and the pinned backend images. Counts may change with vulnerability database updates."
+}

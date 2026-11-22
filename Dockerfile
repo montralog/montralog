@@ -1,15 +1,16 @@
-FROM python:3.13-alpine@sha256:bf12ecc0bea3f171d55145dd02c78b5eeb09f30ee2ac9cc2b4c9e4e8f5e30741
+FROM python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/montralog/montralog" \
       org.opencontainers.image.url="https://github.com/montralog/montralog" \
-      org.opencontainers.image.version="0.8.1" \
+      org.opencontainers.image.version="0.8.2" \
       org.opencontainers.image.revision=$VCS_REF \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="Montralog monitoring, tracing, logging and tracking"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MONTRALOG_DB=/data/montralog.db MONTRALOG_ENCRYPTION_REQUIRED=true MONTRALOG_SILO_STRICT=true
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
+RUN apk upgrade --no-cache && \
+    pip install --no-cache-dir -r requirements.txt && \
     python -m pip uninstall --yes pip setuptools wheel && \
     python -c "import shutil,sysconfig; from pathlib import Path; shutil.rmtree(Path(sysconfig.get_path('stdlib'))/'ensurepip')" && \
     addgroup -g 10001 montralog && \

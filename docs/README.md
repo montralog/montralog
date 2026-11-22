@@ -1,6 +1,6 @@
 # Montralog documentation
 
-Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.1 release notes](RELEASE-0.8.1.md) for dashboard features and schema-8 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
+Start with the [Docker quickstart](../README.md#quickstart-docker). See [0.8.2 security release notes](RELEASE-0.8.2.md) for bundled image updates and schema-8 upgrade steps. The [release page](https://github.com/montralog/montralog/releases) determines publication status. Versioned reports only describe their stated revision and workload.
 
 ## Install and operate
 

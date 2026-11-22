@@ -55,3 +55,7 @@ See [published 0.8.0 evidence](0.8.0/README.md) for exact-image scans, test coun
 [Release notes](../RELEASE-0.8.1.md) describe dashboard cards, schema-8 backend adapters, AI panel drafts and upgrade/rollback requirements. [Dashboard development verification](dashboard-creation/README.md) retains the synthetic local-model results and limitations.
 
 Exact-image security, SBOM, browser, local-AI and acceptance archives are attached to the [0.8.1 release](https://github.com/montralog/montralog/releases/tag/v0.8.1) after its gated publication succeeds. Development checks do not substitute for those release artifacts or an independent penetration test. Historical reports above remain unchanged.
+
+## Version 0.8.2
+
+See [bundled stack remediation evidence and remaining risks](0.8.2/README.md). Full application and bundled-backend reports are attached to the gated release, with no hidden images or findings.
